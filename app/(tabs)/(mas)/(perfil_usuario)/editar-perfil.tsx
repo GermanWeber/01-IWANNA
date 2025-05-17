@@ -1,27 +1,109 @@
-import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity, Alert, Modal, Button} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useEffect, useState } from 'react';
 import { recuperarStorage } from '../../../../services/asyncStorage';
-
+import * as ImagePicker from 'expo-image-picker';
+import { Usuario } from '../../../../types/usuario';
+import { API_URL } from '@env';
 const imgPerfil = require('../../../../assets/images/perfil.png');
 
 export default function EditarPerfil() {
+    const [modalVisible, setModalVisible] = useState(false);
+    const [usuario, setUsuario] = useState<Usuario | null>(null);
+    
     const manejarDireccion = (direccion: {
-    descripcion: string;
-    latitud: number;
-    longitud: number;
+        descripcion: string;
+        latitud: number;
+        longitud: number;
     }) => {
         console.log('Dirección seleccionada:', direccion);
     };
-    const [usuario, setUsuario] = useState<any>(null);
+
+    const seleccionarFoto = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 0.5,
+            allowsEditing: true,
+        });
+
+        if (!result.canceled) {
+            const nuevaFoto = result.assets[0].uri;
+            setUsuario((prev: any) => ({ ...prev, foto: nuevaFoto }));
+            setModalVisible(false);
+        }
+    };
+
+    const tomarFoto = async () => {
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 0.5,
+            allowsEditing: true,
+        });
+
+        if (!result.canceled) {
+            const nuevaFoto = result.assets[0].uri;
+            setUsuario((prev: any) => ({ ...prev, foto: nuevaFoto }));
+            setModalVisible(false);
+        }
+    };
+
+    const guardarDatos = async () => {
         
+        let esValido: boolean = true;
+        if(usuario){
+            // RESTRICCIONES
+            if(!usuario.nombre){
+                esValido = false;
+            }
+
+            //SUBE AL SERVIDOR
+            if(esValido){
+                const urlApi = `${API_URL}usuarios/update-user/${usuario.id}`;
+                console.log("URL API: ",urlApi);
+                try {
+                    const res = await fetch(urlApi, {
+                        method: 'PUT',
+                        headers: {
+                        'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(usuario),
+                    });
+
+                    if (!res.ok) {
+                        throw new Error(`Error al enviar datos. Status: ${res.status}`);
+                    }
+
+                    const data = await res.json();
+                    console.log('Usuario editado:', data);
+                } catch (error) {
+                    console.error('Error al enviar usuario:', error);
+                }
+            } else {
+                Alert.alert(
+                "Campos incompletos",
+                "Por favor, completa todos los campos obligatorios antes de guardar.",
+                [{ text: "OK" }]
+            );
+            }
+            
+        }
+    }
+
+    useEffect(() => {
+    (async () => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+        Alert.alert('Permisos necesarios', 'Necesitamos permiso para usar la cámara y galería');
+        }
+    })();
+    }, []);
+
     useEffect(() => {
         const cargarUsuario = async () => {
             try {
                 const datos = await recuperarStorage('usuario');
-                console.log("datos: ", datos);
                 if (datos) {
                     setUsuario(datos);
                 }
@@ -32,6 +114,7 @@ export default function EditarPerfil() {
         cargarUsuario();
     }, []);
 
+    
     return (
         <KeyboardAwareScrollView
         contentContainerStyle={styles.scrollContainer}
@@ -41,7 +124,7 @@ export default function EditarPerfil() {
             <View style={styles.container}>
                 {/* Sección de Foto de Perfil */}
                 {usuario && (
-                <TouchableOpacity style={styles.avatarContainer} onPress={() => console.log('Cambiar foto')}>
+                <TouchableOpacity style={styles.avatarContainer} onPress={() => setModalVisible(true)}>
                     <Image
                         source={usuario.foto ? { uri: usuario.foto } : imgPerfil}
                         style={styles.avatar}
@@ -61,15 +144,42 @@ export default function EditarPerfil() {
                     </View>
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Nombre</Text>
-                        <TextInput style={styles.input} placeholder={usuario.nombre} />
+                        <TextInput 
+                            style={styles.input}
+                            placeholder={"Ingresa tu nombre"} 
+                            value={usuario.nombre}
+                            onChangeText={(text) =>
+                                setUsuario((prev) => prev ? { ...prev, nombre: text } : prev)
+                            }
+                        />
                     </View>
+
+                    {usuario.id_tipo == 1 && (
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Profesión</Text>
-                        <TextInput style={styles.input} placeholder={usuario.id_profesion ? (usuario.id_profesion.toString()) : ("Ingresa tu profesion")} />
+                        <TextInput 
+                            style={styles.input} 
+                            placeholder="Ingresa tu profesion"
+                            value={usuario.profesion}
+                            onChangeText={(text) =>
+                                setUsuario((prev) => prev ? { ...prev, profesion: text } : prev)
+                            }
+                        />
                     </View>
+                    )}
+                    
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Edad</Text>
-                        <TextInput style={styles.input} placeholder={usuario.edad.toString()} keyboardType="numeric" />
+                        <TextInput 
+                            style={styles.input}
+                            placeholder="Ingresa tu edad"
+                            keyboardType="numeric"
+                            value={usuario.edad?.toString()} 
+                            onChangeText={(text) =>
+                                setUsuario((prev) => prev ? { ...prev, edad: parseInt(text) || 0 } : prev)
+                            }
+                        />
+                            
                     </View>
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Direccion</Text>
@@ -101,16 +211,19 @@ export default function EditarPerfil() {
                 {usuario && (
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
-                    <Ionicons name="call-outline" size={24} color="#8BC34A" />
-                    <Text style={styles.sectionTitle}>Contacto</Text>
+                        <Ionicons name="call-outline" size={24} color="#8BC34A" />
+                        <Text style={styles.sectionTitle}>Contacto</Text>
                     </View>
                     <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Correo</Text>
-                    <TextInput style={styles.input} placeholder="manuel_perez@gmail.com" keyboardType="email-address" />
-                    </View>
-                    <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Teléfono</Text>
-                    <TextInput style={styles.input} placeholder="+56 9 3452 5252" keyboardType="phone-pad" />
+                        <Text style={styles.label}>Teléfono</Text>
+                        <TextInput style={styles.input} 
+                            placeholder="Ej: +56 9 1234 5678"
+                            keyboardType="phone-pad"
+                            value={usuario?.telefono}
+                            onChangeText={(text) =>
+                                setUsuario((prev) => prev ? { ...prev, telefono: text } : prev)
+                            } 
+                        />
                     </View>
                 </View>
                 )}
@@ -119,17 +232,37 @@ export default function EditarPerfil() {
                 {usuario && (
                 <View style={styles.buttonsContainer}>
                     <TouchableOpacity style={styles.cancelButton} onPress={() => router.push('/(perfil_usuario)/mi-perfil')}>
-                    <Ionicons name="close-circle-outline" size={20} color="#fff" />
-                    <Text style={styles.buttonText}>Cancelar</Text>
+                        <Ionicons name="close-circle-outline" size={20} color="#fff" />
+                        <Text style={styles.buttonText}>Cancelar</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.saveButton}>
-                    <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-                    <Text style={styles.buttonText}>Guardar</Text>
+                    <TouchableOpacity style={styles.saveButton} onPress={guardarDatos}>
+                        <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+                        <Text style={styles.buttonText}>Guardar</Text>
                     </TouchableOpacity>
                 </View>
                 )}
 
             </View>
+
+            {/* MODAL */}
+            <Modal
+                visible={modalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.buttonRow}>
+                            <Button title="Seleccionar Foto" onPress={seleccionarFoto} color="#8BC34A" />
+                            <View style={{ width: 10 }} />
+                                <Button title="Tomar Foto" onPress={tomarFoto} color="#8BC34A" />
+                            </View>
+                        <View style={{ height: 20 }} />
+                        <Button title="Cancelar" onPress={() => setModalVisible(false)} color="#f44336" />
+                    </View>
+                </View>
+            </Modal>
         </KeyboardAwareScrollView>
     )
 }
@@ -199,7 +332,6 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         padding: 10,
         fontSize: 16,
-        color: '#888',
         backgroundColor: '#fff',
     },
     inputText: {
@@ -237,5 +369,21 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginLeft: 10,
+    },
+    modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 30,
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 20,
+        elevation: 5,
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
     },
 });
