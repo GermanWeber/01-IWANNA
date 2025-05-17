@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "IWANNA",
+    "slug": "IWANNA",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icons/logo-sin-fondo.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "scheme": "iwanna",
+    "splash": {
+      "image": "./assets/images/icons/logo-sin-fondo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Esta app necesita acceso a tu cámara para tomar fotos de tu documento de identidad.",
+        "NSPhotoLibraryUsageDescription": "Esta app necesita acceso a tu biblioteca de fotos para seleccionar una foto de tu documento de identidad."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icons/logo-sin-fondo.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/images/icons/favicon.png"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
