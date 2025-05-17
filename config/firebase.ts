@@ -11,6 +11,7 @@ const firebaseConfig = {
     messagingSenderId: FB_MESSAGING_SENDER_ID,
     appId: FB_APP_ID,
     measurementId: FB_MEASUREMENT_ID
+    
 };
 
 // Inicializar Firebase
