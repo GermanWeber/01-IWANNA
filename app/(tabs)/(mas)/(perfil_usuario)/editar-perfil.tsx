@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity, Alert, Modal, Button} from 'react-native';
+import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity, Alert, Modal, Button, ActivityIndicator} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -13,6 +13,7 @@ export default function EditarPerfil() {
     const [modalFotoVisible, setModalFotoVisible] = useState(false);
     const [usuario, setUsuario] = useState<Usuario | null>(null);
     const [direccion, setDireccion] = useState<InterfaceDireccion | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const toDireccion = () => {
             router.push('../../../screens/direccion');
@@ -45,57 +46,63 @@ export default function EditarPerfil() {
         }
     };
 
-    const guardarDatos = async () => {
-        
+    const guardarUsuario = async () => {
+        setIsLoading(true);
         let esValido: boolean = true;
-        if(usuario){
-            // RESTRICCIONES
-            if(!usuario.nombre){
+
+        if (usuario) {
+            // Validaciones
+            if (!usuario.nombre || !direccion?.descripcion) {
                 esValido = false;
             }
 
-            //SUBE AL SERVIDOR
-            if(esValido){
-                if(direccion){
-                    guardarDireccion()
-                }
-                const urlApi = `${API_URL}usuarios/update-user/${usuario.id}`;
-                console.log("URL API: ",urlApi);
+            if (esValido) {
                 try {
-                    const res = await fetch(urlApi, {
-                        method: 'PUT',
-                        headers: {
-                        'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(usuario),
-                    });
-
-                    if (!res.ok) {
-                        throw new Error(`Error al enviar datos. Status: ${res.status}`);
+                    // Guardar dirección
+                    if (direccion) {
+                        const resDireccion = await guardarDireccion();
+                        console.log(resDireccion);
+                        if (!resDireccion) {
+                            Alert.alert("Error", "Error al guardar dirección");
+                            setIsLoading(false);
+                            return;
+                        }
                     }
 
-                    const data = await res.json();
-                    console.log('Usuario editado:', data);
+                    // Guardar usuario
+                    if (usuario) {
+                        const resDatos = await guardarDatos();
+                        if (!resDatos) {
+                            Alert.alert("Error", "Error al guardar usuario");
+                            setIsLoading(false);
+                            return;
+                        }
+                    }
+
+                    Alert.alert("Éxito", "El usuario a sido actualizado");
+
                 } catch (error) {
-                    console.error('Error al enviar usuario:', error);
+                    Alert.alert("Error", "Ocurrió un error inesperado");
+                    console.error(error);
                 }
             } else {
                 Alert.alert(
-                "Campos incompletos",
-                "Por favor, completa todos los campos obligatorios antes de guardar.",
-                [{ text: "OK" }]
-            );
+                    "Campos incompletos",
+                    "Por favor, completa todos los campos obligatorios antes de guardar.",
+                    [{ text: "OK" }]
+                );
             }
-            
         }
-    }
+
+        setIsLoading(false);
+    };
+
 
     const guardarDireccion = async () => {
         if (!usuario?.id) {
             console.error("Usuario sin ID. No se puede guardar dirección.");
             return;
         }
-
         if (!direccion || !direccion.descripcion || !direccion.latitud || !direccion.longitud) {
             console.error("Dirección incompleta:", direccion);
             return;
@@ -118,20 +125,46 @@ export default function EditarPerfil() {
             }
 
             const data = await res.json();
-            console.log('Dirección editada:', data);
+            
+            return data.exito;
         } catch (error) {
             console.error('Error al actualizar dirección:', error);
         }
     };
 
-    
-    useEffect(() => {
-    (async () => {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== 'granted') {
-        Alert.alert('Permisos necesarios', 'Necesitamos permiso para usar la cámara y galería');
+    const guardarDatos = async () => {
+        if(usuario){
+            const urlApi = `${API_URL}usuarios/update-user/${usuario.id}`;
+            console.log("URL API: ",urlApi);
+            try {
+                const res = await fetch(urlApi, {
+                    method: 'PUT',
+                    headers: {
+                    'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(usuario),
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Error al enviar datos. Status: ${res.status}`);
+                }
+
+                const data = await res.json();
+                
+                return data.exito;
+            } catch (error) {
+                console.error('Error al enviar usuario:', error);
+            }
         }
-    })();
+    };
+
+    useEffect(() => {
+        (async () => {
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permisos necesarios', 'Necesitamos permiso para usar la cámara y galería');
+            }
+        })();
     }, []);
 
     useEffect(() => {
@@ -282,18 +315,25 @@ export default function EditarPerfil() {
                 )}
 
                 {/* Botones de Guardar y Cancelar */}
-                {usuario && (
-                <View style={styles.buttonsContainer}>
-                    <TouchableOpacity style={styles.cancelButton} onPress={() => router.push('/(perfil_usuario)/mi-perfil')}>
-                        <Ionicons name="close-circle-outline" size={20} color="#fff" />
-                        <Text style={styles.buttonText}>Cancelar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.saveButton} onPress={guardarDatos}>
-                        <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-                        <Text style={styles.buttonText}>Guardar</Text>
-                    </TouchableOpacity>
-                </View>
+                {isLoading && (
+                    <View>
+                        <ActivityIndicator size="large" color="#4CAF50" />
+                    </View>
                 )}
+                {!isLoading && (
+                    <View style={styles.buttonsContainer}>
+                        <TouchableOpacity style={styles.cancelButton} onPress={() => router.push('/(perfil_usuario)/mi-perfil')}>
+                            <Ionicons name="close-circle-outline" size={20} color="#fff" />
+                            <Text style={styles.buttonText}>Cancelar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.saveButton} onPress={guardarUsuario}>
+                            <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+                            <Text style={styles.buttonText}>Guardar</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+                
+
 
             </View>
 
