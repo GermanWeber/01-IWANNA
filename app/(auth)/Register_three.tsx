@@ -44,36 +44,76 @@ const Register_three = () => {
             Alert.alert('Error', 'Por favor, completa todos los campos');
             return;
         }
-
+    
         if (!isValidEmail) {
             Alert.alert('Error', 'Por favor, ingresa un correo válido');
             return;
         }
-
+    
         if (contrasena !== confirmarContrasena) {
             Alert.alert('Error', 'Las contraseñas no coinciden');
             return;
         }
-
+    
         if (contrasena.length < 6) {
             Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
             return;
         }
-
+    
         setIsLoading(true);
         try {
-            // Crear usuario en Firebase
+            // 1. Crear usuario en Firebase
             const userCredential = await createUserWithEmailAndPassword(auth, correo, contrasena);
             const user = userCredential.user;
-
-            // Obtener datos almacenados
+    
+            // 2. Obtener datos almacenados
             const tipoUsuario = await AsyncStorage.getItem('tipoUsuario');
             const datosGuardados = await AsyncStorage.getItem('datosUsuario');
-
-            // Mostrar alerta con los datos
+            const datosUsuario = datosGuardados ? JSON.parse(datosGuardados) : {};
+    
+            // 3. Preparar datos para la base de datos
+            const usuarioData = {
+                nombre: datosUsuario.nombre || 'Usuario',
+                apellido: datosUsuario.apellido || 'Usuario',
+                email: correo,
+                telefono: datosUsuario.telefono || '123456789',
+                rut: datosUsuario.rut || '12345678-9',
+                edad: datosUsuario.edad || 18,
+                id_sexo: datosUsuario.sexo || 1,
+                descripcion: datosUsuario.profesion || 'Sin descripción',
+                id_profesion: datosUsuario.profesion ? 1 : null,
+                id_estado: 1,
+                id_tipo: parseInt(tipoUsuario || '1'),
+                foto: '',
+                id_comuna: 1
+            };
+    
+            // 4. Crear usuario en la base de datos
+            const response = await fetch(`${API_URL}usuarios/create-user-prueba`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(usuarioData)
+            });
+    
+            const responseData = await response.json();
+    
+            if (!response.ok) {
+                throw new Error(responseData.error || 'Error al crear usuario en la base de datos');
+            }
+    
+            // 5. Limpiar datos temporales
+            await AsyncStorage.removeItem('datosUsuario');
+            await AsyncStorage.removeItem('tipoUsuario');
+    
+            // 6. Guardar el token de Firebase
+            const token = await user.getIdToken();
+            await AsyncStorage.setItem('userToken', token);
+    
             Alert.alert(
                 'Registro exitoso',
-                `Usuario creado en Firebase con ID: ${user.uid}\n\nDatos almacenados:\nTipo de Usuario: ${tipoUsuario}\nDatos Personales: ${datosGuardados}`,
+                'Tu cuenta ha sido creada correctamente',
                 [
                     {
                         text: 'OK',
@@ -81,13 +121,17 @@ const Register_three = () => {
                     }
                 ]
             );
-
+    
         } catch (error: any) {
             console.error('Error en el registro:', error);
             let errorMessage = 'Error al crear la cuenta';
+            
             if (error.code === 'auth/email-already-in-use') {
                 errorMessage = 'Este correo electrónico ya está registrado';
+            } else if (error.message.includes('Error al crear usuario')) {
+                errorMessage = 'Error al registrar en la base de datos';
             }
+            
             Alert.alert('Error', errorMessage);
         } finally {
             setIsLoading(false);
