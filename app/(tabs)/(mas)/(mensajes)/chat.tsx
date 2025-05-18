@@ -1,43 +1,130 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { BASE_URL } from '@env';
+
+interface Message {
+  id: number;
+  id_autor: number;
+  contenido: string;
+  f_creacion: string;
+  nombre: string;
+  foto: string;
+}
 
 export default function Chat() {
-  const [messages, setMessages] = useState([
-    { id: '1', text: 'Hola, ¿cómo estás?', fromUser: false },
-    { id: '2', text: '¡Hola! Todo bien, ¿y tú?', fromUser: true },
-    { id: '3', text: 'Muy bien, tengo un problema en mi casa me podrias ayudar?', fromUser: false },
-    { id: '4', text: '¡Claro! ¿Qué problema tienes?', fromUser: true },
-    { id: '5', text: 'Tengo un problema con mi computadora', fromUser: false },
-  
-  ]);
-
+  const { id } = useLocalSearchParams();
+  console.log('ID del chat:', id);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const sendMessage = () => {
-    if (newMessage.trim() === '') return;
-
-    const message = {
-      id: Date.now().toString(),
-      text: newMessage,
-      fromUser: true,
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}chat/mensajes/${id}`);
+        
+        if (!response.ok) {
+          throw new Error(`Error al cargar los mensajesxxxx ${id}`);
+        }
+        
+        const data = await response.json();
+        setMessages(data);
+      } catch (err) {
+        console.error('Error:', err);
+        setError('Error al cargar los mensajessssss');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    setMessages([...messages, message]);
-    setNewMessage('');
+    if (id) {
+      fetchMessages();
+    }
+  }, [id]);
+
+  const sendMessage = async () => {
+    if (newMessage.trim() === '') return;
+  
+    try {
+      const response = await fetch(`${BASE_URL}chat/enviar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id_chat: id,
+          id_autor: 1, // Reemplaza con el ID del usuario autenticado
+          contenido: newMessage,
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Error al enviar el mensaje');
+      }
+  
+      const sentMessage = await response.json();
+      
+      // Actualizar la interfaz con el mensaje enviado
+      setMessages(prev => [...prev, {
+        id: sentMessage.id,
+        id_autor: sentMessage.id_autor,
+        contenido: sentMessage.contenido,
+        f_creacion: sentMessage.f_creacion,
+        nombre: sentMessage.nombre,
+        foto: sentMessage.foto
+      }]);
+      
+      setNewMessage('');
+    } catch (err) {
+      console.error('Error al enviar mensaje:', err);
+      // Mostrar algún mensaje de error al usuario
+    }
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#8BC34A" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={90}
+    >
       <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={[styles.messageBubble, item.fromUser ? styles.userBubble : styles.otherBubble]}>
-            <Text style={styles.messageText}>{item.text}</Text>
-          </View>
-        )}
-        contentContainerStyle={styles.messageList}
-      />
+  data={messages}
+  keyExtractor={(item) => item.id.toString()}
+  renderItem={({ item }) => (
+    <View style={[
+      styles.messageBubble, 
+      item.id_autor === 1 ? styles.userBubble : styles.otherBubble // Ajusta según el ID del usuario autenticado
+    ]}>
+      {item.nombre && item.id_autor !== 1 && (
+        <Text style={styles.senderName}>{item.nombre}</Text>
+      )}
+      <Text style={styles.messageText}>{item.contenido}</Text>
+      <Text style={styles.messageTime}>
+        {new Date(item.f_creacion).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </Text>
+    </View>
+  )}
+  contentContainerStyle={styles.messageList}
+/>
+      
 
       <View style={styles.inputContainer}>
         <TextInput
@@ -45,8 +132,16 @@ export default function Chat() {
           placeholder="Escribe un mensaje..."
           value={newMessage}
           onChangeText={setNewMessage}
+          multiline
         />
-        <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+        <TouchableOpacity 
+          style={[
+            styles.sendButton,
+            { backgroundColor: newMessage.trim() ? '#8BC34A' : '#CCCCCC' }
+          ]} 
+          onPress={sendMessage}
+          disabled={!newMessage.trim()}
+        >
           <Text style={styles.sendText}>Enviar</Text>
         </TouchableOpacity>
       </View>
@@ -57,56 +152,81 @@ export default function Chat() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#EFEFEF',
+    backgroundColor: '#F5F5F5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  senderName: {
+    fontWeight: 'bold',
+    fontSize: 12,
+    marginBottom: 2,
+    color: '#555',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
   },
   messageList: {
     padding: 10,
   },
   messageBubble: {
-    maxWidth: '70%',
-    padding: 10,
+    maxWidth: '80%',
+    padding: 12,
     borderRadius: 15,
     marginBottom: 10,
   },
   userBubble: {
-    backgroundColor: '#DCF8C6',
     alignSelf: 'flex-end',
+    backgroundColor: '#DCF8C6',
+    marginLeft: '20%',
   },
   otherBubble: {
-    backgroundColor: '#FFFFFF',
     alignSelf: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    marginRight: '20%',
   },
   messageText: {
     fontSize: 16,
-    color: '#333',
+  },
+  messageTime: {
+    fontSize: 10,
+    color: '#666',
+    alignSelf: 'flex-end',
+    marginTop: 4,
   },
   inputContainer: {
     flexDirection: 'row',
     padding: 10,
-    backgroundColor: '#FFF',
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderColor: '#DDD',
-    alignItems: 'center',
+    borderTopColor: '#E0E0E0',
   },
   input: {
     flex: 1,
-    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#CCC',
+    borderColor: '#E0E0E0',
+    borderRadius: 20,
     paddingHorizontal: 15,
     paddingVertical: 8,
-    fontSize: 16,
-    backgroundColor: '#FFF',
+    marginRight: 10,
+    maxHeight: 100,
   },
   sendButton: {
-    marginLeft: 10,
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
     borderRadius: 20,
   },
   sendText: {
-    color: '#FFF',
+    color: 'white',
     fontWeight: 'bold',
   },
 });

@@ -1,14 +1,17 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import {FB_KEY,FB_PROJECT_ID, FB_AUTH_DOMAIN, FB_STORAGE_BUCKET,FB_MESSAGING_SENDER_ID,FB_APP_ID,FB_MEASUREMENT_ID} from '@env';
 
 // Tu configuración de Firebase
 const firebaseConfig = {
-    apiKey: "AIzaSyDDSLh1lECWiyBqDRbHvHzkhBxXwwZup1s",
-    authDomain: "iwanna-c8a1d.firebaseapp.com",
-    projectId: "iwanna-c8a1d",
-    storageBucket: "iwanna-c8a1d.firebasestorage.app",
-    messagingSenderId: "697310693712",
-    appId: "1:697310693712:web:aa996b310166ab0d07c455"
+    apiKey: FB_KEY,
+    authDomain: FB_AUTH_DOMAIN,
+    projectId: FB_PROJECT_ID,
+    storageBucket: FB_STORAGE_BUCKET,
+    messagingSenderId: FB_MESSAGING_SENDER_ID,
+    appId: FB_APP_ID,
+    measurementId: FB_MEASUREMENT_ID
+    
 };
 
 // Inicializar Firebase
