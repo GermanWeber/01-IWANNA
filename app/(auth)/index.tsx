@@ -117,10 +117,11 @@ const Login = () => {
 
             const data: Usuario = await res.json();
             return data;
-            } catch (error) {
-                console.error('Error al obtener usuario:', error);
-                return null;
-            }
+
+        } catch (error) {
+            console.error('Error al obtener usuario:', error);
+            return null;
+        }
     };
     
     return (
