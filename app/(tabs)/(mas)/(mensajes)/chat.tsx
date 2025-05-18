@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { BASE_URL } from '@env';
+import { API_URL } from '@env';
 
 interface Message {
   id: number;
@@ -14,31 +14,32 @@ interface Message {
 
 export default function Chat() {
   const { id } = useLocalSearchParams();
-  console.log('ID del chat:', id);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const response = await fetch(`${BASE_URL}chat/mensajes/${id}`);
-        
-        if (!response.ok) {
-          throw new Error(`Error al cargar los mensajesxxxx ${id}`);
-        }
-        
-        const data = await response.json();
-        setMessages(data);
-      } catch (err) {
-        console.error('Error:', err);
-        setError('Error al cargar los mensajessssss');
-      } finally {
-        setLoading(false);
+  const fetchMessages = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}chat/mensajes/${id}`);
+      
+      if (!response.ok) {
+        throw new Error(`Error al cargar los mensajes ${id}`);
       }
-    };
+      
+      const data = await response.json();
+      setMessages(data);
+    } catch (err) {
+      console.error('Error:', err);
+      setError('Error al cargar los mensajes');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (id) {
       fetchMessages();
     }
@@ -48,14 +49,14 @@ export default function Chat() {
     if (newMessage.trim() === '') return;
   
     try {
-      const response = await fetch(`${BASE_URL}chat/enviar`, {
+      const response = await fetch(`${API_URL}chat/mensajes/enviar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           id_chat: id,
-          id_autor: 1, // Reemplaza con el ID del usuario autenticado
+          id_autor: 1, // aqui hay que remplazar con el id del local storage
           contenido: newMessage,
         }),
       });
@@ -66,16 +67,8 @@ export default function Chat() {
   
       const sentMessage = await response.json();
       
-      // Actualizar la interfaz con el mensaje enviado
-      setMessages(prev => [...prev, {
-        id: sentMessage.id,
-        id_autor: sentMessage.id_autor,
-        contenido: sentMessage.contenido,
-        f_creacion: sentMessage.f_creacion,
-        nombre: sentMessage.nombre,
-        foto: sentMessage.foto
-      }]);
-      
+      // Refrescar la lista completa de mensajes
+      await fetchMessages();
       setNewMessage('');
     } catch (err) {
       console.error('Error al enviar mensaje:', err);
@@ -107,19 +100,17 @@ export default function Chat() {
     >
       <FlatList
   data={messages}
-  keyExtractor={(item) => item.id.toString()}
+  keyExtractor={(item, index) => item?.id?.toString() || `message-${index}`}
   renderItem={({ item }) => (
     <View style={[
       styles.messageBubble, 
-      item.id_autor === 1 ? styles.userBubble : styles.otherBubble // Ajusta según el ID del usuario autenticado
+      item.id_autor === 1 ? styles.userBubble : styles.otherBubble // ID del usuario autenticado
     ]}>
       {item.nombre && item.id_autor !== 1 && (
         <Text style={styles.senderName}>{item.nombre}</Text>
       )}
       <Text style={styles.messageText}>{item.contenido}</Text>
-      <Text style={styles.messageTime}>
-        {new Date(item.f_creacion).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-      </Text>
+      <Text style={styles.messageTime}>{item.f_creacion}</Text>
     </View>
   )}
   contentContainerStyle={styles.messageList}
