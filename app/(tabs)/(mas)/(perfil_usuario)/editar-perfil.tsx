@@ -1,26 +1,22 @@
 import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity, Alert, Modal, Button} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { useEffect, useState } from 'react';
-import { recuperarStorage } from '../../../../services/asyncStorage';
+import { useCallback, useEffect, useState } from 'react';
+import { eliminarDatos, recuperarStorage } from '../../../../services/asyncStorage';
 import * as ImagePicker from 'expo-image-picker';
 import { Usuario } from '../../../../types/usuario';
 import { API_URL } from '@env';
 const imgPerfil = require('../../../../assets/images/perfil.png');
 
 export default function EditarPerfil() {
-    const [modalVisible, setModalVisible] = useState(false);
+    const [modalFotoVisible, setModalFotoVisible] = useState(false);
     const [usuario, setUsuario] = useState<Usuario | null>(null);
-    
-    const manejarDireccion = (direccion: {
-        descripcion: string;
-        latitud: number;
-        longitud: number;
-    }) => {
-        console.log('Dirección seleccionada:', direccion);
-    };
+    const [direccion, setDireccion] = useState<InterfaceDireccion | null>(null);
 
+    const toDireccion = () => {
+            router.push('../../../screens/direccion');
+        }
     const seleccionarFoto = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -31,7 +27,7 @@ export default function EditarPerfil() {
         if (!result.canceled) {
             const nuevaFoto = result.assets[0].uri;
             setUsuario((prev: any) => ({ ...prev, foto: nuevaFoto }));
-            setModalVisible(false);
+            setModalFotoVisible(false);
         }
     };
 
@@ -45,7 +41,7 @@ export default function EditarPerfil() {
         if (!result.canceled) {
             const nuevaFoto = result.assets[0].uri;
             setUsuario((prev: any) => ({ ...prev, foto: nuevaFoto }));
-            setModalVisible(false);
+            setModalFotoVisible(false);
         }
     };
 
@@ -60,6 +56,9 @@ export default function EditarPerfil() {
 
             //SUBE AL SERVIDOR
             if(esValido){
+                if(direccion){
+                    guardarDireccion()
+                }
                 const urlApi = `${API_URL}usuarios/update-user/${usuario.id}`;
                 console.log("URL API: ",urlApi);
                 try {
@@ -91,6 +90,41 @@ export default function EditarPerfil() {
         }
     }
 
+    const guardarDireccion = async () => {
+        if (!usuario?.id) {
+            console.error("Usuario sin ID. No se puede guardar dirección.");
+            return;
+        }
+
+        if (!direccion || !direccion.descripcion || !direccion.latitud || !direccion.longitud) {
+            console.error("Dirección incompleta:", direccion);
+            return;
+        }
+
+        const urlApi = `${API_URL}direccion/${usuario.id}`;
+        console.log("URL API:", urlApi);
+
+        try {
+            const res = await fetch(urlApi, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(direccion),
+            });
+
+            if (!res.ok) {
+                throw new Error(`Error al enviar datos de dirección. Status: ${res.status}`);
+            }
+
+            const data = await res.json();
+            console.log('Dirección editada:', data);
+        } catch (error) {
+            console.error('Error al actualizar dirección:', error);
+        }
+    };
+
+    
     useEffect(() => {
     (async () => {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -114,6 +148,22 @@ export default function EditarPerfil() {
         cargarUsuario();
     }, []);
 
+    useFocusEffect(
+        useCallback(() => {
+            const cargarUsuario = async () => {
+            try {
+                const datos = await recuperarStorage('direccion');
+                if (datos) {
+                    setDireccion(datos);
+                    console.log("direccion recuperada edit: ",datos)
+                }
+            } catch (error) {
+                console.error('Error al cargar usuario:', error);
+            }
+        };
+            cargarUsuario();
+        }, [])
+    )
     
     return (
         <KeyboardAwareScrollView
@@ -124,7 +174,7 @@ export default function EditarPerfil() {
             <View style={styles.container}>
                 {/* Sección de Foto de Perfil */}
                 {usuario && (
-                <TouchableOpacity style={styles.avatarContainer} onPress={() => setModalVisible(true)}>
+                <TouchableOpacity style={styles.avatarContainer} onPress={() => setModalFotoVisible(true)}>
                     <Image
                         source={usuario.foto ? { uri: usuario.foto } : imgPerfil}
                         style={styles.avatar}
@@ -183,8 +233,8 @@ export default function EditarPerfil() {
                     </View>
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Direccion</Text>
-                        <TouchableOpacity style={styles.input} onPress={() => router.push('/(perfil_usuario)/direccion')}>
-                            <Text style={styles.inputText}>Seleccionar dirección</Text>
+                        <TouchableOpacity style={styles.input} onPress={toDireccion}>
+                            <Text style={!direccion?.descripcion ? (styles.inputTextPlaceHolder):(styles.inputText)}>{direccion?.descripcion ?? "direccion"}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -201,6 +251,9 @@ export default function EditarPerfil() {
                     style={[styles.input, styles.textArea]}
                     placeholder="Escribe una breve descripción..."
                     value={usuario.descripcion}
+                    onChangeText={(text) =>
+                                setUsuario((prev) => prev ? { ...prev, descripcion: text } : prev)
+                    } 
                     multiline
                     numberOfLines={4}
                     />
@@ -244,12 +297,12 @@ export default function EditarPerfil() {
 
             </View>
 
-            {/* MODAL */}
+            {/* MODAL FOTO */}
             <Modal
-                visible={modalVisible}
+                visible={modalFotoVisible}
                 transparent={true}
                 animationType="slide"
-                onRequestClose={() => setModalVisible(false)}
+                onRequestClose={() => setModalFotoVisible(false)}
             >
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
@@ -259,7 +312,7 @@ export default function EditarPerfil() {
                                 <Button title="Tomar Foto" onPress={tomarFoto} color="#8BC34A" />
                             </View>
                         <View style={{ height: 20 }} />
-                        <Button title="Cancelar" onPress={() => setModalVisible(false)} color="#f44336" />
+                        <Button title="Cancelar" onPress={() => setModalFotoVisible(false)} color="#f44336" />
                     </View>
                 </View>
             </Modal>
@@ -335,6 +388,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     inputText: {
+        fontSize: 16,
+    },
+    inputTextPlaceHolder: {
         fontSize: 16,
         color: '#888',
     },
