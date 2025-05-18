@@ -1,17 +1,55 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Register_two_cliente = () => {
     const router = useRouter();
     const [nombre, setNombre] = useState('');
     const [apellido, setApellido] = useState('');
     const [telefono, setTelefono] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleNext = () => {
-        // Aquí iría la validación de campos
-        router.push('Register_three');
+    const handleNext = async () => {
+        // Validación de campos
+        if (!nombre || !apellido || !telefono) {
+            Alert.alert('Error', 'Por favor, completa todos los campos');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            // Guardar datos en AsyncStorage
+            const datosUsuario = {
+                nombre,
+                apellido,
+                telefono
+            };
+            
+            await AsyncStorage.setItem('datosUsuario', JSON.stringify(datosUsuario));
+            
+            // Obtener todos los datos almacenados
+            const tipoUsuario = await AsyncStorage.getItem('tipoUsuario');
+            const datosGuardados = await AsyncStorage.getItem('datosUsuario');
+            
+            // Mostrar los datos en un alert
+            Alert.alert(
+                'Datos Almacenados',
+                `Tipo de Usuario: ${tipoUsuario}\nDatos Personales: ${datosGuardados}`,
+                [
+                    {
+                        text: 'Continuar',
+                        onPress: () => router.push('Register_three')
+                    }
+                ]
+            );
+        } catch (error) {
+            console.error('Error al guardar los datos:', error);
+            Alert.alert('Error', 'Hubo un error al guardar los datos');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (

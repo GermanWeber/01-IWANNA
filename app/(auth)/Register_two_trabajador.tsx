@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Register_two_trabajador = () => {
     const router = useRouter();
@@ -12,10 +13,51 @@ const Register_two_trabajador = () => {
     const [rut, setRut] = useState('');
     const [profesion, setProfesion] = useState('');
     const [experiencia, setExperiencia] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleNext = () => {
-        // Aquí iría la validación de campos
-        router.push('Register_three');
+    const handleNext = async () => {
+        // Validación de campos
+        if (!nombre || !apellido || !telefono) {
+            Alert.alert('Error', 'Por favor, completa todos los campos');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            // Guardar datos en AsyncStorage
+            const datosUsuario = {
+                nombre,
+                apellido,
+                telefono,
+                direccion,
+                rut,
+                profesion,
+                experiencia
+            };
+            
+            await AsyncStorage.setItem('datosUsuario', JSON.stringify(datosUsuario));
+            
+            // Obtener todos los datos almacenados
+            const tipoUsuario = await AsyncStorage.getItem('tipoUsuario');
+            const datosGuardados = await AsyncStorage.getItem('datosUsuario');
+            
+            // Mostrar los datos en un alert
+            Alert.alert(
+                'Datos Almacenados',
+                `Tipo de Usuario: ${tipoUsuario}\nDatos Personales: ${datosGuardados}`,
+                [
+                    {
+                        text: 'Continuar',
+                        onPress: () => router.push('Register_three')
+                    }
+                ]
+            );
+        } catch (error) {
+            console.error('Error al guardar los datos:', error);
+            Alert.alert('Error', 'Hubo un error al guardar los datos');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -114,6 +156,7 @@ const Register_two_trabajador = () => {
                 <TouchableOpacity 
                     style={styles.nextButton}
                     onPress={handleNext}
+                    disabled={isLoading}
                 >
                     <Text style={styles.nextButtonText}>Siguiente</Text>
                     <Ionicons name="arrow-forward" size={24} color="#fff" />

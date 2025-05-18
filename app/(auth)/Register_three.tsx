@@ -1,25 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { crearUsuarioStripe } from '../../services/paymentService';
+import { auth } from '../../config/firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@env';
 
 const Register_three = () => {
-    
     const router = useRouter();
+    const params = useLocalSearchParams();
     const [correo, setCorreo] = useState('');
     const [contrasena, setContrasena] = useState('');
     const [confirmarContrasena, setConfirmarContrasena] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isValidEmail, setIsValidEmail] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
+    const [datosUsuario, setDatosUsuario] = useState<any>(null);
+
+    useEffect(() => {
+        const cargarDatosUsuario = async () => {
+            try {
+                const datos = await AsyncStorage.getItem('datosUsuario');
+                if (datos) {
+                    setDatosUsuario(JSON.parse(datos));
+                }
+            } catch (error) {
+                console.error('Error al cargar datos del usuario:', error);
+            }
+        };
+        cargarDatosUsuario();
+    }, []);
 
     const validateEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         setIsValidEmail(emailRegex.test(email));
     };
 
-    const handleRegister = () => {
+    const handleRegister = async () => {
         if (!correo || !contrasena || !confirmarContrasena) {
             Alert.alert('Error', 'Por favor, completa todos los campos');
             return;
@@ -40,13 +60,38 @@ const Register_three = () => {
             return;
         }
 
+        setIsLoading(true);
+        try {
+            // Crear usuario en Firebase
+            const userCredential = await createUserWithEmailAndPassword(auth, correo, contrasena);
+            const user = userCredential.user;
 
+            // Obtener datos almacenados
+            const tipoUsuario = await AsyncStorage.getItem('tipoUsuario');
+            const datosGuardados = await AsyncStorage.getItem('datosUsuario');
 
-        // Aquí iría la lógica de registro con Firebase
-        // Por ahora solo redirigimos al login
+            // Mostrar alerta con los datos
+            Alert.alert(
+                'Registro exitoso',
+                `Usuario creado en Firebase con ID: ${user.uid}\n\nDatos almacenados:\nTipo de Usuario: ${tipoUsuario}\nDatos Personales: ${datosGuardados}`,
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => router.push('/')
+                    }
+                ]
+            );
 
-        
-        router.push('/');
+        } catch (error: any) {
+            console.error('Error en el registro:', error);
+            let errorMessage = 'Error al crear la cuenta';
+            if (error.code === 'auth/email-already-in-use') {
+                errorMessage = 'Este correo electrónico ya está registrado';
+            }
+            Alert.alert('Error', errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -140,8 +185,9 @@ const Register_three = () => {
                 <TouchableOpacity 
                     style={styles.registerButton}
                     onPress={handleRegister}
+                    disabled={isLoading}
                 >
-                    <Text style={styles.registerButtonText}>Crear Cuenta</Text>
+                    <Text style={styles.registerButtonText}>{isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}</Text>
                 </TouchableOpacity>
             </ScrollView>
         </KeyboardAvoidingView>
