@@ -7,6 +7,7 @@ export interface Usuario {
     edad?: number;
     id_sexo: number;
     descripcion?: string;
+    profesion?:string;
     id_profesion?: number;
     id_estado: number;
     id_tipo: number;
