@@ -3,10 +3,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useCallback, useEffect, useState } from 'react';
-import { eliminarDatos, recuperarStorage } from '../../../../services/asyncStorage';
+import { guardarStorage, recuperarStorage } from '../../../../services/asyncStorage';
 import * as ImagePicker from 'expo-image-picker';
 import { Usuario } from '../../../../types/usuario';
-import { API_URL } from '@env';
+import { API_URL, BUCKET_URL} from '@env';
 const imgPerfil = require('../../../../assets/images/perfil.png');
 
 export default function EditarPerfil() {
@@ -14,10 +14,30 @@ export default function EditarPerfil() {
     const [usuario, setUsuario] = useState<Usuario | null>(null);
     const [direccion, setDireccion] = useState<InterfaceDireccion | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [nuevaFoto, setNuevaFoto] = useState<any>(null);
+    
+    const obtenerUsuario = async (email: string): Promise<Usuario | null> => {
+        const urlApi = `${API_URL}usuarios/${email}`;
+        console.log(urlApi)
+        try {
+            const res = await fetch(urlApi);
+
+            if (!res.ok) {
+                throw new Error(`Error al consultar la API. Status: ${res.status}`);
+            }
+
+            const data: Usuario = await res.json();
+            return data;
+        } catch (error) {
+            console.error('Error al obtener usuario:', error);
+            return null;
+        }
+    };
 
     const toDireccion = () => {
             router.push('../../../screens/direccion');
-        }
+    }
+    
     const seleccionarFoto = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -26,8 +46,8 @@ export default function EditarPerfil() {
         });
 
         if (!result.canceled) {
-            const nuevaFoto = result.assets[0].uri;
-            setUsuario((prev: any) => ({ ...prev, foto: nuevaFoto }));
+            const foto = result.assets[0].uri;
+            setNuevaFoto(foto);
             setModalFotoVisible(false);
         }
     };
@@ -40,8 +60,8 @@ export default function EditarPerfil() {
         });
 
         if (!result.canceled) {
-            const nuevaFoto = result.assets[0].uri;
-            setUsuario((prev: any) => ({ ...prev, foto: nuevaFoto }));
+            const foto = result.assets[0].uri;
+            setNuevaFoto(foto);
             setModalFotoVisible(false);
         }
     };
@@ -79,7 +99,22 @@ export default function EditarPerfil() {
                         }
                     }
 
-                    Alert.alert("Éxito", "El usuario a sido actualizado");
+                    if(nuevaFoto){
+                        const resFoto = await guardarFoto();
+                        console.log("respuesta de foto: ",resFoto)
+                    }else{
+                        console.log("sin foto por mandar")
+                    }
+
+                    const usuarioDatos = await obtenerUsuario(usuario.email);
+
+                    if(usuarioDatos){
+                        guardarStorage("usuario",usuarioDatos);
+                        Alert.alert("Éxito", "El usuario a sido actualizado");
+
+                    }else{
+                        Alert.alert("Error", "No se pudo actualizar");
+                    }
 
                 } catch (error) {
                     Alert.alert("Error", "Ocurrió un error inesperado");
@@ -97,7 +132,6 @@ export default function EditarPerfil() {
         setIsLoading(false);
     };
 
-
     const guardarDireccion = async () => {
         if (!usuario?.id) {
             console.error("Usuario sin ID. No se puede guardar dirección.");
@@ -109,7 +143,6 @@ export default function EditarPerfil() {
         }
 
         const urlApi = `${API_URL}direccion/${usuario.id}`;
-        console.log("URL API:", urlApi);
 
         try {
             const res = await fetch(urlApi, {
@@ -155,6 +188,34 @@ export default function EditarPerfil() {
             } catch (error) {
                 console.error('Error al enviar usuario:', error);
             }
+        }
+    };
+
+    const guardarFoto = async () => {
+        const formData = new FormData();
+        const urlApi = `${API_URL}s3/foto-perfil`;
+        console.log(urlApi)
+        formData.append("foto-perfil", {
+            uri: nuevaFoto,
+            name: "foto.jpg",
+            type: "image/jpeg",
+        } as any); 
+        
+        if (usuario?.id) {
+            formData.append("id_user", usuario.id.toString());
+        }
+
+        try {
+            const response = await fetch(urlApi, {
+            method: "POST",
+            body: formData
+            });
+
+            const data = await response.json();
+            console.log("Foto subida con éxito:", data.url);
+
+        } catch (error) {
+            console.error("Error al subir la foto:", error);
         }
     };
 
@@ -209,7 +270,13 @@ export default function EditarPerfil() {
                 {usuario && (
                 <TouchableOpacity style={styles.avatarContainer} onPress={() => setModalFotoVisible(true)}>
                     <Image
-                        source={usuario.foto ? { uri: usuario.foto } : imgPerfil}
+                        source={
+                        nuevaFoto
+                        ? { uri: nuevaFoto }
+                        : usuario?.foto
+                            ? { uri: `${BUCKET_URL}foto-perfil/${usuario.foto}?t=${new Date().getTime()} ` }
+                            : imgPerfil
+                    }
                         style={styles.avatar}
                     />
                     <View style={styles.avatarOverlay}>
