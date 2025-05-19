@@ -41,7 +41,13 @@ const obtenerUsuarioPrueba = async (email: string) => {
         }
 
         // Guardar datos simples en AsyncStorage
-        await AsyncStorage.setItem('userData', JSON.stringify(data));
+        await AsyncStorage.setItem('usuario', JSON.stringify(data));
+        console.log('Datos guardados en AsyncStorage:', data); // Log para verificar datos guardados
+
+        // Verificar que los datos se guardaron correctamente
+        const storedData = await AsyncStorage.getItem('usuario');
+        console.log('Datos recuperados de AsyncStorage:', storedData); // Log para verificar datos recuperados
+
         return data;
     } catch (error) {
         console.error('Error:', error);
