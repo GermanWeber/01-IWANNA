@@ -87,7 +87,7 @@ const Register_three = () => {
                 foto: '',
                 id_comuna: 1
             };
-    
+            
             // 4. Crear usuario en la base de datos
             const response = await fetch(`${API_URL}usuarios/create-user-prueba`, {
                 method: 'POST',

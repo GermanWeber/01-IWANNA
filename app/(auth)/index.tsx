@@ -11,6 +11,7 @@ import { API_URL } from '@env';
 
 // LOGIN 
 const Login = () => {
+    
     const [email, setEmail] = useState('');
     const [contrasena, setContrasena] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -25,6 +26,29 @@ const Login = () => {
     useEffect(() => {
         console.log('Pantalla de Login renderizada');
     }, []);
+
+    // En tu componente Login, agrega esta función simple:
+const obtenerUsuarioPrueba = async (email: string) => {
+    try {
+        const url = `${API_URL}usuarios/prueba/${email}`;
+        console.log('Consultando usuario en:', url);
+
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Error al obtener usuario');
+        }
+
+        // Guardar datos simples en AsyncStorage
+        await AsyncStorage.setItem('userData', JSON.stringify(data));
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+};
+
 
     const validateEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -77,8 +101,9 @@ const Login = () => {
             const token = await user.getIdToken();
             await AsyncStorage.setItem('userToken', token);
 
-            // Guardar email del usuario
-            await AsyncStorage.setItem('userEmail', email);
+             // 3. Obtener datos básicos del usuario
+            const userData = await obtenerUsuarioPrueba(email);
+            console.log('Datos del usuario:', userData);
 
             router.push('(tabs)');
         } catch (error: any) {
