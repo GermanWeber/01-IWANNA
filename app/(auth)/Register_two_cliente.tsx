@@ -56,7 +56,7 @@ const Register_two_cliente = () => {
                 apellido,
                 telefono,
                 rut,
-                id_sexo: sexo,
+                sexo,
                 fecha_nacimiento: fechaNacimiento.toISOString(),
                 edad: edadCalculada
             };
