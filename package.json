@@ -54,6 +54,7 @@
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
     "react-star-ratings": "^2.3.0",
+    "@react-native-community/datetimepicker": "8.2.0",
     "react-native-maps": "1.18.0"
   },
   "devDependencies": {

@@ -5,14 +5,14 @@ import { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../../config/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { guardarStorage} from '../../services/asyncStorage';
-import { Usuario } from '../../types/usuario'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { API_URL } from '@env';
 
 // LOGIN 
 const Login = () => {
-    const [email, setUsuario] = useState('');
+    
+    const [email, setEmail] = useState('');
     const [contrasena, setContrasena] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isValidEmail, setIsValidEmail] = useState(true);
@@ -26,6 +26,35 @@ const Login = () => {
     useEffect(() => {
         console.log('Pantalla de Login renderizada');
     }, []);
+
+    // En tu componente Login, agrega esta función simple:
+const obtenerUsuarioPrueba = async (email: string) => {
+    try {
+        const url = `${API_URL}usuarios/prueba/${email}`;
+        console.log('Consultando usuario en:', url);
+
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Error al obtener usuario');
+        }
+
+        // Guardar datos simples en AsyncStorage
+        await AsyncStorage.setItem('usuario', JSON.stringify(data));
+        console.log('Datos guardados en AsyncStorage:', data); // Log para verificar datos guardados
+
+        // Verificar que los datos se guardaron correctamente
+        const storedData = await AsyncStorage.getItem('usuario');
+        console.log('Datos recuperados de AsyncStorage:', storedData); // Log para verificar datos recuperados
+
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+};
+
 
     const validateEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -70,27 +99,28 @@ const Login = () => {
 
         setIsLoading(true);
         try {
-            //INGRESA AL HOME
-            await signInWithEmailAndPassword(auth, email, contrasena);
-            const usuarioDatos = await obtenerUsuario(email);
-            if(!usuarioDatos){
-                shake();
-                Alert.alert('Error', 'No se encontro datos en la base de datos');
-                return;
-            }
-            guardarStorage("usuario",usuarioDatos);
+            // Autenticación con Firebase
+            const userCredential = await signInWithEmailAndPassword(auth, email, contrasena);
+            const user = userCredential.user;
 
+            // Obtener token de Firebase
+            const token = await user.getIdToken();
+            await AsyncStorage.setItem('userToken', token);
+
+             // 3. Obtener datos básicos del usuario
+            const userData = await obtenerUsuarioPrueba(email);
+            console.log('Datos del usuario:', userData);
 
             router.push('(tabs)');
         } catch (error: any) {
-            let errorMessage = 'Error al iniciar sesión';
-            if (error.code === 'auth/user-not-found') {
-                errorMessage = 'Usuario no encontrado';
-            } else if (error.code === 'auth/wrong-password') {
-                errorMessage = 'Contraseña incorrecta';
-            } else if (error.code === 'auth/invalid-email') {
-                errorMessage = 'Correo electrónico inválido';
+            console.log('Error de Firebase:', error.code); // Para debugging
+            let errorMessage = 'Email o contraseña incorrectos';
+            
+            // Solo validamos el formato del email
+            if (!isValidEmail) {
+                errorMessage = 'Por favor, ingresa un correo válido';
             }
+            
             Alert.alert('Error', errorMessage);
         } finally {
             setIsLoading(false);
@@ -105,24 +135,6 @@ const Login = () => {
         router.push('Recover');
     };
 
-    const obtenerUsuario = async (email: string): Promise<Usuario | null> => {
-        const urlApi = `${API_URL}usuarios/${email}`;
-        console.log(urlApi)
-        try {
-            const res = await fetch(urlApi);
-
-            if (!res.ok) {
-                throw new Error(`Error al consultar la API. Status: ${res.status}`);
-            }
-
-            const data: Usuario = await res.json();
-            return data;
-        } catch (error) {
-            console.error('Error al obtener usuario:', error);
-            return null;
-        }
-    };
-    
     return (
         <KeyboardAvoidingView 
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -155,7 +167,7 @@ const Login = () => {
                         placeholder="Correo electrónico"
                         value={email}
                         onChangeText={(text) => {
-                            setUsuario(text);
+                            setEmail(text);
                             validateEmail(text);
                         }}
                         keyboardType="email-address"

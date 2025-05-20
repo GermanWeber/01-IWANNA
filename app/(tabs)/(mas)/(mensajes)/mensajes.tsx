@@ -5,7 +5,7 @@ import BotonMensaje from '../../../../components/botonMensaje';
 import { StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { BASE_URL } from '@env';
+import { API_URL } from '@env';
 
 interface Chat {
   id: number;
@@ -29,7 +29,7 @@ export default function Mensajes() {
         try {
           // Obtener el ID del usuario autenticado (ajusta según tu sistema de autenticación)
           const userId = 1; // Reemplaza con el ID del usuario logueado
-          const response = await fetch(`${BASE_URL}chat/trabajador/${userId}`);
+          const response = await fetch(`${API_URL}chat/trabajador/${userId}`);
           
           if (!response.ok) {
             throw new Error('Error al obtener los chats');

@@ -15,9 +15,22 @@ export default function Categorias() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Estado para guardar todas las categorías (sin filtrar)
+  const [allCategorias, setAllCategorias] = useState<any[]>([]);
+
   const handleBuscar = (text: string) => {
     setBusqueda(text);
-    console.log('Texto buscado:', text);
+    
+    if (text.trim() === '') {
+      // Si el texto está vacío, mostramos todas las categorías
+      setCategorias(allCategorias);
+    } else {
+      // Filtramos las categorías localmente
+      const filtered = allCategorias.filter(categoria => 
+        categoria.descripcion.toLowerCase().includes(text.toLowerCase())
+      );
+      setCategorias(filtered);
+    }
   };
 
   useEffect(() => {
@@ -25,8 +38,8 @@ export default function Categorias() {
       try {
         const response = await fetch(`${API_URL}category`); 
         const data = await response.json();
-        console.log('Categorias recibidas:', data);
-        setCategorias(data);
+        setAllCategorias(data); // Guardamos todas las categorías
+        setCategorias(data);    // Y también las establecemos como categorías visibles
         setError(null);
       } catch (err) {
         console.error('Error fetching categorias:', err);
