@@ -28,9 +28,9 @@ const Login = () => {
     }, []);
 
     // En tu componente Login, agrega esta función simple:
-const obtenerUsuarioPrueba = async (email: string) => {
+const obtenerUsuario = async (email: string) => {
     try {
-        const url = `${API_URL}usuarios/prueba/${email}`;
+        const url = `${API_URL}usuarios/${email}`;
         console.log('Consultando usuario en:', url);
 
         const response = await fetch(url);
@@ -108,7 +108,7 @@ const obtenerUsuarioPrueba = async (email: string) => {
             await AsyncStorage.setItem('userToken', token);
 
              // 3. Obtener datos básicos del usuario
-            const userData = await obtenerUsuarioPrueba(email);
+            const userData = await obtenerUsuario(email);
             console.log('Datos del usuario:', userData);
 
             router.push('(tabs)');
