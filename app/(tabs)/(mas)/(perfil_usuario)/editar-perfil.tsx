@@ -1,22 +1,43 @@
-import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity, Alert, Modal, Button} from 'react-native';
+import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity, Alert, Modal, Button, ActivityIndicator} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useCallback, useEffect, useState } from 'react';
-import { eliminarDatos, recuperarStorage } from '../../../../services/asyncStorage';
+import { guardarStorage, recuperarStorage } from '../../../../services/asyncStorage';
 import * as ImagePicker from 'expo-image-picker';
 import { Usuario } from '../../../../types/usuario';
-import { API_URL } from '@env';
+import { API_URL, BUCKET_URL} from '@env';
 const imgPerfil = require('../../../../assets/images/perfil.png');
 
 export default function EditarPerfil() {
     const [modalFotoVisible, setModalFotoVisible] = useState(false);
     const [usuario, setUsuario] = useState<Usuario | null>(null);
     const [direccion, setDireccion] = useState<InterfaceDireccion | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [nuevaFoto, setNuevaFoto] = useState<any>(null);
+    
+    const obtenerUsuario = async (email: string): Promise<Usuario | null> => {
+        const urlApi = `${API_URL}usuarios/${email}`;
+        console.log(urlApi)
+        try {
+            const res = await fetch(urlApi);
+
+            if (!res.ok) {
+                throw new Error(`Error al consultar la API. Status: ${res.status}`);
+            }
+
+            const data: Usuario = await res.json();
+            return data;
+        } catch (error) {
+            console.error('Error al obtener usuario:', error);
+            return null;
+        }
+    };
 
     const toDireccion = () => {
             router.push('../../../screens/direccion');
-        }
+    }
+    
     const seleccionarFoto = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -25,8 +46,8 @@ export default function EditarPerfil() {
         });
 
         if (!result.canceled) {
-            const nuevaFoto = result.assets[0].uri;
-            setUsuario((prev: any) => ({ ...prev, foto: nuevaFoto }));
+            const foto = result.assets[0].uri;
+            setNuevaFoto(foto);
             setModalFotoVisible(false);
         }
     };
@@ -39,70 +60,89 @@ export default function EditarPerfil() {
         });
 
         if (!result.canceled) {
-            const nuevaFoto = result.assets[0].uri;
-            setUsuario((prev: any) => ({ ...prev, foto: nuevaFoto }));
+            const foto = result.assets[0].uri;
+            setNuevaFoto(foto);
             setModalFotoVisible(false);
         }
     };
 
-    const guardarDatos = async () => {
-        
+    const guardarUsuario = async () => {
+        setIsLoading(true);
         let esValido: boolean = true;
-        if(usuario){
-            // RESTRICCIONES
-            if(!usuario.nombre){
+
+        if (usuario) {
+            // Validaciones
+            if (!usuario.nombre || !direccion?.descripcion) {
                 esValido = false;
             }
 
-            //SUBE AL SERVIDOR
-            if(esValido){
-                if(direccion){
-                    guardarDireccion()
-                }
-                const urlApi = `${API_URL}usuarios/update-user/${usuario.id}`;
-                console.log("URL API: ",urlApi);
+            if (esValido) {
                 try {
-                    const res = await fetch(urlApi, {
-                        method: 'PUT',
-                        headers: {
-                        'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(usuario),
-                    });
-
-                    if (!res.ok) {
-                        throw new Error(`Error al enviar datos. Status: ${res.status}`);
+                    // Guardar dirección
+                    if (direccion) {
+                        const resDireccion = await guardarDireccion();
+                        console.log(resDireccion);
+                        if (!resDireccion) {
+                            Alert.alert("Error", "Error al guardar dirección");
+                            setIsLoading(false);
+                            return;
+                        }
                     }
 
-                    const data = await res.json();
-                    console.log('Usuario editado:', data);
+                    // Guardar usuario
+                    if (usuario) {
+                        const resDatos = await guardarDatos();
+                        if (!resDatos) {
+                            Alert.alert("Error", "Error al guardar usuario");
+                            setIsLoading(false);
+                            return;
+                        }
+                    }
+
+                    if(nuevaFoto){
+                        const resFoto = await guardarFoto();
+                        console.log("respuesta de foto: ",resFoto)
+                    }else{
+                        console.log("sin foto por mandar")
+                    }
+
+                    const usuarioDatos = await obtenerUsuario(usuario.email);
+
+                    if(usuarioDatos){
+                        guardarStorage("usuario",usuarioDatos);
+                        Alert.alert("Éxito", "El usuario a sido actualizado");
+
+                    }else{
+                        Alert.alert("Error", "No se pudo actualizar");
+                    }
+
                 } catch (error) {
-                    console.error('Error al enviar usuario:', error);
+                    Alert.alert("Error", "Ocurrió un error inesperado");
+                    console.error(error);
                 }
             } else {
                 Alert.alert(
-                "Campos incompletos",
-                "Por favor, completa todos los campos obligatorios antes de guardar.",
-                [{ text: "OK" }]
-            );
+                    "Campos incompletos",
+                    "Por favor, completa todos los campos obligatorios antes de guardar.",
+                    [{ text: "OK" }]
+                );
             }
-            
         }
-    }
+
+        setIsLoading(false);
+    };
 
     const guardarDireccion = async () => {
         if (!usuario?.id) {
             console.error("Usuario sin ID. No se puede guardar dirección.");
             return;
         }
-
         if (!direccion || !direccion.descripcion || !direccion.latitud || !direccion.longitud) {
             console.error("Dirección incompleta:", direccion);
             return;
         }
 
         const urlApi = `${API_URL}direccion/${usuario.id}`;
-        console.log("URL API:", urlApi);
 
         try {
             const res = await fetch(urlApi, {
@@ -118,20 +158,74 @@ export default function EditarPerfil() {
             }
 
             const data = await res.json();
-            console.log('Dirección editada:', data);
+            
+            return data.exito;
         } catch (error) {
             console.error('Error al actualizar dirección:', error);
         }
     };
 
-    
-    useEffect(() => {
-    (async () => {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== 'granted') {
-        Alert.alert('Permisos necesarios', 'Necesitamos permiso para usar la cámara y galería');
+    const guardarDatos = async () => {
+        if(usuario){
+            const urlApi = `${API_URL}usuarios/update-user/${usuario.id}`;
+            console.log("URL API: ",urlApi);
+            try {
+                const res = await fetch(urlApi, {
+                    method: 'PUT',
+                    headers: {
+                    'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(usuario),
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Error al enviar datos. Status: ${res.status}`);
+                }
+
+                const data = await res.json();
+                
+                return data.exito;
+            } catch (error) {
+                console.error('Error al enviar usuario:', error);
+            }
         }
-    })();
+    };
+
+    const guardarFoto = async () => {
+        const formData = new FormData();
+        const urlApi = `${API_URL}s3/foto-perfil`;
+        console.log(urlApi)
+        formData.append("foto-perfil", {
+            uri: nuevaFoto,
+            name: "foto.jpg",
+            type: "image/jpeg",
+        } as any); 
+        
+        if (usuario?.id) {
+            formData.append("id_user", usuario.id.toString());
+        }
+
+        try {
+            const response = await fetch(urlApi, {
+            method: "POST",
+            body: formData
+            });
+
+            const data = await response.json();
+            console.log("Foto subida con éxito:", data.url);
+
+        } catch (error) {
+            console.error("Error al subir la foto:", error);
+        }
+    };
+
+    useEffect(() => {
+        (async () => {
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permisos necesarios', 'Necesitamos permiso para usar la cámara y galería');
+            }
+        })();
     }, []);
 
     useEffect(() => {
@@ -176,7 +270,13 @@ export default function EditarPerfil() {
                 {usuario && (
                 <TouchableOpacity style={styles.avatarContainer} onPress={() => setModalFotoVisible(true)}>
                     <Image
-                        source={usuario.foto ? { uri: usuario.foto } : imgPerfil}
+                        source={
+                        nuevaFoto
+                        ? { uri: nuevaFoto }
+                        : usuario?.foto
+                            ? { uri: `${BUCKET_URL}foto-perfil/${usuario.foto}?t=${new Date().getTime()} ` }
+                            : imgPerfil
+                    }
                         style={styles.avatar}
                     />
                     <View style={styles.avatarOverlay}>
@@ -282,18 +382,25 @@ export default function EditarPerfil() {
                 )}
 
                 {/* Botones de Guardar y Cancelar */}
-                {usuario && (
-                <View style={styles.buttonsContainer}>
-                    <TouchableOpacity style={styles.cancelButton} onPress={() => router.push('/(perfil_usuario)/mi-perfil')}>
-                        <Ionicons name="close-circle-outline" size={20} color="#fff" />
-                        <Text style={styles.buttonText}>Cancelar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.saveButton} onPress={guardarDatos}>
-                        <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-                        <Text style={styles.buttonText}>Guardar</Text>
-                    </TouchableOpacity>
-                </View>
+                {isLoading && (
+                    <View>
+                        <ActivityIndicator size="large" color="#4CAF50" />
+                    </View>
                 )}
+                {!isLoading && (
+                    <View style={styles.buttonsContainer}>
+                        <TouchableOpacity style={styles.cancelButton} onPress={() => router.push('/(perfil_usuario)/mi-perfil')}>
+                            <Ionicons name="close-circle-outline" size={20} color="#fff" />
+                            <Text style={styles.buttonText}>Cancelar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.saveButton} onPress={guardarUsuario}>
+                            <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+                            <Text style={styles.buttonText}>Guardar</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+                
+
 
             </View>
 

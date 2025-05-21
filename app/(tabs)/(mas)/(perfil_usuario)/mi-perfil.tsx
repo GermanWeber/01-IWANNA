@@ -4,6 +4,7 @@ import { RatingStars } from '../../../../components/rating-stars';
 import { router } from 'expo-router';
 import { recuperarStorage } from '../../../../services/asyncStorage';
 import { useEffect, useState } from 'react';
+import { BUCKET_URL} from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const imgPerfil = require('../../../../assets/images/perfil.png');
@@ -18,6 +19,8 @@ export default function MiPerfil() {
         { id: 6, url: 'https://picsum.photos/600/600?random=6' },
     ]
     const [usuario, setUsuario] = useState<any>(null);
+    const [fotoPerfil, setFotoPerfil] = useState<any>(null);
+
     
     useEffect(() => {
         const cargarUsuario = async () => {
@@ -68,7 +71,7 @@ export default function MiPerfil() {
                     {/* Sección de Perfil */}
                     <View style={styles.profileHeader}>
                         <Image
-                            source={usuario.foto ? { uri: usuario.foto } : imgPerfil}
+                            source={usuario.foto ? { uri: `${BUCKET_URL}foto-perfil/${usuario.foto}?t=${new Date().getTime()}` } : imgPerfil}
                             style={styles.profileImage}
                         />
                         <View style={styles.profileInfo}>
@@ -373,6 +376,8 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#333',
         marginLeft: 10,
+        flexShrink: 1,
+        flexWrap: 'wrap',
     },
     description: {
         fontSize: 16,
