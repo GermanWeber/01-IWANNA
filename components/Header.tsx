@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Image, TouchableOpacity, StyleSheet, Platform, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { recuperarStorage } from '../services/asyncStorage';
+import { BUCKET_URL} from '@env';
+const imgPerfil = require('../assets/images/perfil.png');
 
 interface HeaderProps {
     showBackButton?: boolean;
@@ -16,12 +18,27 @@ export default function Header({
     showProfile = true 
 }: HeaderProps) {
     const router = useRouter();
+    const [usuario, setUsuario] = useState<any>(null);
     
+    //CARGA USUARIO DESDE STORAGE Y LO GUARDA
+    useEffect(() => {
+            const cargarUsuario = async () => {
+                try {
+                    const datos = await recuperarStorage('usuario');
+                    console.log("datos: ", datos);
+                    if (datos) {
+                        setUsuario(datos);
+                    }
+                } catch (error) {
+                    console.error('Error al cargar usuario:', error);
+                }
+            };
+            cargarUsuario();
+    }, []);
+
     const handleProfilePress = async () => {
         try {
-            const usuarioData = await AsyncStorage.getItem('usuario');
-
-            if (usuarioData) {
+            if (usuario) {
                 router.push('/(tabs)/(mas)/mi-perfil');
             } else {
                 router.push('/(auth)');
@@ -89,7 +106,7 @@ export default function Header({
                             >
                                 <View style={styles.profileImageContainer}>
                                     <Image
-                                        source={require('../assets/images/perfil.png')}
+                                        source={usuario?.foto ? { uri: `${BUCKET_URL}foto-perfil/${usuario.foto}?t=${new Date().getTime()}` } : imgPerfil}
                                         style={styles.userImage}
                                     />
                                 </View>
