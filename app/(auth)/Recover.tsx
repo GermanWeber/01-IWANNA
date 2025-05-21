@@ -97,7 +97,7 @@ const Recover = () => {
                 </TouchableOpacity>
 
                 <Image
-                    source={require('../../assets/images/logo.jpg')}
+                    source={require('../../assets/images/icons/logo-sin-fondo-manusc.png')}
                     style={styles.logo}
                 />
 
