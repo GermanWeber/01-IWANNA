@@ -1,19 +1,17 @@
 import React from 'react';
-import { View, Image, TouchableOpacity, StyleSheet, Text, Platform, StatusBar } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet, Platform, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface HeaderProps {
-    titulo?: string;
     showBackButton?: boolean;
     showLogo?: boolean;
     showProfile?: boolean;
 }
 
 export default function Header({ 
-    titulo, 
-    showBackButton = false, 
+    showBackButton = true,
     showLogo = true,
     showProfile = true 
 }: HeaderProps) {
@@ -22,24 +20,23 @@ export default function Header({
     return (
         <View style={styles.container}>
             <LinearGradient
-                colors={['#8BC34A', '#4CAF50']}
+                colors={['#84AE46', '#84AE46']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.gradient}
             >
                 <View style={styles.contentContainer}>
                     <View style={styles.leftContainer}>
-                        {showBackButton ? (
+                        {showBackButton && (
                             <TouchableOpacity 
                                 style={styles.backButton}
                                 onPress={() => router.back()}
+                                activeOpacity={0.8}
                             >
-                                <Ionicons name="arrow-back" size={24} color="#fff" />
+                                <View style={styles.backButtonInner}>
+                                    <Ionicons name="arrow-back" size={22} color="#84AE46" />
+                                </View>
                             </TouchableOpacity>
-                        ) : titulo && (
-                            <View style={styles.titleWrapper}>
-                                <Text style={styles.title}>{titulo}</Text>
-                            </View>
                         )}
                     </View>
 
@@ -47,7 +44,7 @@ export default function Header({
                         {showLogo && (
                             <View style={styles.logoContainer}>
                                 <Image
-                                    source={require('../assets/images/icons/logo-sin-fondo.png')}
+                                    source={require('../assets/images/icons/logo-sin-fondo-sin-nombre.png')}
                                     style={styles.logo}
                                     resizeMode="contain"
                                 />
@@ -56,7 +53,7 @@ export default function Header({
                     </View>
 
                     <View style={styles.rightContainer}>
-                        {showProfile && !showBackButton && (
+                        {showProfile && (
                             <TouchableOpacity 
                                 style={styles.profileContainer}
                                 onPress={() => router.push('/(auth)')}
@@ -120,12 +117,30 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     backButton: {
-        width: 40,
-        height: 40,
+        width: 36,
+        height: 36,
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: 18,
+    },
+    backButtonInner: {
+        width: 36,
+        height: 36,
+        backgroundColor: '#f5f5f5',
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 3,
+            },
+            android: {
+                elevation: 4,
+            },
+        }),
     },
     profileContainer: {
         width: 40,
@@ -137,11 +152,11 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#fff',
+        backgroundColor: '#f5f5f5',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
-        borderColor: '#fff',
+        borderColor: '#f5f5f5',
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
@@ -159,32 +174,14 @@ const styles = StyleSheet.create({
         height: 34,
         borderRadius: 17,
     },
-    titleWrapper: {
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: '#fff',
-        letterSpacing: 0.3,
-        textTransform: 'capitalize',
-        fontFamily: Platform.select({
-            ios: 'System',
-            android: 'Roboto',
-        }),
-        textShadowColor: 'rgba(0, 0, 0, 0.15)',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 1,
-    },
     logoContainer: {
-        width: 100,
-        height: 100,
+        width: 60,
+        height: 60,
         justifyContent: 'center',
         alignItems: 'center',
     },
     logo: {
-        width: 95,
-        height: 95,
+        width: 77,
+        height: 77,
     },
 }); 
