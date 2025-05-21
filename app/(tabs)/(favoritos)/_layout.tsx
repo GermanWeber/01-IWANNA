@@ -9,7 +9,7 @@ export default function FavoritosLayout() {
         name="favoritos"
         options={{
           header: (props) => (
-            <HeaderPrincipal titulo= "FAVORITOS" bgColor="#FFFFFF"/>
+            <HeaderPrincipal showBackButton={false}/>
           ),
         }}
       />
