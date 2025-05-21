@@ -141,7 +141,7 @@ const obtenerUsuario = async (email: string) => {
         >
             <View style={styles.contentContainer}>
                 <Image
-                    source={require('../../assets/images/logo.jpg')}
+                    source={require('../../assets/images/icons/logo-sin-fondo-manusc.png')}
                     style={styles.logo}
                 />
 

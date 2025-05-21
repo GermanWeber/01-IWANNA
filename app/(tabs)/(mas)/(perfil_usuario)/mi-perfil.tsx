@@ -1,10 +1,14 @@
-import { ScrollView, StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, Image, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { RatingStars } from '../../../../components/rating-stars';
 import { router } from 'expo-router';
 import { recuperarStorage } from '../../../../services/asyncStorage';
 import { useEffect, useState } from 'react';
+<<<<<<< HEAD
 import { BUCKET_URL} from '@env';
+=======
+import AsyncStorage from '@react-native-async-storage/async-storage';
+>>>>>>> kbr
 
 const imgPerfil = require('../../../../assets/images/perfil.png');
 
@@ -35,6 +39,33 @@ export default function MiPerfil() {
         };
         cargarUsuario();
     }, []);
+
+    const cerrarSesion = async () => {
+        Alert.alert(
+            'Cerrar Sesión',
+            '¿Estás seguro que deseas cerrar sesión?',
+            [
+                {
+                    text: 'Cancelar',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Cerrar Sesión',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await AsyncStorage.removeItem('usuario');
+                            
+                            router.replace('/(auth)');
+                        } catch (error) {
+                            console.error('Error al cerrar sesión:', error);
+                            Alert.alert('Error', 'No se pudo cerrar la sesión');
+                        }
+                    }
+                }
+            ]
+        );
+    };
 
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -249,6 +280,15 @@ export default function MiPerfil() {
                             </TouchableOpacity>
                         </View>
                     )}
+
+                    {/* Botón de Cerrar Sesión */}
+                    <TouchableOpacity 
+                        style={styles.logoutButton} 
+                        onPress={cerrarSesion}
+                    >
+                        <Ionicons name="log-out-outline" size={20} color="#fff" />
+                        <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
+                    </TouchableOpacity>
                 </View>
             )}
             
@@ -461,5 +501,22 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         marginRight: 5,
+    },
+    logoutButton: {
+        backgroundColor: '#FF3B30',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 15,
+        borderRadius: 10,
+        marginTop: 20,
+        marginBottom: 30,
+        marginHorizontal: 16,
+    },
+    logoutButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginLeft: 8,
     },
 });
