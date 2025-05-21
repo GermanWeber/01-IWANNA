@@ -1,28 +1,44 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Image, TouchableOpacity, StyleSheet, Platform, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { recuperarStorage } from '../services/asyncStorage';
+import { BUCKET_URL} from '@env';
+const imgPerfil = require('../assets/images/perfil.png');
 
 interface HeaderProps {
     showBackButton?: boolean;
     showLogo?: boolean;
     showProfile?: boolean;
 }
-
 export default function Header({ 
     showBackButton = true,
     showLogo = true,
     showProfile = true 
 }: HeaderProps) {
     const router = useRouter();
+    const [usuario, setUsuario] = useState<any>(null);
+    
+    //CARGA USUARIO DESDE STORAGE Y LO GUARDA
+    useEffect(() => {
+            const cargarUsuario = async () => {
+                try {
+                    const datos = await recuperarStorage('usuario');
+                    console.log("datos: ", datos);
+                    if (datos) {
+                        setUsuario(datos);
+                    }
+                } catch (error) {
+                    console.error('Error al cargar usuario:', error);
+                }
+            };
+            cargarUsuario();
+    }, []);
 
     const handleProfilePress = async () => {
         try {
-            const usuarioData = await AsyncStorage.getItem('usuario');
-
-            if (usuarioData) {
+            if (usuario) {
                 router.push('/(tabs)/(mas)/mi-perfil');
             } else {
                 router.push('/(auth)');
@@ -43,7 +59,7 @@ export default function Header({
             >
                 <View style={styles.contentContainer}>
                     <View style={styles.leftContainer}>
-                        {showBackButton && (
+                        {showBackButton ? (
                             <TouchableOpacity 
                                 style={styles.backButton}
                                 onPress={() => router.back()}
@@ -53,7 +69,20 @@ export default function Header({
                                     <Ionicons name="arrow-back" size={22} color="#84AE46" />
                                 </View>
                             </TouchableOpacity>
-                        )}
+                        ): 
+                        (
+                            <TouchableOpacity 
+                                style={styles.imgContainer}
+                                onPress={() => router.back()}
+                                activeOpacity={0.8}
+                            >
+                                <Image
+                                    source={require('../assets/images/icons/iwanna_manusc.png')}
+                                    style={styles.decorativeImage}
+                                    resizeMode="contain"
+                                />
+                            </TouchableOpacity>)
+                        }
                     </View>
 
                     <View style={styles.centerContainer}>
@@ -77,7 +106,7 @@ export default function Header({
                             >
                                 <View style={styles.profileImageContainer}>
                                     <Image
-                                        source={require('../assets/images/perfil.png')}
+                                        source={usuario?.foto ? { uri: `${BUCKET_URL}foto-perfil/${usuario.foto}?t=${new Date().getTime()}` } : imgPerfil}
                                         style={styles.userImage}
                                     />
                                 </View>
@@ -200,4 +229,10 @@ const styles = StyleSheet.create({
         width: 77,
         height: 77,
     },
+    imgContainer: {
+        width: "100%"
+    },
+    decorativeImage: {
+        width: "100%",
+    }
 }); 

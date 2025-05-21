@@ -13,7 +13,7 @@ export default function CategoriaLayout() {
         name="categorias"
         options={{
           header: (props) => (
-            <HeaderPrincipal titulo="CATEGORIAS"/>
+            <HeaderPrincipal showBackButton={false}/>
           ),
         }}
       />
@@ -21,9 +21,7 @@ export default function CategoriaLayout() {
         name="[detalleCategoria]"
         options={{
           header: (props) => (
-            <HeaderPrincipal
-              titulo="CATEGORIAS"
-            />
+            <HeaderPrincipal/>
           ),
         }}
       />

@@ -73,7 +73,9 @@ export default function DireccionScreen() {
     // Cuando el ref esté listo y tengamos dirección, setear texto en input
     useEffect(() => {
         if (refReady && direccion) {
-            autoCompleteRef.current?.setAddressText(direccion.descripcion);
+            setTimeout(() => {
+                autoCompleteRef.current?.setAddressText(direccion.descripcion);
+            }, 100);
         }
     }, [refReady, direccion]);
     

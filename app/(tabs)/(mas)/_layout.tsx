@@ -11,7 +11,7 @@ export default function MasLayout() {
         name="mas"
         options={{
           header: (props) => (
-            <HeaderPrincipal titulo="MÁS"/>
+            <HeaderPrincipal showBackButton={false}/>
           ),
         }}
       />
@@ -24,7 +24,7 @@ export default function MasLayout() {
         name="agenda"
         options={{
           header: (props) => (
-            <HeaderPrincipal titulo="AGENDA"/>
+            <HeaderPrincipal/>
           ),
         }}
       />
@@ -48,7 +48,7 @@ export default function MasLayout() {
         name="preguntas-frecuentes"
         options={{
           header: (props) => (
-            <HeaderPrincipal titulo="PREGUNTAS FRECUENTES"/>
+            <HeaderPrincipal/>
           ),
         }}
       />
@@ -56,7 +56,7 @@ export default function MasLayout() {
         name="denuncias"
         options={{
           header: (props) => (
-            <HeaderPrincipal titulo="DENUNCIAS"/>
+            <HeaderPrincipal/>
           ),
         }}
       />
@@ -64,7 +64,7 @@ export default function MasLayout() {
         name="post"
         options={{
           header: (props) => (
-            <HeaderPrincipal titulo="POSTS"/>
+            <HeaderPrincipal/>
           ),
         }}
       />
@@ -72,7 +72,7 @@ export default function MasLayout() {
         name="quienes-somos"
         options={{
           header: (props) => (
-            <HeaderPrincipal titulo="QUIENES SOMOS"/>
+            <HeaderPrincipal/>
           ),
         }}
       />
