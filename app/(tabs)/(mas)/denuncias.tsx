@@ -5,7 +5,6 @@ import { Button, Card, RadioButton, HelperText } from 'react-native-paper';
 export default function Denuncias() {
     const [tipoDenuncia, setTipoDenuncia] = useState('');
     const [descripcion, setDescripcion] = useState('');
-    const [email, setEmail] = useState('');
     const [error, setError] = useState('');
 
     const tiposDenuncia = [
@@ -25,14 +24,6 @@ export default function Denuncias() {
             setError('Por favor, describe el problema');
             return false;
         }
-        if (!email.trim()) {
-            setError('Por favor, ingresa tu correo electrónico');
-            return false;
-        }
-        if (!/\S+@\S+\.\S+/.test(email)) {
-            setError('Por favor, ingresa un correo electrónico válido');
-            return false;
-        }
         setError('');
         return true;
     };
@@ -48,7 +39,6 @@ export default function Denuncias() {
             // Limpiar formulario
             setTipoDenuncia('');
             setDescripcion('');
-            setEmail('');
         }
     };
 
@@ -56,42 +46,31 @@ export default function Denuncias() {
         <SafeAreaView style={styles.safeArea}>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.container}>
-                    <Text style={styles.titulo}>Reportar un Problema</Text>
-                    
                     <Card style={styles.card}>
                         <Card.Content>
-                            <Text style={styles.subtitulo}>Tipo de Denuncia</Text>
+                            <Text style={styles.titulo}>Enviar Denuncia</Text>
+                            <Text style={styles.subtitulo}>
+                                Selecciona el tipo de denuncia y describe el problema
+                            </Text>
+
+                            <Text style={styles.label}>Tipo de Denuncia</Text>
                             <RadioButton.Group onValueChange={value => setTipoDenuncia(value)} value={tipoDenuncia}>
                                 {tiposDenuncia.map((tipo, index) => (
                                     <View key={index} style={styles.radioOption}>
-                                        <RadioButton.Item
-                                            label={tipo}
-                                            value={tipo}
-                                            color="#84AE46"
-                                        />
+                                        <RadioButton value={tipo} color="#84AE46" />
+                                        <Text style={styles.radioLabel}>{tipo}</Text>
                                     </View>
                                 ))}
                             </RadioButton.Group>
 
-                            <Text style={styles.subtitulo}>Descripción del Problema</Text>
+                            <Text style={styles.label}>Descripción del Problema</Text>
                             <TextInput
                                 style={styles.textArea}
-                                multiline
-                                numberOfLines={4}
                                 value={descripcion}
                                 onChangeText={setDescripcion}
                                 placeholder="Describe el problema en detalle..."
-                                placeholderTextColor="#666"
-                            />
-
-                            <Text style={styles.subtitulo}>Correo Electrónico</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={email}
-                                onChangeText={setEmail}
-                                placeholder="tu@email.com"
-                                keyboardType="email-address"
-                                autoCapitalize="none"
+                                multiline
+                                numberOfLines={4}
                             />
 
                             {error ? <HelperText type="error">{error}</HelperText> : null}
@@ -130,31 +109,28 @@ const styles = StyleSheet.create({
         backgroundColor: '#f5f5f5',
     },
     scrollContainer: {
-        paddingBottom: 20,
+        padding: 16,
     },
     container: {
         flex: 1,
-        padding: 16,
-    },
-    titulo: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 20,
-        textAlign: 'center',
     },
     card: {
         marginBottom: 16,
         borderRadius: 10,
         elevation: 3,
     },
-    infoCard: {
-        marginTop: 8,
-        borderRadius: 10,
-        elevation: 2,
-        backgroundColor: '#eaf7db',
+    titulo: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 8,
     },
     subtitulo: {
+        fontSize: 16,
+        color: '#666',
+        marginBottom: 20,
+    },
+    label: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#333',
@@ -162,7 +138,14 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     radioOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
         marginVertical: 4,
+    },
+    radioLabel: {
+        fontSize: 16,
+        color: '#333',
+        marginLeft: 8,
     },
     textArea: {
         borderWidth: 1,
@@ -170,36 +153,32 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 12,
         fontSize: 16,
-        backgroundColor: '#fff',
         minHeight: 100,
         textAlignVertical: 'top',
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        backgroundColor: '#fff',
     },
     button: {
         marginTop: 24,
         backgroundColor: '#84AE46',
-        paddingVertical: 8,
+        borderRadius: 8,
     },
     buttonLabel: {
         fontSize: 16,
-        fontWeight: 'bold',
+        paddingVertical: 4,
+    },
+    infoCard: {
+        marginTop: 16,
+        borderRadius: 10,
+        elevation: 3,
     },
     infoTitulo: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
-        color: '#84AE46',
-        marginBottom: 8,
+        color: '#333',
+        marginBottom: 12,
     },
     infoTexto: {
         fontSize: 14,
-        color: '#666',
-        lineHeight: 20,
+        color: '#84AE46',
+        lineHeight: 22,
     },
 });
