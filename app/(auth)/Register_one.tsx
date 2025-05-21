@@ -1,11 +1,13 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Image, KeyboardAvoidingView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Register_one = () => {
     const router = useRouter();
     const scaleAnim = useRef(new Animated.Value(1)).current;
+    const [tipoUsuario, setTipoUsuario] = useState<number>(0); // 0: no seleccionado, 1: cliente, 2: trabajador
 
     const handlePressIn = () => {
         Animated.spring(scaleAnim, {
@@ -21,12 +23,36 @@ const Register_one = () => {
         }).start();
     };
 
-    const handleClientePress = () => {
-        router.push('Register_two_cliente');
+    const handleClientePress = async () => {
+        const tipo = 1;
+        setTipoUsuario(tipo);
+        try {
+            await AsyncStorage.setItem('tipoUsuario', tipo.toString());
+            router.push({
+                pathname: 'Register_two_cliente',
+                params: { tipoUsuario: tipo }
+            });
+            alert(`Has seleccionado el tipo de usuario: ${tipo}`);
+        } catch (error) {
+            console.error('Error al guardar el tipo de usuario:', error);
+            alert('Error al guardar la selección');
+        }
     };
 
-    const handleTrabajadorPress = () => {
-        router.push('Register_two_trabajador');
+    const handleTrabajadorPress = async () => {
+        const tipo = 2;
+        setTipoUsuario(tipo);
+        try {
+            await AsyncStorage.setItem('tipoUsuario', tipo.toString());
+            router.push({
+                pathname: 'Register_two_trabajador',
+                params: { tipoUsuario: tipo }
+            });
+            alert(`Has seleccionado el tipo de usuario: ${tipo}`);
+        } catch (error) {
+            console.error('Error al guardar el tipo de usuario:', error);
+            alert('Error al guardar la selección');
+        }
     };
 
     return (

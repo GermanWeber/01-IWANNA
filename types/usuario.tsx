@@ -12,5 +12,6 @@ export interface Usuario {
     id_estado: number;
     id_tipo: number;
     foto?: string;
-    direccion: string;
+    direccion?: string;
+    id_direccion?: string;
 }
