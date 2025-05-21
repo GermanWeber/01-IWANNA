@@ -3,6 +3,7 @@ import { View, Image, TouchableOpacity, StyleSheet, Platform, StatusBar } from '
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface HeaderProps {
     showBackButton?: boolean;
@@ -16,6 +17,21 @@ export default function Header({
     showProfile = true 
 }: HeaderProps) {
     const router = useRouter();
+
+    const handleProfilePress = async () => {
+        try {
+            const usuarioData = await AsyncStorage.getItem('usuario');
+
+            if (usuarioData) {
+                router.push('/(tabs)/(mas)/mi-perfil');
+            } else {
+                router.push('/(auth)');
+            }
+        } catch (error) {
+            console.error('Error al verificar la sesión:', error);
+            router.push('/(auth)');
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -56,7 +72,7 @@ export default function Header({
                         {showProfile && (
                             <TouchableOpacity 
                                 style={styles.profileContainer}
-                                onPress={() => router.push('/(auth)')}
+                                onPress={handleProfilePress}
                                 activeOpacity={0.7}
                             >
                                 <View style={styles.profileImageContainer}>
