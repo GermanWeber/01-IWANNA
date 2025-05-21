@@ -4,11 +4,8 @@ import { RatingStars } from '../../../../components/rating-stars';
 import { router } from 'expo-router';
 import { recuperarStorage } from '../../../../services/asyncStorage';
 import { useEffect, useState } from 'react';
-<<<<<<< HEAD
 import { BUCKET_URL} from '@env';
-=======
 import AsyncStorage from '@react-native-async-storage/async-storage';
->>>>>>> kbr
 
 const imgPerfil = require('../../../../assets/images/perfil.png');
 
