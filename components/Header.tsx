@@ -10,14 +10,13 @@ interface HeaderProps {
     showLogo?: boolean;
     showProfile?: boolean;
 }
-
 export default function Header({ 
     showBackButton = true,
     showLogo = true,
     showProfile = true 
 }: HeaderProps) {
     const router = useRouter();
-
+    
     const handleProfilePress = async () => {
         try {
             const usuarioData = await AsyncStorage.getItem('usuario');
@@ -43,7 +42,7 @@ export default function Header({
             >
                 <View style={styles.contentContainer}>
                     <View style={styles.leftContainer}>
-                        {showBackButton && (
+                        {showBackButton ? (
                             <TouchableOpacity 
                                 style={styles.backButton}
                                 onPress={() => router.back()}
@@ -53,7 +52,20 @@ export default function Header({
                                     <Ionicons name="arrow-back" size={22} color="#84AE46" />
                                 </View>
                             </TouchableOpacity>
-                        )}
+                        ): 
+                        (
+                            <TouchableOpacity 
+                                style={styles.imgContainer}
+                                onPress={() => router.back()}
+                                activeOpacity={0.8}
+                            >
+                                <Image
+                                    source={require('../assets/images/icons/iwanna_manusc.png')}
+                                    style={styles.decorativeImage}
+                                    resizeMode="contain"
+                                />
+                            </TouchableOpacity>)
+                        }
                     </View>
 
                     <View style={styles.centerContainer}>
@@ -200,4 +212,10 @@ const styles = StyleSheet.create({
         width: 77,
         height: 77,
     },
+    imgContainer: {
+        width: "100%"
+    },
+    decorativeImage: {
+        width: "100%",
+    }
 }); 
