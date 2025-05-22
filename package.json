@@ -14,6 +14,7 @@
     "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/checkbox": "^0.5.17",
+    "@react-native-community/datetimepicker": "8.2.0",
     "@react-native-firebase/app": "^21.14.0",
     "@react-native-firebase/auth": "^21.14.0",
     "@react-native-picker/picker": "^2.11.0",
@@ -34,6 +35,7 @@
     "firebase": "^11.6.1",
     "react": "18.3.1",
     "react-native": "0.76.9",
+    "react-native-calendars": "^1.1312.0",
     "react-native-collapsible": "^1.6.2",
     "react-native-dotenv": "^3.4.11",
     "react-native-gesture-handler": "~2.20.2",
@@ -41,6 +43,7 @@
     "react-native-google-places-autocomplete": "^2.5.7",
     "react-native-image-picker": "^8.2.1",
     "react-native-keyboard-aware-scroll-view": "^0.9.5",
+    "react-native-maps": "1.18.0",
     "react-native-pager-view": "6.5.1",
     "react-native-paper": "^5.13.2",
     "react-native-picker": "^4.3.7",
@@ -53,9 +56,7 @@
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
-    "react-star-ratings": "^2.3.0",
-    "@react-native-community/datetimepicker": "8.2.0",
-    "react-native-maps": "1.18.0"
+    "react-star-ratings": "^2.3.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

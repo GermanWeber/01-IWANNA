@@ -60,7 +60,10 @@ export default function PerfilUsuario() {
                     </View>
                     {/* Boton de Cotizar */}
                     {usuario.tipo_usuario === 1 && (
-                        <TouchableOpacity style={styles.cotizacionButton}>
+                        <TouchableOpacity 
+                            style={styles.cotizacionButton}
+                            onPress={() => router.push('/(mas)/(cotizacion)/cotizacion-form')}
+                        >
                             <Text style={styles.cotizacionButtonText}>Cotizar</Text>
                         </TouchableOpacity>
                     )}
