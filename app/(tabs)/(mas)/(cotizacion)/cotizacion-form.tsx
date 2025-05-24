@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { recuperarStorage } from '../../../../services/asyncStorage';
 import { createCotizacion } from '../../../../services/cotizacionService';
 import { CotizacionRequest, CotizacionResponse } from '../../../../types/cotizacion';
-
 
 interface InterfaceDireccion {
     descripcion: string;
@@ -16,10 +15,11 @@ interface InterfaceDireccion {
 
 const CotizacionForm = () => {
     const router = useRouter();
+    const [idUsuario, setIdUsuario] = useState<number | null>(null);
     const [asunto, setAsunto] = useState('');
     const [descripcion, setDescripcion] = useState('');
-    const [fechaEstimada, setFechaEstimada] = useState('');
     const [direccion, setDireccion] = useState<InterfaceDireccion | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const cargarDireccion = async () => {
         const direccionGuardada = await recuperarStorage("direccion_cotizacion");
@@ -34,52 +34,72 @@ const CotizacionForm = () => {
         }, [])
     );
 
-    
+    useEffect(() => {
+        const obtenerIdUsuario = async () => {
+            try {
+                const usuario = await recuperarStorage('usuario');
+                if (usuario) {
+                    setIdUsuario(usuario.id);
+                    console.log('ID del usuario obtenido:', usuario.id);
+                } else {
+                    Alert.alert('Error', 'No se pudo obtener la información del usuario');
+                    router.back();
+                }
+            } catch (error) {
+                console.error('Error al obtener ID del usuario:', error);
+                Alert.alert('Error', 'Ocurrió un error al obtener la información del usuario');
+                router.back();
+            }
+        };
+
+        obtenerIdUsuario();
+    }, []);
+
     const handleSubmit = async () => {
-        if (!asunto || !descripcion || !fechaEstimada || !direccion) {
-            Alert.alert('Error', 'Por favor completa todos los campos');
+        if (!idUsuario) {
+            Alert.alert('Error', 'No se pudo identificar al usuario');
             return;
         }
 
-        const cotizacion: CotizacionRequest = {
-            asunto,
-            descripcion,
-            direccion: direccion.descripcion
-        };
+        if (!descripcion.trim() || !asunto.trim() || !direccion) {
+            Alert.alert('Error', 'Por favor, completa todos los campos requeridos');
+            return;
+        }
 
+        setIsLoading(true);
         try {
-            console.log('Enviando cotización:', cotizacion);
-            const response = await createCotizacion(cotizacion);
-            if (response) {
-                Alert.alert(
-                    'Éxito',
-                    'Tu cotización ha sido enviada correctamente',
-                    [
-                        {
-                            text: 'OK',
-                            onPress: () => router.back()
-                        }
-                    ]
-                );
-            }
+            const cotizacionData: CotizacionRequest = {
+                asunto: asunto,
+                descripcion: descripcion,
+                direccion: direccion.descripcion,
+                id_cliente: idUsuario
+            };
+
+            console.log('Enviando datos de cotización:', cotizacionData);
+
+            const response = await createCotizacion(cotizacionData);
+            console.log('Respuesta de la cotización:', response);
+            
+            Alert.alert(
+                'Éxito',
+                'Tu cotización ha sido enviada correctamente',
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => router.back()
+                    }
+                ]
+            );
         } catch (error) {
             console.error('Error al crear cotización:', error);
-            Alert.alert('Error', 'No se pudo enviar la cotización. Por favor, intenta nuevamente.');
+            Alert.alert('Error', 'No se pudo enviar la cotización');
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity 
-                    style={styles.backButton}
-                    onPress={() => router.back()}
-                >
-                    <Ionicons name="arrow-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.title}>Nueva Cotización</Text>
-            </View>
-
             <KeyboardAwareScrollView
                 style={styles.scrollView}
                 enableOnAndroid={true}
@@ -136,24 +156,15 @@ const CotizacionForm = () => {
                         />
                     </View>
 
-                    {/* Fecha Estimada */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Fecha Estimada</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="DD/MM/AAAA"
-                            value={fechaEstimada}
-                            onChangeText={setFechaEstimada}
-                            placeholderTextColor="#999"
-                        />
-                    </View>
-
                     {/* Botón de Enviar */}
                     <TouchableOpacity 
                         style={styles.submitButton}
                         onPress={handleSubmit}
+                        disabled={isLoading}
                     >
-                        <Text style={styles.submitButtonText}>Enviar Cotización</Text>
+                        <Text style={styles.submitButtonText}>
+                            {isLoading ? 'Enviando...' : 'Enviar Cotización'}
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </KeyboardAwareScrollView>

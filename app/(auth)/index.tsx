@@ -6,8 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../../config/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { obtenerUsuarioPrueba } from '../../services/obtenerUsuario';
 
-import { API_URL } from '@env';
 
 // LOGIN 
 const Login = () => {
@@ -28,32 +28,7 @@ const Login = () => {
     }, []);
 
     // En tu componente Login, agrega esta función simple:
-const obtenerUsuarioPrueba = async (email: string) => {
-    try {
-        const url = `${API_URL}usuarios/prueba/${email}`;
-        console.log('Consultando usuario en:', url);
 
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.message || 'Error al obtener usuario');
-        }
-
-        // Guardar datos simples en AsyncStorage
-        await AsyncStorage.setItem('usuario', JSON.stringify(data));
-        console.log('Datos guardados en AsyncStorage:', data); // Log para verificar datos guardados
-
-        // Verificar que los datos se guardaron correctamente
-        const storedData = await AsyncStorage.getItem('usuario');
-        console.log('Datos recuperados de AsyncStorage:', storedData); // Log para verificar datos recuperados
-
-        return data;
-    } catch (error) {
-        console.error('Error:', error);
-        throw error;
-    }
-};
 
 
     const validateEmail = (email: string) => {
@@ -231,7 +206,7 @@ const obtenerUsuarioPrueba = async (email: string) => {
 
                 <View style={styles.registerContainer}>
                     <Text style={styles.registerText}>¿No tienes una cuenta? </Text>
-                    <TouchableOpacity onPress={handleGoToRegister}>
+                    <TouchableOpacity onPress={() => router.push('Register_term_check')}>
                         <Text style={styles.registerLink}>Regístrate</Text>
                     </TouchableOpacity>
                 </View>

@@ -3,6 +3,7 @@ export interface CotizacionRequest {
     asunto: string;
     descripcion: string;
     direccion: string;
+    id_cliente: number;
 }
 
 export interface CotizacionResponse {
@@ -11,5 +12,7 @@ export interface CotizacionResponse {
     asunto: string;
     descripcion: string;
     direccion: string;
-    // ... otros campos que devuelva tu backend
+    id_cliente: number;
+    estado?: string;
+    fecha?: string;
 }
