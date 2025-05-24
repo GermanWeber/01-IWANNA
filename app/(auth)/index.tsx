@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../../config/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { verificarSuscripcion } from '../../services/paymentService';
 
 import { API_URL } from '@env';
 
@@ -55,7 +56,6 @@ const obtenerUsuario = async (email: string) => {
     }
 };
 
-
     const validateEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         setIsValidEmail(emailRegex.test(email));
@@ -100,16 +100,21 @@ const obtenerUsuario = async (email: string) => {
         setIsLoading(true);
         try {
             // Autenticación con Firebase
+         
             const userCredential = await signInWithEmailAndPassword(auth, email, contrasena);
             const user = userCredential.user;
-
+           
             // Obtener token de Firebase
             const token = await user.getIdToken();
             await AsyncStorage.setItem('userToken', token);
-
+            
              // 3. Obtener datos básicos del usuario
             const userData = await obtenerUsuario(email);
+
+            //obtener datos de stripe
+            const stripeData = await verificarSuscripcion(userData.id);
             console.log('Datos del usuario:', userData);
+            console.log('Datos de Stripe:', stripeData);
 
             router.push('(tabs)');
         } catch (error: any) {

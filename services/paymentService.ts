@@ -1,5 +1,6 @@
 
-import { BASE_URL } from "@env";
+import { API_URL } from "@env";
+
 
 
 export interface Product {
@@ -27,7 +28,7 @@ export interface CheckoutSession {
 //traer los productos (suscripciones)
 export const fetchProducts = async (): Promise<Product[]> => {
   try {
-    const response = await fetch(`${BASE_URL}payment/products`, {
+    const response = await fetch(`${API_URL}payment/products`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -61,7 +62,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
 //traer los precios
 export const fetchPrices = async (): Promise<Product[]> => {
   try {
-    const response = await fetch(`${BASE_URL}payment/prices`, {
+    const response = await fetch(`${API_URL}payment/prices`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -96,25 +97,43 @@ export const fetchPrices = async (): Promise<Product[]> => {
 //crear usuario en strape
 export const crearUsuarioStripe = async (userId: string, email: string, nombre: string) => {
   try {
-    const response = await fetch(`${BASE_URL}payment/create-user`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ userId, email, nombre }),
+    console.log('Enviando datos a Stripe...', {
+        email: email,
+        nombre: nombre,
+        userId: userId
     });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Error al crear el usuario');
+
+    const responseStripe = await fetch(`${API_URL}payment/create-customer`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            userId: userId,
+            email: email,
+            nombre: nombre
+        })
+    });
+
+    if (!responseStripe.ok) {
+        throw new Error('Error al crear el cliente en Stripe');
     }
+
+} catch (error) {
+    console.error('Error en la creación del cliente Stripe:', error);
     
-    const user = await response.json();
-    console.log('Usuario creado:', user);
-    return user;
+}
+};
+
+//verificar la suscripcion
+export const verificarSuscripcion = async (customerId: string) => {
+  try {
+    const response = await fetch(`${API_URL}payment/verify-subscription/${customerId}`);
+    const data = await response.json();
+    return data;
   } catch (error) {
-    console.error('Error en crearUsuarioStripe:', error);
-    throw error;
+    console.error('Error al verificar la suscripción:', error);
+    return { subscribed: false };
   }
 };
 
@@ -124,7 +143,7 @@ export const iniciarCheckout = async (priceId: string, userId: string, setLoadin
   try {
     console.log('Iniciando checkout con priceId:', priceId , 'userId:', userId);
 
-    const response = await fetch(`${BASE_URL}payment/create-checkout-session`, {
+    const response = await fetch(`${API_URL}payment/create-checkout-session`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
