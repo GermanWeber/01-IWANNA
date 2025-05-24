@@ -9,7 +9,7 @@ export default function RootLayout() {
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
             <Stack>
                 <Stack.Screen 
-                    name="post" 
+                    name="mis-posts" 
                     options={{
                         header: (props) => (
                             <HeaderPrincipal/>

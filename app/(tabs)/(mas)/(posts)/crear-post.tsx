@@ -16,6 +16,7 @@ export default function Post() {
     const [archivo, setArchivo] = useState<{ uri: string; type: 'image' | 'video' } | null>(null);
     const [descripcion, setDescripcion] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [errorVideo, setErrorVideo] = useState(false);
     const getMimeType = (uri: string) => {
         if (uri.endsWith('.jpg') || uri.endsWith('.jpeg')) return 'image/jpeg';
         if (uri.endsWith('.png')) return 'image/png';
@@ -32,10 +33,16 @@ export default function Post() {
 
         if (!result.canceled) {
             const asset = result.assets[0];
-            setArchivo({
-                uri: asset.uri,
-                type: asset.type as 'image' | 'video',
-            });
+            if (asset.type === 'video') {
+                const videoUri = await prepararVideoParaVisualizacion(asset.uri);
+                setArchivo({ uri: videoUri, type: 'video' });
+            }else{
+                setArchivo({
+                    uri: asset.uri,
+                    type: asset.type as 'image' | 'video',
+                });
+            }
+
         }
     };
 
@@ -94,14 +101,36 @@ export default function Post() {
             });
 
             const data = await response.json();
-            console.log("Archivo subido con éxito:", data.url);
+            if (!data.exito) {
+                Alert.alert("Error", "No se pudo subir el archivo.");
+            } else {
+                Alert.alert("Éxito", "Archivo subido con éxito.");
+                router.back();
+            }
 
         } catch (error) {
             console.error("Error al subir el archivo:", error);
         }
         setIsLoading(false);
     };
-    
+
+    const prepararVideoParaVisualizacion = async (uri: string): Promise<string> => {
+        try {
+            const fileName = uri.split('/').pop();
+            const newPath = `${FileSystem.documentDirectory}${fileName}`;
+            
+            await FileSystem.copyAsync({
+            from: uri,
+            to: newPath,
+            });
+
+            console.log("✅ URI lista para video:", newPath);
+            return newPath;
+        } catch (error) {
+            console.error("❌ Error al copiar el archivo:", error);
+            throw error;
+        }
+    };
     //Solicita acceso a la camara y galeria
     useEffect(() => {
         (async () => {
@@ -146,6 +175,9 @@ export default function Post() {
                             useNativeControls
                             isLooping
                             resizeMode={ResizeMode.CONTAIN}
+                            onError={(e) => {
+                                Alert.alert("Error", "No se pudo reproducir el video. Por favor, intenta con otro archivo.");
+                            }}
                         />
                     )}
                 </View>
@@ -184,7 +216,7 @@ export default function Post() {
                         </TouchableOpacity>
                     </View>
                 )}     
-            </View>       
+            </View> 
         </ScrollView>
     )
 }

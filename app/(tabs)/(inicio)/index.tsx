@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { FlatList, View, Text, Image, StyleSheet, SafeAreaView, StatusBar, ActivityIndicator } from 'react-native';
 import Post from '../../../components/post';
 import { useEffect } from 'react';
@@ -6,6 +6,7 @@ import HeaderPrincipal from '../../../components/Header';
 import { guardarStorage, recuperarStorage } from '../../../services/asyncStorage';
 import { API_URL } from '@env';
 import { PostType } from '../../../types/post';
+import { useFocusEffect } from 'expo-router';
 const Home = () => {
     
     const [posts, setPosts] = useState<PostType[]>([]);
@@ -33,17 +34,18 @@ const Home = () => {
     };
 
 
-    useEffect(() => {
-        const cargarUsuarioYPosts  = async () => {
+    useFocusEffect(
+        useCallback(() => {
+            const cargarUsuarioYPosts = async () => {
             const datos = await recuperarStorage('usuario');
-            console.log(datos);
             if (datos) {
                 setUsuario(datos);
             }
             await obtenerPosts();
-        };
-        cargarUsuarioYPosts();
-    }, []);
+            };
+            cargarUsuarioYPosts();
+        }, [])
+    );
     
     if (loading) {
         return (
