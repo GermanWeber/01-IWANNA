@@ -1,8 +1,9 @@
 import { Stack } from 'expo-router';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import 'react-native-get-random-values';
+import HeaderPrincipal from '../components/Header';
 
 export default function RootLayout() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen  name="screens" options={{ headerShown: false }}/>
         </Stack>
     </SafeAreaView>
   );

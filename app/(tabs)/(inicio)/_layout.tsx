@@ -9,7 +9,7 @@ export default function InicioLayout() {
         name="index"
         options={{
           header: (props) => (
-            <HeaderPrincipal titulo= "INICIO" />
+            <HeaderPrincipal showBackButton={false}/>
           ),
         }}
       />

@@ -7,7 +7,7 @@ import { auth } from '../../config/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { obtenerUsuarioPrueba } from '../../services/obtenerUsuario';
-
+import { API_URL } from '@env';
 
 // LOGIN 
 const Login = () => {
@@ -28,7 +28,15 @@ const Login = () => {
     }, []);
 
     // En tu componente Login, agrega esta función simple:
-
+const obtenerUsuario = async (email: string) => {
+    try {
+        const url = `${API_URL}usuarios/${email}`;
+        console.log('Consultando usuario en:', url);
+    } catch (error) {
+        console.error('Error al obtener usuario:', error);
+        throw error;
+    }
+};
 
 
     const validateEmail = (email: string) => {
@@ -83,7 +91,7 @@ const Login = () => {
             await AsyncStorage.setItem('userToken', token);
 
              // 3. Obtener datos básicos del usuario
-            const userData = await obtenerUsuarioPrueba(email);
+            const userData = await obtenerUsuario(email);
             console.log('Datos del usuario:', userData);
 
             router.push('(tabs)');
