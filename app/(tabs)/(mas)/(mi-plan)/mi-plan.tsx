@@ -1,8 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import BotonCategorias from '../../../../components/BotonCategorias';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { fetchProducts } from '../../../../services/paymentService';
 import { recuperarStorage } from '../../../../services/asyncStorage';
 import { useState } from 'react';
 
@@ -48,7 +46,7 @@ useEffect( () => {
                     <Text style={styles.advantage}>• Acceso a contenido premium</Text>
                     <Text style={styles.advantage}>• Sin anuncios</Text> 
                     <Text style={styles.advantage}>• Soporte 24/7</Text>
-                    <Text style={styles.advantage}>• Acceso anticipado a nuevas funciones</Text>
+                    <Text style={styles.advantage}>Proximo pago: {datosStripe?.billing_cycle_anchor_formatted}</Text>
                        
                    
                 </View>
