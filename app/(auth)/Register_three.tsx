@@ -91,7 +91,7 @@ const Register_three = () => {
             };
             
             // 4. Crear usuario en la base de datos
-            const response = await fetch(`${API_URL}usuarios/create-user-prueba`, {
+            const response = await fetch(`${API_URL}usuarios/create-user`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ const Register_three = () => {
             console.log('Usuario creado con ID:', userId);
 
             // 5. Crear usuario en Stripe
-            await crearUsuarioStripe(userId, correo, usuarioData.nombre);
+            await crearUsuarioStripe(userId, correo, `${usuarioData.nombre} ${usuarioData.apellido}`);
     
             
             // 6. Limpiar datos temporales

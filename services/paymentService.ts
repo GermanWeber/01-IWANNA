@@ -1,5 +1,6 @@
 
 import { API_URL } from "@env";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
@@ -125,23 +126,62 @@ export const crearUsuarioStripe = async (userId: string, email: string, nombre: 
 }
 };
 
-//verificar la suscripcion
-export const verificarSuscripcion = async (customerId: string) => {
+
+//verficar suscripcion por id
+export const getSubscriptionInfo = async (Id: string) => {
   try {
-    const response = await fetch(`${API_URL}payment/verify-subscription/${customerId}`);
-    const data = await response.json();
-    return data;
+    const response = await fetch(`${API_URL}payment/subscription/${Id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${await AsyncStorage.getItem('token')}`,
+      },
+    });
+
+    const responseText = await response.text();
+    let data;
+    
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse JSON response:', responseText);
+      throw new Error(`Invalid JSON response from server: ${response.status} ${response.statusText}`);
+    }
+
+    console.log('Datos de suscripción:', data);
+    
+    if (data.subscribed) {
+      const expiryDate = new Date(data.current_period_end * 1000);
+      const formattedDate = expiryDate.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      return {
+        ...data,
+        formattedExpiryDate: formattedDate,
+        isActive: data.status === 'active' || data.status === 'trialing',
+        
+      };
+    }
+    
+    // When not subscribed, return both status and customerId
+    return { 
+      subscribed: false, 
+      ...data
+    };
   } catch (error) {
-    console.error('Error al verificar la suscripción:', error);
-    return { subscribed: false };
+    console.error('Error al obtener la información de suscripción:', error);
+    throw error;
   }
 };
 
 //crear la sesión de pago
-export const iniciarCheckout = async (priceId: string, userId: string, setLoading: (loading: boolean) => void) => {
+export const iniciarCheckout = async (priceId: string, customerId: string, setLoading: (loading: boolean) => void) => {
   setLoading(true);
   try {
-    console.log('Iniciando checkout con priceId:', priceId , 'userId:', userId);
+    console.log('Iniciando checkout con priceId:', priceId, 'customerId:', customerId);
 
     const response = await fetch(`${API_URL}payment/create-checkout-session`, {
       method: 'POST',
@@ -149,10 +189,9 @@ export const iniciarCheckout = async (priceId: string, userId: string, setLoadin
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({ priceId, userId }),
+      body: JSON.stringify({ priceId, customerId }), // Cambiado de userId a customerId
     });
 
-    // Read the response only once
     const responseData = await response.json();
     
     if (!response.ok) {

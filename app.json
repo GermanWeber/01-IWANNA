@@ -4,12 +4,12 @@
     "slug": "IWANNA",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icons/logo-sin-fondo.png",
+    "icon": "./assets/images/icons/iwanna_manusc.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "scheme": "iwanna",
     "splash": {
-      "image": "./assets/images/icons/logo-sin-fondo.png",
+      "image": "./assets/images/icons/iwanna_manusc.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
