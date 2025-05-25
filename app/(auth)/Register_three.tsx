@@ -85,7 +85,8 @@ const Register_three = () => {
                 id_estado: 1,
                 id_tipo: parseInt(tipoUsuario || '1'),
                 foto: '',
-                id_comuna: 1
+                id_comuna: 1,
+                direccion: datosUsuario.direccion?.descripcion || null
             };
             
             // 4. Crear usuario en la base de datos

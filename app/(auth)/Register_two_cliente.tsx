@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, Modal } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { recuperarStorage } from '../../services/asyncStorage';
+
+interface InterfaceDireccion {
+    descripcion: string;
+    latitud: number;
+    longitud: number;
+}
 
 const Register_two_cliente = () => {
     const router = useRouter();
@@ -16,6 +23,7 @@ const Register_two_cliente = () => {
     const [fechaNacimiento, setFechaNacimiento] = useState<Date | null>(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [direccion, setDireccion] = useState<InterfaceDireccion | null>(null);
 
     const calcularEdad = (fecha: Date): number => {
         const hoy = new Date();
@@ -37,9 +45,30 @@ const Register_two_cliente = () => {
         }
     };
 
+    const toDireccion = () => {
+        router.push('/screens/direccion');
+    };
+
+    useFocusEffect(
+        React.useCallback(() => {
+            const cargarDireccion = async () => {
+                try {
+                    const datos = await recuperarStorage('direccion');
+                    if (datos) {
+                        setDireccion(datos);
+                        console.log("direccion recuperada: ", datos);
+                    }
+                } catch (error) {
+                    console.error('Error al cargar dirección:', error);
+                }
+            };
+            cargarDireccion();
+        }, [])
+    );
+
     const handleNext = async () => {
         // Validación de campos
-        if (!nombre || !apellido || !telefono || sexo === null || !fechaNacimiento) {
+        if (!nombre || !apellido || !telefono || sexo === null || !fechaNacimiento || !direccion) {
             Alert.alert('Error', 'Por favor, completa todos los campos');
             return;
         }
@@ -47,7 +76,7 @@ const Register_two_cliente = () => {
         setIsLoading(true);
         try {
             const edadCalculada = calcularEdad(fechaNacimiento);
-            console.log('Edad calculada:', edadCalculada);
+            //console.log('Edad calculada:', edadCalculada);
             
             // Guardar datos en AsyncStorage
             const datosUsuario = {
@@ -57,23 +86,24 @@ const Register_two_cliente = () => {
                 rut,
                 sexo,
                 fecha_nacimiento: fechaNacimiento.toISOString(),
-                edad: edadCalculada
+                edad: edadCalculada,
+                direccion: direccion
             };
-            console.log('Objeto datosUsuario antes de guardar:', datosUsuario);
+            //console.log('Objeto datosUsuario antes de guardar:', datosUsuario);
             
             await AsyncStorage.setItem('datosUsuario', JSON.stringify(datosUsuario));
             
             // Verificar cómo quedó guardado
             const datosGuardados = await AsyncStorage.getItem('datosUsuario');
-            console.log('Datos guardados en AsyncStorage (string):', datosGuardados);
+            //console.log('Datos guardados en AsyncStorage (string):', datosGuardados);
             const userData = JSON.parse(datosGuardados || '{}');
-            console.log('Datos parseados del AsyncStorage:', userData);
+            //console.log('Datos parseados del AsyncStorage:', userData);
             
             // Obtener todos los datos almacenados
             const tipoUsuario = await AsyncStorage.getItem('tipoUsuario');
             
             // Mostrar los datos en un alert
-            Alert.alert(
+            /*Alert.alert(
                 'Datos Almacenados',
                 `Tipo de Usuario: ${tipoUsuario}\nDatos Personales: ${datosGuardados}`,
                 [
@@ -82,7 +112,12 @@ const Register_two_cliente = () => {
                         onPress: () => router.push('Register_three')
                     }
                 ]
-            );
+            );*/
+            
+            // Navegar directamente a Register_three
+            router.push('Register_three');
+
+            
         } catch (error) {
             console.error('Error al guardar los datos:', error);
             Alert.alert('Error', 'Hubo un error al guardar los datos');
@@ -208,6 +243,15 @@ const Register_two_cliente = () => {
                             onChangeText={setRut}
                             keyboardType="numeric"
                         />
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                        <Ionicons name="location-outline" size={20} color="#666" style={styles.inputIcon} />
+                        <TouchableOpacity style={styles.input} onPress={toDireccion}>
+                            <Text style={!direccion?.descripcion ? styles.inputTextPlaceHolder : styles.inputText}>
+                                {direccion?.descripcion ?? "Seleccionar dirección"}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -361,6 +405,12 @@ const styles = StyleSheet.create({
     },
     closeButton: {
         padding: 5,
+    },
+    inputTextPlaceHolder: {
+        color: '#999',
+    },
+    inputText: {
+        color: '#333',
     },
 });
 
