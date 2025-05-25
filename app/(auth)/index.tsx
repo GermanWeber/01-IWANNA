@@ -6,7 +6,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../../config/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { obtenerUsuarioPrueba } from '../../services/obtenerUsuario';
 import { API_URL } from '@env';
 
 // LOGIN 
@@ -103,11 +102,20 @@ const obtenerUsuario = async (email: string) => {
             const token = await user.getIdToken();
             await AsyncStorage.setItem('userToken', token);
 
-             // 3. Obtener datos básicos del usuario
-            const userData = await obtenerUsuarioPrueba(email);
-            console.log('Datos del usuario:', userData);
+            // Obtener datos básicos del usuario
+            try {
+                const userData = await obtenerUsuario(email);
+                console.log('Datos del usuario:', userData);
+                
+                if (!userData) {
+                    throw new Error('No se pudieron obtener los datos del usuario');
+                }
 
-            router.push('(tabs)');
+                router.push('(tabs)');
+            } catch (userError) {
+                console.error('Error al obtener datos del usuario:', userError);
+                Alert.alert('Error', 'Error al obtener datos del usuario. Por favor, intenta nuevamente.');
+            }
         } catch (error: any) {
             console.log('Error de Firebase:', error.code); // Para debugging
             let errorMessage = 'Email o contraseña incorrectos';
