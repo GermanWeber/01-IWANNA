@@ -152,13 +152,13 @@ export default function EditarPerfil() {
                 },
                 body: JSON.stringify(direccion),
             });
+            console.log("res: ",res);
 
             if (!res.ok) {
                 throw new Error(`Error al enviar datos de dirección. Status: ${res.status}`);
             }
 
             const data = await res.json();
-            
             return data.exito;
         } catch (error) {
             console.error('Error al actualizar dirección:', error);

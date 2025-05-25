@@ -105,7 +105,7 @@ export default function Mas() {
                             colorIconoDerecha="#8BC34A"
                             colorIconoIzquierda="#8BC34A"
                             iconoIzquierda="image"
-                            onPress={() => router.push('/(mas)/post')}
+                            onPress={() => router.push('/(mas)/(posts)/mis-posts')}
                         />
                         <BotonCategorias
                             textoBoton="COTIZACIONES"
