@@ -1,8 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, TouchableHighlight, Text, View, Image, StyleSheet, GestureResponderEvent } from 'react-native';
+import { TouchableOpacity, Text, View, Image, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-
 
 type Props = {
     textoBoton?: string;
@@ -10,73 +8,118 @@ type Props = {
     colorTexto?: string;
     colorTextoProfesion?: string;
     bgColor?: string;
- 
     onPress: () => void;
     iconoDerecha?: any;
     colorIconoDerecha?: string;
     avatar?: any;
 };
 
-const BotonAvatar: React.FC<Props> = ({ textoBoton, colorTexto, onPress,
-                                            bgColor, iconoDerecha, colorIconoDerecha, 
-                                            avatar, textoProfesion, colorTextoProfesion 
-    }) => {
+const BotonAvatar: React.FC<Props> = ({
+    textoBoton,
+    textoProfesion,
+    colorTexto = '#2C3E50',
+    colorTextoProfesion = '#7F8C8D',
+    bgColor = '#FFFFFF',
+    onPress,
+    iconoDerecha = 'chevron-forward',
+    colorIconoDerecha = '#00BCD4',
+    avatar = require('../assets/images/perfil.png')
+}) => {
     return (
+        <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.boton, { backgroundColor: bgColor }]}
+            onPress={onPress}
+        >
+            <View style={styles.contenidoBoton}>
+                <View style={styles.avatarContainer}>
+                    <Image
+                        source={avatar}
+                        style={styles.avatar}
+                        resizeMode="cover"
+                    />
+                    <View style={styles.textContainer}>
+                        <Text style={[styles.nombre, { color: colorTexto }]} numberOfLines={1}>
+                            {textoBoton}
+                        </Text>
+                        {textoProfesion && (
+                            <Text 
+                                style={[styles.profesion, { color: colorTextoProfesion }]} 
+                                numberOfLines={1}
+                            >
+                                {textoProfesion}
+                            </Text>
+                        )}
+                    </View>
+                </View>
+                <Ionicons 
+                    name={iconoDerecha} 
+                    size={20} 
+                    color={colorIconoDerecha} 
+                    style={styles.icono} 
+                />
+            </View>
+        </TouchableOpacity>
+    );
+};
 
-    <TouchableHighlight
-
-    style={[styles.boton, { backgroundColor: bgColor }]}
-    underlayColor={'#ddd'}
-    onPress={onPress}
-    >
-    <View style={styles.contenidoBoton}>
-        <View  style={{ flexDirection: 'row', gap:10 }}>
-        <Image
-            source={avatar}
-            style={{
-              width: 60,
-              height: 60,
-              borderRadius: 80,
-              marginVertical: 5,
-              borderColor: '#00BCD4',
-              borderWidth: 5,
-              
-            }}
-          />
-          <View style={{ marginLeft: 10, justifyContent: 'center', gap: 5}}>
-            <Text style={{ fontWeight: '800', color: colorTexto }}>{textoBoton}</Text>
-            <Text style={{ fontWeight: '300', color: colorTextoProfesion }}>{textoProfesion}</Text>
-          </View>
-        </View>
-        <Ionicons name={iconoDerecha} size={20} color={colorIconoDerecha} style={styles.icono} />
-    </View>
-    </TouchableHighlight>
-        );
-    }
-
-
-    const styles = StyleSheet.create({
+const styles = StyleSheet.create({
     boton: {
-        marginVertical: 10,
-        marginHorizontal: 10,
-        padding: 20,
-        borderRadius: 50,
-        boxShadow: '0 5px 10px rgba(0, 0, 0, 0.2)',
-        
-        
-      },
-      contenidoBoton: {
+        marginVertical: 8,
+        marginHorizontal: 16,
+        padding: 16,
+        borderRadius: 16,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+            },
+            android: {
+                elevation: 4,
+            },
+        }),
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#EDF2F7',
+    },
+    contenidoBoton: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-      },
-      icono: {
+        alignItems: 'center',
+    },
+    avatarContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    avatar: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        borderWidth: 2,
+        borderColor: '#E2E8F0',
+        backgroundColor: '#F7FAFC',
+    },
+    textContainer: {
+        marginLeft: 16,
+        flex: 1,
         marginRight: 8,
+    },
+    nombre: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    profesion: {
+        fontSize: 14,
+        fontWeight: '400',
+        opacity: 0.8,
+    },
+    icono: {
         alignSelf: 'center',
-        justifyContent: 'center',
-        fontSize: 30,
+    },
+});
 
-        
-      },
-    });
-
-export default BotonAvatar;    
+export default BotonAvatar;

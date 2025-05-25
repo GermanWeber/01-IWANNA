@@ -1,5 +1,7 @@
 
-import { BASE_URL } from "@env";
+import { API_URL } from "@env";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 
 export interface Product {
@@ -27,7 +29,7 @@ export interface CheckoutSession {
 //traer los productos (suscripciones)
 export const fetchProducts = async (): Promise<Product[]> => {
   try {
-    const response = await fetch(`${BASE_URL}payment/products`, {
+    const response = await fetch(`${API_URL}payment/products`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -61,7 +63,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
 //traer los precios
 export const fetchPrices = async (): Promise<Product[]> => {
   try {
-    const response = await fetch(`${BASE_URL}payment/prices`, {
+    const response = await fetch(`${API_URL}payment/prices`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -96,44 +98,100 @@ export const fetchPrices = async (): Promise<Product[]> => {
 //crear usuario en strape
 export const crearUsuarioStripe = async (userId: string, email: string, nombre: string) => {
   try {
-    const response = await fetch(`${BASE_URL}payment/create-user`, {
-      method: 'POST',
+    console.log('Enviando datos a Stripe...', {
+        email: email,
+        nombre: nombre,
+        userId: userId
+    });
+
+    const responseStripe = await fetch(`${API_URL}payment/create-customer`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            userId: userId,
+            email: email,
+            nombre: nombre
+        })
+    });
+
+    if (!responseStripe.ok) {
+        throw new Error('Error al crear el cliente en Stripe');
+    }
+
+} catch (error) {
+    console.error('Error en la creación del cliente Stripe:', error);
+    
+}
+};
+
+
+//verficar suscripcion por id
+export const getSubscriptionInfo = async (Id: string) => {
+  try {
+    const response = await fetch(`${API_URL}payment/subscription/${Id}`, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${await AsyncStorage.getItem('token')}`,
       },
-      body: JSON.stringify({ userId, email, nombre }),
     });
+
+    const responseText = await response.text();
+    let data;
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Error al crear el usuario');
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse JSON response:', responseText);
+      throw new Error(`Invalid JSON response from server: ${response.status} ${response.statusText}`);
+    }
+
+    console.log('Datos de suscripción:', data);
+    
+    if (data.subscribed) {
+      const expiryDate = new Date(data.current_period_end * 1000);
+      const formattedDate = expiryDate.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      return {
+        ...data,
+        formattedExpiryDate: formattedDate,
+        isActive: data.status === 'active' || data.status === 'trialing',
+        
+      };
     }
     
-    const user = await response.json();
-    console.log('Usuario creado:', user);
-    return user;
+    // When not subscribed, return both status and customerId
+    return { 
+      subscribed: false, 
+      ...data
+    };
   } catch (error) {
-    console.error('Error en crearUsuarioStripe:', error);
+    console.error('Error al obtener la información de suscripción:', error);
     throw error;
   }
 };
 
 //crear la sesión de pago
-export const iniciarCheckout = async (priceId: string, userId: string, setLoading: (loading: boolean) => void) => {
+export const iniciarCheckout = async (priceId: string, customerId: string, setLoading: (loading: boolean) => void) => {
   setLoading(true);
   try {
-    console.log('Iniciando checkout con priceId:', priceId , 'userId:', userId);
+    console.log('Iniciando checkout con priceId:', priceId, 'customerId:', customerId);
 
-    const response = await fetch(`${BASE_URL}payment/create-checkout-session`, {
+    const response = await fetch(`${API_URL}payment/create-checkout-session`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({ priceId, userId }),
+      body: JSON.stringify({ priceId, customerId }), // Cambiado de userId a customerId
     });
 
-    // Read the response only once
     const responseData = await response.json();
     
     if (!response.ok) {

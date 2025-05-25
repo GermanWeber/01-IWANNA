@@ -65,6 +65,8 @@ const Register_three = () => {
             // 1. Crear usuario en Firebase
             const userCredential = await createUserWithEmailAndPassword(auth, correo, contrasena);
             const user = userCredential.user;
+
+            console.log(user.uid);
     
             // 2. Obtener datos almacenados
             const tipoUsuario = await AsyncStorage.getItem('tipoUsuario');
@@ -89,25 +91,33 @@ const Register_three = () => {
             };
             
             // 4. Crear usuario en la base de datos
-            const response = await fetch(`${API_URL}usuarios/create-user-prueba`, {
+            const response = await fetch(`${API_URL}usuarios/create-user`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(usuarioData)
             });
-    
+
             const responseData = await response.json();
-    
+
             if (!response.ok) {
                 throw new Error(responseData.error || 'Error al crear usuario en la base de datos');
             }
+
+            // Obtener el ID del usuario recién creado
+            const userId = responseData.userId;
+            console.log('Usuario creado con ID:', userId);
+
+            // 5. Crear usuario en Stripe
+            await crearUsuarioStripe(userId, correo, `${usuarioData.nombre} ${usuarioData.apellido}`);
     
-            // 5. Limpiar datos temporales
+            
+            // 6. Limpiar datos temporales
             await AsyncStorage.removeItem('datosUsuario');
             await AsyncStorage.removeItem('tipoUsuario');
     
-            // 6. Guardar el token de Firebase
+            // 7. Guardar el token de Firebase
             const token = await user.getIdToken();
             await AsyncStorage.setItem('userToken', token);
     
@@ -136,6 +146,8 @@ const Register_three = () => {
         } finally {
             setIsLoading(false);
         }
+
+        
     };
 
     return (

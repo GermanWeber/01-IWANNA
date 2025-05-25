@@ -6,8 +6,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../../config/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { obtenerUsuarioPrueba } from '../../services/obtenerUsuario';
-import { API_URL } from '@env';
+import { getSubscriptionInfo } from '../../services/paymentService';
+import { obtenerUsuario } from '../../services/userService';
+import { guardarStorage } from '../../services/asyncStorage';
+
 
 // LOGIN 
 const Login = () => {
@@ -22,22 +24,6 @@ const Login = () => {
     // Animaciones
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const shakeAnim = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-        console.log('Pantalla de Login renderizada');
-    }, []);
-
-    // En tu componente Login, agrega esta función simple:
-const obtenerUsuario = async (email: string) => {
-    try {
-        const url = `${API_URL}usuarios/${email}`;
-        console.log('Consultando usuario en:', url);
-    } catch (error) {
-        console.error('Error al obtener usuario:', error);
-        throw error;
-    }
-};
-
 
     const validateEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -83,16 +69,34 @@ const obtenerUsuario = async (email: string) => {
         setIsLoading(true);
         try {
             // Autenticación con Firebase
+         
             const userCredential = await signInWithEmailAndPassword(auth, email, contrasena);
             const user = userCredential.user;
-
+           
             // Obtener token de Firebase
             const token = await user.getIdToken();
             await AsyncStorage.setItem('userToken', token);
-
+            
              // 3. Obtener datos básicos del usuario
             const userData = await obtenerUsuario(email);
-            console.log('Datos del usuario:', userData);
+
+            //obtener datos de stripe
+          
+            const stripeData = await getSubscriptionInfo(userData.id);
+            console.log('Datos de Stripe:', stripeData);
+
+            // Guardar los datos de Stripe
+            if (stripeData) {
+                try {
+                await guardarStorage('stripeData', stripeData);
+                console.log('Datos de Stripe guardados correctamente');
+                } catch (error) {
+                console.error('Error al guardar datos de Stripe:', error);
+                }
+            }
+            //console.log('Datos del usuario:', userData);
+            console.log('Datos de Stripe:', stripeData);
+            
 
             router.push('(tabs)');
         } catch (error: any) {
