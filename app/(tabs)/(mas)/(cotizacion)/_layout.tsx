@@ -8,9 +8,7 @@ export default function CotizacionLayout() {
       <Stack.Screen
         name="cotizacion"
         options={{
-          header: (props) => (
-            <HeaderPrincipal />
-          ),
+          header: () => <HeaderPrincipal />
         }}
       />
 
@@ -20,6 +18,20 @@ export default function CotizacionLayout() {
           header: (props) => (
             <HeaderPrincipal/>
           ),
+        }}
+      />
+
+      <Stack.Screen
+        name="cotizacion-form"
+        options={{
+          header: () => <HeaderPrincipal />
+        }}
+      />
+
+      <Stack.Screen
+        name="direccion-cotizacion"
+        options={{
+          header: () => <HeaderPrincipal />
         }}
       />
     </Stack>

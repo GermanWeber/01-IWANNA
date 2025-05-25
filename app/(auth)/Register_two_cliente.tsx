@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,7 +16,6 @@ const Register_two_cliente = () => {
     const [fechaNacimiento, setFechaNacimiento] = useState<Date | null>(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-
 
     const calcularEdad = (fecha: Date): number => {
         const hoy = new Date();
@@ -195,6 +194,8 @@ const Register_two_cliente = () => {
                             onChange={handleDateChange}
                             maximumDate={new Date()}
                             minimumDate={new Date(1900, 0, 1)}
+                            accentColor="#4CAF50"
+                            locale="es-ES"
                         />
                     )}
 
@@ -325,6 +326,41 @@ const styles = StyleSheet.create({
         marginTop: -15,
         marginBottom: 5,
         marginLeft: 15,
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    calendarContainer: {
+        backgroundColor: '#ffffff',
+        borderRadius: 15,
+        padding: 20,
+        width: '90%',
+        maxWidth: 400,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    calendarHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    calendarTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333333',
+    },
+    closeButton: {
+        padding: 5,
     },
 });
 

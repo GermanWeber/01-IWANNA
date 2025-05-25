@@ -1,13 +1,42 @@
 import { router, useLocalSearchParams } from "expo-router";
-import React from "react";
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet} from "react-native";
+import React, { useState } from "react";
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert} from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { RatingStars } from "../../../components/rating-stars";
-
-
+import { recuperarStorage } from "../../../services/asyncStorage";
 
 export default function PerfilUsuario() {
     const { idUsuario } = useLocalSearchParams();
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleCotizar = async () => {
+        try {
+            setIsLoading(true);
+            const usuario = await recuperarStorage('usuario');
+            
+            if (!usuario) {
+                Alert.alert(
+                    "No puedes cotizar :(",
+                    "Debes estar registrado para realizar una cotización",
+                    [
+                        {
+                            text: "OK",
+                            onPress: () => router.push('/(auth)')
+                        }
+                    ]
+                );
+                return;
+            }
+
+            // Si el usuario existe, procedemos con la cotización
+            router.push('/(mas)/(cotizacion)/cotizacion-form');
+        } catch (error) {
+            console.error('Error al verificar usuario:', error);
+            Alert.alert("Error", "Ocurrió un error al verificar tu sesión");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     //Aqui deberiamos llamar a la api para recuperar los datos del usuario segun el ID
     const posts = [
@@ -60,8 +89,14 @@ export default function PerfilUsuario() {
                     </View>
                     {/* Boton de Cotizar */}
                     {usuario.tipo_usuario === 1 && (
-                        <TouchableOpacity style={styles.cotizacionButton}>
-                            <Text style={styles.cotizacionButtonText}>Cotizar</Text>
+                        <TouchableOpacity 
+                            style={styles.cotizacionButton}
+                            onPress={handleCotizar}
+                            disabled={isLoading}
+                        >
+                            <Text style={styles.cotizacionButtonText}>
+                                {isLoading ? 'Verificando...' : 'Cotizar'}
+                            </Text>
                         </TouchableOpacity>
                     )}
                     {/* SOLO MUESTRA LA ID DEL USUARIO */}
