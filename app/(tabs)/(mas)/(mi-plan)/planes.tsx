@@ -14,6 +14,7 @@ export default function Planes() {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [usuario, setUsuario] = useState<any>(null);
+  const [datosStripe, setDatosStripe] = useState<any>(null);
 
   const handleCheckout = async (priceId: string, userId: string) => {
     try {
@@ -26,8 +27,6 @@ export default function Planes() {
     }
   };
 
-
-
   const handleWebViewNavigation = (event: any) => {
     const { url } = event.nativeEvent;
     // Verifica si es una URL de éxito o cancelación
@@ -36,7 +35,7 @@ export default function Planes() {
     }
   };
 
-  useEffect(() => {
+  useEffect( () => {
     const loadProducts = async () => {
       try {
         setLoading(true);
@@ -49,18 +48,20 @@ export default function Planes() {
       }
     };
 
-    const cargarUsuario = async () => {
+    const loadStripeData = async () => {
       try {
-        setLoading(true);
-        const usuario = await recuperarStorage('usuario');
-        setUsuario(usuario) ;
+        const datosStripeStr = await recuperarStorage('stripeData');
+        if (datosStripeStr) {
+          console.log('Datos de Stripe recuperados:', datosStripeStr);
+          // Actualiza el estado con los datos recuperados
+          setDatosStripe(datosStripeStr);
+        }
       } catch (error) {
-        alert(error instanceof Error ? error.message : 'Error al cargar el usuario');
-      } finally {
-        setLoading(false);
+        console.error('Error al recuperar datos de Stripe:', error);
       }
     };
-    cargarUsuario();
+    
+    loadStripeData();
     loadProducts();
   }, []);
 
@@ -96,7 +97,7 @@ export default function Planes() {
                 </View>
                 <TouchableOpacity 
                   style={styles.selectButton} 
-                  onPress={() => handleCheckout(product.priceId, usuario?.id)}
+                  onPress={() => handleCheckout(product.priceId, datosStripe?.customerId)}
                   disabled={loading}
                 >
                   <Text style={styles.buttonText}>

@@ -77,7 +77,7 @@ export default function Header({
                                 activeOpacity={0.8}
                             >
                                 <Image
-                                    source={require('../assets/images/icons/iwanna_manusc.png')}
+                                    source={require('../assets/images/icons/iwanna_manusc_grueso.png')}
                                     style={styles.decorativeImage}
                                     resizeMode="contain"
                                 />

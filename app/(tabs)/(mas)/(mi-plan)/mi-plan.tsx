@@ -1,20 +1,49 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { useState } from 'react'
 import BotonCategorias from '../../../../components/BotonCategorias';
 import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { fetchProducts } from '../../../../services/paymentService';
+import { recuperarStorage } from '../../../../services/asyncStorage';
+import { useState } from 'react';
+
+
+
 
 export default function MiPlan() {
     const router = useRouter();
+
+    const [loading, setLoading] = useState(false);
+    const [datosStripe, setDatosStripe] = useState<any>(null);
+
+useEffect( () => {
+
+    const loadStripeData = async () => {
+      try {
+        const datosStripeStr = await recuperarStorage('stripeData');
+        if (datosStripeStr) {
+          console.log('Datos de Stripe recuperados:', datosStripeStr);
+          // Actualiza el estado con los datos recuperados
+          setDatosStripe(datosStripeStr);
+        }
+      } catch (error) {
+        console.error('Error al recuperar datos de Stripe:', error);
+      }
+    };
+    
+    loadStripeData();
+  }, []);
+
+
 
     return (
         <View style={styles.container}>
             <View style={[styles.card]}>
                 <View style={styles.cardHeader}>
-                    <Text style={styles.planName}>Nivel ORO</Text>
+                    <Text style={styles.planName}>{datosStripe?.planName}</Text>
                 </View>
                 
                 <View style={styles.advantages}>
-                    <Text style={styles.price}>$19.990/mes</Text>
+                    <Text style={styles.price}>{datosStripe?.price}/mes</Text>
                     
                     <Text style={styles.advantage}>• Acceso a contenido premium</Text>
                     <Text style={styles.advantage}>• Sin anuncios</Text> 

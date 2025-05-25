@@ -52,6 +52,7 @@ export default function MiPerfil() {
                     onPress: async () => {
                         try {
                             await AsyncStorage.removeItem('usuario');
+                            await AsyncStorage.removeItem('stripeData');
                             
                             router.replace('/(auth)');
                         } catch (error) {

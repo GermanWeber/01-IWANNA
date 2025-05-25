@@ -1,6 +1,5 @@
 import { Stack } from 'expo-router';
 import HeaderPrincipal from '../../../components/Header';
-import { SafeAreaView } from 'react-native-safe-area-context'; 
 
 export default function MasLayout() {
   
@@ -61,12 +60,8 @@ export default function MasLayout() {
         }}
       />
       <Stack.Screen
-        name="post"
-        options={{
-          header: (props) => (
-            <HeaderPrincipal/>
-          ),
-        }}
+        name="(posts)"
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="quienes-somos"
