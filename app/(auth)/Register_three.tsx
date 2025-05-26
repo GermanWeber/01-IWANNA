@@ -44,22 +44,22 @@ const Register_three = () => {
             Alert.alert('Error', 'Por favor, completa todos los campos');
             return;
         }
-    
+
         if (!isValidEmail) {
             Alert.alert('Error', 'Por favor, ingresa un correo válido');
             return;
         }
-    
+
         if (contrasena !== confirmarContrasena) {
             Alert.alert('Error', 'Las contraseñas no coinciden');
             return;
         }
-    
+
         if (contrasena.length < 6) {
             Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
             return;
         }
-    
+
         setIsLoading(true);
         try {
             // 1. Crear usuario en Firebase
@@ -67,12 +67,12 @@ const Register_three = () => {
             const user = userCredential.user;
 
             console.log(user.uid);
-    
+
             // 2. Obtener datos almacenados
             const tipoUsuario = await AsyncStorage.getItem('tipoUsuario');
             const datosGuardados = await AsyncStorage.getItem('datosUsuario');
             const datosUsuario = datosGuardados ? JSON.parse(datosGuardados) : {};
-    
+
             // 3. Preparar datos para la base de datos
             const usuarioData = {
                 nombre: datosUsuario.nombre || 'Usuario',
@@ -83,13 +83,14 @@ const Register_three = () => {
                 edad: datosUsuario.edad || 18,
                 id_sexo: datosUsuario.sexo || 1,
                 descripcion: datosUsuario.profesion || 'Sin descripción',
-                id_profesion: datosUsuario.profesion ? 1 : null,
+                id_profesion: datosUsuario.id_profesion || null,
                 id_estado: 1,
                 id_tipo: parseInt(tipoUsuario || '1'),
                 foto: '',
-                id_comuna: 1
+                id_comuna: 1,
+                direccion: datosUsuario.direccion?.descripcion || null
             };
-            
+
             // 4. Crear usuario en la base de datos
             const response = await fetch(`${API_URL}usuarios/create-user`, {
                 method: 'POST',
@@ -111,16 +112,16 @@ const Register_three = () => {
 
             // 5. Crear usuario en Stripe
             await crearUsuarioStripe(userId, correo, `${usuarioData.nombre} ${usuarioData.apellido}`);
-    
-            
+
+
             // 6. Limpiar datos temporales
             await AsyncStorage.removeItem('datosUsuario');
             await AsyncStorage.removeItem('tipoUsuario');
-    
+
             // 7. Guardar el token de Firebase
             const token = await user.getIdToken();
             await AsyncStorage.setItem('userToken', token);
-    
+
             Alert.alert(
                 'Registro exitoso',
                 'Tu cuenta ha sido creada correctamente',
@@ -131,33 +132,33 @@ const Register_three = () => {
                     }
                 ]
             );
-    
+
         } catch (error: any) {
             console.error('Error en el registro:', error);
             let errorMessage = 'Error al crear la cuenta';
-            
+
             if (error.code === 'auth/email-already-in-use') {
                 errorMessage = 'Este correo electrónico ya está registrado';
             } else if (error.message.includes('Error al crear usuario')) {
                 errorMessage = 'Error al registrar en la base de datos';
             }
-            
+
             Alert.alert('Error', errorMessage);
         } finally {
             setIsLoading(false);
         }
 
-        
+
     };
 
     return (
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
         >
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.header}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.backButton}
                         onPress={() => router.back()}
                     >
@@ -173,11 +174,11 @@ const Register_three = () => {
                         styles.inputContainer,
                         !isValidEmail && correo.length > 0 && styles.inputError
                     ]}>
-                        <Ionicons 
-                            name="mail-outline" 
-                            size={20} 
-                            color={!isValidEmail && correo.length > 0 ? '#FF3B30' : '#666'} 
-                            style={styles.inputIcon} 
+                        <Ionicons
+                            name="mail-outline"
+                            size={20}
+                            color={!isValidEmail && correo.length > 0 ? '#FF3B30' : '#666'}
+                            style={styles.inputIcon}
                         />
                         <TextInput
                             style={styles.input}
@@ -204,14 +205,14 @@ const Register_three = () => {
                             onChangeText={setContrasena}
                             secureTextEntry={!showPassword}
                         />
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={() => setShowPassword(!showPassword)}
                             style={styles.eyeIcon}
                         >
-                            <Ionicons 
-                                name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                                size={20} 
-                                color="#666" 
+                            <Ionicons
+                                name={showPassword ? "eye-outline" : "eye-off-outline"}
+                                size={20}
+                                color="#666"
                             />
                         </TouchableOpacity>
                     </View>
@@ -225,20 +226,20 @@ const Register_three = () => {
                             onChangeText={setConfirmarContrasena}
                             secureTextEntry={!showConfirmPassword}
                         />
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                             style={styles.eyeIcon}
                         >
-                            <Ionicons 
-                                name={showConfirmPassword ? "eye-outline" : "eye-off-outline"} 
-                                size={20} 
-                                color="#666" 
+                            <Ionicons
+                                name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+                                size={20}
+                                color="#666"
                             />
                         </TouchableOpacity>
                     </View>
                 </View>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={styles.registerButton}
                     onPress={handleRegister}
                     disabled={isLoading}

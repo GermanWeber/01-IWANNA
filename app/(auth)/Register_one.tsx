@@ -32,7 +32,7 @@ const Register_one = () => {
                 pathname: 'Register_two_cliente',
                 params: { tipoUsuario: tipo }
             });
-            alert(`Has seleccionado el tipo de usuario: ${tipo}`);
+           // alert(`Has seleccionado el tipo de usuario: ${tipo}`);
         } catch (error) {
             console.error('Error al guardar el tipo de usuario:', error);
             alert('Error al guardar la selección');
@@ -48,7 +48,7 @@ const Register_one = () => {
                 pathname: 'Register_two_trabajador',
                 params: { tipoUsuario: tipo }
             });
-            alert(`Has seleccionado el tipo de usuario: ${tipo}`);
+            //alert(`Has seleccionado el tipo de usuario: ${tipo}`);
         } catch (error) {
             console.error('Error al guardar el tipo de usuario:', error);
             alert('Error al guardar la selección');

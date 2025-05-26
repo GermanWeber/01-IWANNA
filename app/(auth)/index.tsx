@@ -81,23 +81,20 @@ const Login = () => {
             const userData = await obtenerUsuario(email);
 
             //obtener datos de stripe
-          
             const stripeData = await getSubscriptionInfo(userData.id);
             console.log('Datos de Stripe:', stripeData);
 
             // Guardar los datos de Stripe
             if (stripeData) {
                 try {
-                await guardarStorage('stripeData', stripeData);
-                console.log('Datos de Stripe guardados correctamente');
+                    await guardarStorage('stripeData', stripeData);
+                    console.log('Datos de Stripe guardados correctamente');
                 } catch (error) {
-                console.error('Error al guardar datos de Stripe:', error);
+                    console.error('Error al guardar datos de Stripe:', error);
                 }
             }
-            //console.log('Datos del usuario:', userData);
-            console.log('Datos de Stripe:', stripeData);
             
-
+            console.log('Datos de Stripe:', stripeData);
             router.push('(tabs)');
         } catch (error: any) {
             console.log('Error de Firebase:', error.code); // Para debugging
