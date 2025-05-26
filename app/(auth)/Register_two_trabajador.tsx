@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { recuperarStorage } from '../../services/asyncStorage';
+import { API_URL } from '@env';
 
 interface InterfaceDireccion {
     descripcion: string;
@@ -24,18 +25,64 @@ const Register_two_trabajador = () => {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [direccion, setDireccion] = useState<InterfaceDireccion | null>(null);
+    const [descripcion, setDescripcion] = useState('');
+    const [profesiones, setProfesiones] = useState([]);
+    const [showProfesiones, setShowProfesiones] = useState(false);
+    const [busqueda, setBusqueda] = useState('');
+    const [profesionesFiltradas, setProfesionesFiltradas] = useState([]);
+    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
+    const [idProfesionSeleccionada, setIdProfesionSeleccionada] = useState<number | null>(null);
 
     const calcularEdad = (fecha: Date): number => {
         const hoy = new Date();
         let edad = hoy.getFullYear() - fecha.getFullYear();
         const mesActual = hoy.getMonth();
         const mesNacimiento = fecha.getMonth();
-        
+
         if (mesActual < mesNacimiento || (mesActual === mesNacimiento && hoy.getDate() < fecha.getDate())) {
             edad--;
         }
-        
+
         return edad;
+    };
+
+    const obtenerProfesiones = async () => {
+        try {
+            const url = `${API_URL}category/profesiones`;
+            console.log('Consultando profesiones en:', url);
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Error al obtener profesiones');
+            }
+
+            console.log('Estructura de profesiones recibida:', JSON.stringify(data, null, 2));
+            setProfesiones(data);
+            setProfesionesFiltradas(data);
+            setShowProfesiones(true);
+        } catch (error) {
+            console.error('Error:', error);
+            Alert.alert('Error', 'No se pudieron obtener las profesiones');
+        }
+    };
+
+    const quitarTildes = (texto: string): string => {
+        return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    };
+
+    const filtrarProfesiones = (texto: string) => {
+        setBusqueda(texto);
+        if (texto) {
+            const textoNormalizado = quitarTildes(texto.toLowerCase());
+            const filtradas = profesiones.filter((profesion: any) =>
+                quitarTildes(profesion.descripcion.toLowerCase()).includes(textoNormalizado)
+            );
+            setProfesionesFiltradas(filtradas);
+        } else {
+            setProfesionesFiltradas(profesiones);
+        }
     };
 
     const handleDateChange = (event: any, selectedDate?: Date) => {
@@ -68,7 +115,7 @@ const Register_two_trabajador = () => {
 
     const handleNext = async () => {
         // Validación de campos
-        if (!nombre || !apellido || !telefono || sexo === null || !fechaNacimiento || !direccion) {
+        if (!nombre || !apellido || !telefono || sexo === null || !fechaNacimiento || !direccion || !idProfesionSeleccionada) {
             Alert.alert('Error', 'Por favor, completa todos los campos');
             return;
         }
@@ -76,25 +123,28 @@ const Register_two_trabajador = () => {
         setIsLoading(true);
         try {
             const edadCalculada = calcularEdad(fechaNacimiento);
-            
+
             // Guardar datos en AsyncStorage
             const datosUsuario = {
                 nombre,
                 apellido,
                 telefono,
                 rut,
-                id_sexo: sexo,
+                sexo,
                 fecha_nacimiento: fechaNacimiento.toISOString(),
                 edad: edadCalculada,
-                direccion: direccion
+                direccion: direccion,
+                profesion: categoriaSeleccionada,
+                id_profesion: idProfesionSeleccionada
             };
-            
+
+            console.log('Datos finales a guardar:', datosUsuario);
             await AsyncStorage.setItem('datosUsuario', JSON.stringify(datosUsuario));
-            
+
             // Obtener todos los datos almacenados
             const tipoUsuario = await AsyncStorage.getItem('tipoUsuario');
             const datosGuardados = await AsyncStorage.getItem('datosUsuario');
-            
+
             // Mostrar los datos en un alert
             /*Alert.alert(
                 'Datos Almacenados',
@@ -106,7 +156,7 @@ const Register_two_trabajador = () => {
                     }
                 ]
             );*/
-            
+
             // Navegar directamente a Register_three
             router.push('Register_three');
         } catch (error) {
@@ -118,13 +168,13 @@ const Register_two_trabajador = () => {
     };
 
     return (
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
         >
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.header}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.backButton}
                         onPress={() => router.back()}
                     >
@@ -167,16 +217,81 @@ const Register_two_trabajador = () => {
                         />
                     </View>
 
+                    <TouchableOpacity
+                        style={styles.categoriaInput}
+                        onPress={obtenerProfesiones}
+                    >
+                        <Ionicons name="search" size={20} color="#666" style={styles.inputIcon} />
+                        <Text style={categoriaSeleccionada ? styles.categoriaText : styles.categoriaPlaceholder}>
+                            {categoriaSeleccionada || "Selecciona tu profesión"}
+                        </Text>
+                    </TouchableOpacity>
+
+                    {showProfesiones && (
+                        <Modal
+                            visible={showProfesiones}
+                            transparent={true}
+                            animationType="slide"
+                            onRequestClose={() => setShowProfesiones(false)}
+                        >
+                            <View style={styles.modalContainer}>
+                                <View style={styles.modalContent}>
+                                    <View style={styles.modalHeader}>
+                                        <Text style={styles.modalTitle}>Selecciona una profesión</Text>
+                                        <TouchableOpacity onPress={() => setShowProfesiones(false)}>
+                                            <Ionicons name="close" size={24} color="#333" />
+                                        </TouchableOpacity>
+                                    </View>
+
+                                    <View style={styles.searchContainer}>
+                                        <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+                                        <TextInput
+                                            style={styles.searchInput}
+                                            placeholder="Buscar profesión..."
+                                            value={busqueda}
+                                            onChangeText={filtrarProfesiones}
+                                            autoCapitalize="none"
+                                        />
+                                    </View>
+
+                                    <ScrollView style={styles.profesionesList}>
+                                        {profesionesFiltradas.map((profesion: any) => (
+                                            <TouchableOpacity
+                                                key={profesion.id}
+                                                style={styles.profesionItem}
+                                                onPress={() => {
+                                                    console.log('Profesión seleccionada:', profesion);
+                                                    setCategoriaSeleccionada(profesion.descripcion);
+                                                    setDescripcion(profesion.descripcion);
+                                                    setIdProfesionSeleccionada(profesion.id);
+                                                    console.log('ID de profesión guardado:', profesion.id);
+                                                    setShowProfesiones(false);
+                                                    setBusqueda('');
+                                                }}
+                                            >
+                                                <Text style={styles.profesionText}>{profesion.descripcion}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                        {profesionesFiltradas.length === 0 && (
+                                            <Text style={styles.noResultsText}>No se encontraron resultados</Text>
+                                        )}
+                                    </ScrollView>
+                                </View>
+                            </View>
+                        </Modal>
+                    )}
+
+
                     <View style={styles.sexoContainer}>
-                        <Text style={styles.sexoLabel}>Sexo:</Text>
                         <View style={styles.pickerContainer}>
+                            <Ionicons name="male-female-outline" size={20} color="#666" style={styles.pickerIcon} />
                             <Picker
                                 selectedValue={sexo}
                                 onValueChange={(itemValue) => setSexo(itemValue)}
                                 style={styles.picker}
                                 dropdownIconColor="#666"
                             >
-                                <Picker.Item label="Seleccione una opción" value={null} color="#666" />
+                                <Picker.Item label="Selecciona tu género" value={null} color="#666" />
                                 <Picker.Item label="Masculino" value={1} />
                                 <Picker.Item label="Femenino" value={2} />
                                 <Picker.Item label="Prefiero no decirlo" value={3} />
@@ -186,7 +301,7 @@ const Register_two_trabajador = () => {
 
                     <View style={styles.inputContainer}>
                         <Ionicons name="calendar-outline" size={20} color="#666" style={styles.inputIcon} />
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.dateInput}
                             onPress={() => setShowDatePicker(true)}
                         >
@@ -194,7 +309,7 @@ const Register_two_trabajador = () => {
                                 styles.dateInputText,
                                 !fechaNacimiento && styles.dateInputPlaceholder
                             ]}>
-                                {fechaNacimiento 
+                                {fechaNacimiento
                                     ? fechaNacimiento.toLocaleDateString('es-ES', {
                                         year: 'numeric',
                                         month: 'long',
@@ -246,7 +361,7 @@ const Register_two_trabajador = () => {
                     </View>
                 </View>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={styles.nextButton}
                     onPress={handleNext}
                     disabled={isLoading}
@@ -288,7 +403,7 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     formContainer: {
-        gap: 20,
+        gap: 15,
     },
     inputContainer: {
         flexDirection: 'row',
@@ -298,6 +413,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         paddingHorizontal: 15,
         backgroundColor: '#f9f9f9',
+        height: 50,
     },
     inputIcon: {
         marginRight: 10,
@@ -307,39 +423,45 @@ const styles = StyleSheet.create({
         height: 50,
         color: '#333',
     },
-    nextButton: {
+    categoriaInput: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#4CAF50',
-        padding: 15,
-        borderRadius: 10,
-        marginTop: 30,
-        marginBottom: 20,
-    },
-    nextButtonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginRight: 10,
-    },
-    sexoContainer: {
-        marginTop: 10,
-        marginBottom: 10,
-    },
-    sexoLabel: {
-        fontSize: 16,
-        color: '#666',
-        marginBottom: 10,
-    },
-    pickerContainer: {
         borderWidth: 1,
         borderColor: '#ddd',
-        borderRadius: 8,
+        borderRadius: 10,
+        paddingHorizontal: 15,
+        backgroundColor: '#f9f9f9',
+        height: 50,
+    },
+    categoriaText: {
+        flex: 1,
+        color: '#333',
+        fontSize: 16,
+    },
+    categoriaPlaceholder: {
+        flex: 1,
+        color: '#999',
+        fontSize: 16,
+    },
+    sexoContainer: {
+        height: 50,
+    },
+    pickerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 10,
         backgroundColor: '#f9f9f9',
         overflow: 'hidden',
+        paddingHorizontal: 15,
+        height: 50,
+    },
+    pickerIcon: {
+        marginRight: 10,
     },
     picker: {
+        flex: 1,
         height: 50,
         color: '#333',
     },
@@ -358,9 +480,25 @@ const styles = StyleSheet.create({
     edadText: {
         color: '#666',
         fontSize: 14,
-        marginTop: -15,
+        marginTop: -10,
         marginBottom: 5,
         marginLeft: 15,
+    },
+    nextButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#4CAF50',
+        padding: 15,
+        borderRadius: 10,
+        marginTop: 30,
+        marginBottom: 20,
+    },
+    nextButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginRight: 10,
     },
     modalContainer: {
         flex: 1,
@@ -368,34 +506,56 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    calendarContainer: {
-        backgroundColor: '#ffffff',
-        borderRadius: 15,
+    modalContent: {
+        backgroundColor: '#fff',
+        borderRadius: 10,
         padding: 20,
         width: '90%',
-        maxWidth: 400,
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        maxHeight: '80%',
     },
-    calendarHeader: {
+    modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 15,
+        marginBottom: 20,
     },
-    calendarTitle: {
+    modalTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#333333',
+        color: '#333',
     },
-    closeButton: {
-        padding: 5,
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f5f5f5',
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        marginBottom: 15,
+    },
+    searchIcon: {
+        marginRight: 10,
+    },
+    searchInput: {
+        flex: 1,
+        height: 40,
+        color: '#333',
+    },
+    profesionesList: {
+        maxHeight: 400,
+    },
+    profesionItem: {
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    profesionText: {
+        fontSize: 16,
+        color: '#333',
+    },
+    noResultsText: {
+        textAlign: 'center',
+        color: '#666',
+        padding: 20,
     },
     inputTextPlaceHolder: {
         color: '#999',

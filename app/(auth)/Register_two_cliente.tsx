@@ -30,11 +30,11 @@ const Register_two_cliente = () => {
         let edad = hoy.getFullYear() - fecha.getFullYear();
         const mesActual = hoy.getMonth();
         const mesNacimiento = fecha.getMonth();
-        
+
         if (mesActual < mesNacimiento || (mesActual === mesNacimiento && hoy.getDate() < fecha.getDate())) {
             edad--;
         }
-        
+
         return edad;
     };
 
@@ -77,7 +77,7 @@ const Register_two_cliente = () => {
         try {
             const edadCalculada = calcularEdad(fechaNacimiento);
             //console.log('Edad calculada:', edadCalculada);
-            
+
             // Guardar datos en AsyncStorage
             const datosUsuario = {
                 nombre,
@@ -90,18 +90,18 @@ const Register_two_cliente = () => {
                 direccion: direccion
             };
             //console.log('Objeto datosUsuario antes de guardar:', datosUsuario);
-            
+
             await AsyncStorage.setItem('datosUsuario', JSON.stringify(datosUsuario));
-            
+
             // Verificar cómo quedó guardado
             const datosGuardados = await AsyncStorage.getItem('datosUsuario');
             //console.log('Datos guardados en AsyncStorage (string):', datosGuardados);
             const userData = JSON.parse(datosGuardados || '{}');
             //console.log('Datos parseados del AsyncStorage:', userData);
-            
+
             // Obtener todos los datos almacenados
             const tipoUsuario = await AsyncStorage.getItem('tipoUsuario');
-            
+
             // Mostrar los datos en un alert
             /*Alert.alert(
                 'Datos Almacenados',
@@ -113,11 +113,11 @@ const Register_two_cliente = () => {
                     }
                 ]
             );*/
-            
+
             // Navegar directamente a Register_three
             router.push('Register_three');
 
-            
+
         } catch (error) {
             console.error('Error al guardar los datos:', error);
             Alert.alert('Error', 'Hubo un error al guardar los datos');
@@ -127,13 +127,13 @@ const Register_two_cliente = () => {
     };
 
     return (
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
         >
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.header}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.backButton}
                         onPress={() => router.back()}
                     >
@@ -177,15 +177,15 @@ const Register_two_cliente = () => {
                     </View>
 
                     <View style={styles.sexoContainer}>
-                        <Text style={styles.sexoLabel}>Sexo:</Text>
                         <View style={styles.pickerContainer}>
+                            <Ionicons name="male-female-outline" size={20} color="#666" style={styles.pickerIcon} />
                             <Picker
                                 selectedValue={sexo}
                                 onValueChange={(itemValue) => setSexo(itemValue)}
                                 style={styles.picker}
                                 dropdownIconColor="#666"
                             >
-                                <Picker.Item label="Seleccione una opción" value={null} color="#666" />
+                                <Picker.Item label="Seleccione género" value={null} color="#666" />
                                 <Picker.Item label="Masculino" value={1} />
                                 <Picker.Item label="Femenino" value={2} />
                                 <Picker.Item label="Prefiero no decirlo" value={3} />
@@ -195,7 +195,7 @@ const Register_two_cliente = () => {
 
                     <View style={styles.inputContainer}>
                         <Ionicons name="calendar-outline" size={20} color="#666" style={styles.inputIcon} />
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.dateInput}
                             onPress={() => setShowDatePicker(true)}
                         >
@@ -203,7 +203,7 @@ const Register_two_cliente = () => {
                                 styles.dateInputText,
                                 !fechaNacimiento && styles.dateInputPlaceholder
                             ]}>
-                                {fechaNacimiento 
+                                {fechaNacimiento
                                     ? fechaNacimiento.toLocaleDateString('es-ES', {
                                         year: 'numeric',
                                         month: 'long',
@@ -235,17 +235,6 @@ const Register_two_cliente = () => {
                     )}
 
                     <View style={styles.inputContainer}>
-                        <Ionicons name="card-outline" size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="RUT"
-                            value={rut}
-                            onChangeText={setRut}
-                            keyboardType="numeric"
-                        />
-                    </View>
-
-                    <View style={styles.inputContainer}>
                         <Ionicons name="location-outline" size={20} color="#666" style={styles.inputIcon} />
                         <TouchableOpacity style={styles.input} onPress={toDireccion}>
                             <Text style={!direccion?.descripcion ? styles.inputTextPlaceHolder : styles.inputText}>
@@ -255,7 +244,7 @@ const Register_two_cliente = () => {
                     </View>
                 </View>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={styles.nextButton}
                     onPress={handleNext}
                     disabled={isLoading}
@@ -333,22 +322,24 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     sexoContainer: {
-        marginTop: 10,
-        marginBottom: 10,
-    },
-    sexoLabel: {
-        fontSize: 16,
-        color: '#666',
-        marginBottom: 10,
+        height: 50,
     },
     pickerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
         borderWidth: 1,
         borderColor: '#ddd',
-        borderRadius: 8,
+        borderRadius: 10,
         backgroundColor: '#f9f9f9',
         overflow: 'hidden',
+        paddingHorizontal: 15,
+        height: 50,
+    },
+    pickerIcon: {
+        marginRight: 10,
     },
     picker: {
+        flex: 1,
         height: 50,
         color: '#333',
     },
