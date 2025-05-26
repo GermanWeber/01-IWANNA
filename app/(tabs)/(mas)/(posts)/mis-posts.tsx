@@ -12,9 +12,15 @@ export default function Post() {
     const [usuario, setUsuario] = useState<any>(null);
     const [posts, setPosts] = useState<PostType[]>([]);
     const [videoCargando, setVideoCargando] = useState<{ [id: number]: boolean }>({});
-    const esVideo = (archivo:any) => {
-        const extension = archivo.split('.').pop().toLowerCase();
-        return ['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(extension);
+    const esVideo = (archivo: string | null | undefined): boolean => {
+        if (!archivo) return false;
+        try {
+            const extension = archivo.split('.').pop()?.toLowerCase() || '';
+            return ['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(extension);
+        } catch (error) {
+            console.error('Error checking if file is video:', error);
+            return false;
+        }
     };
     
     const obtenerPosts = async (usuarioId: number) => {
