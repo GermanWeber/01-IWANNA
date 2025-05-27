@@ -178,7 +178,7 @@ export const getSubscriptionInfo = async (Id: string) => {
 };
 
 //crear la sesión de pago
-export const iniciarCheckout = async (priceId: string, customerId: string, setLoading: (loading: boolean) => void) => {
+export const iniciarCheckout = async (priceId: string, customerId: string, idUser: string, setLoading: (loading: boolean) => void) => {
   setLoading(true);
   try {
     console.log('Iniciando checkout con priceId:', priceId, 'customerId:', customerId);
@@ -189,7 +189,7 @@ export const iniciarCheckout = async (priceId: string, customerId: string, setLo
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({ priceId, customerId }), // Cambiado de userId a customerId
+      body: JSON.stringify({ priceId, customerId, idUser }), // Cambiado de userId a customerId
     });
 
     const responseData = await response.json();

@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, View, Image, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BUCKET_URL } from '@env';
 
 type Props = {
     textoBoton?: string;
@@ -34,7 +35,7 @@ const BotonAvatar: React.FC<Props> = ({
             <View style={styles.contenidoBoton}>
                 <View style={styles.avatarContainer}>
                     <Image
-                        source={avatar}
+                        source={{ uri: `${BUCKET_URL}foto-perfil/${avatar}` }}
                         style={styles.avatar}
                         resizeMode="cover"
                     />

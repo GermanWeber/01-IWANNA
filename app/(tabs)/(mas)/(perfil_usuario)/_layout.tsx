@@ -9,7 +9,7 @@ export default function PerfilLayout() {
                 name="mi-perfil"
                 options={{
                 header: (props) => (
-                    <HeaderPrincipal titulo="MI PERFIL" bgColor="#FFFFFF"/>
+                    <HeaderPrincipal/>
                 ),
                 }}
             />
@@ -17,7 +17,7 @@ export default function PerfilLayout() {
                 name="editar-perfil"
                 options={{
                 header: (props) => (
-                    <HeaderPrincipal titulo="EDITAR PERFIL" bgColor="#FFFFFF"/>
+                    <HeaderPrincipal/>
                 ),
                 }}
             />
@@ -25,7 +25,7 @@ export default function PerfilLayout() {
                 name="[idUsuario]"
                 options={{
                 header: (props) => (
-                    <HeaderPrincipal titulo="ALO" bgColor="#FFFFFF"/>
+                    <HeaderPrincipal/>
                 ),
                 }}
             />

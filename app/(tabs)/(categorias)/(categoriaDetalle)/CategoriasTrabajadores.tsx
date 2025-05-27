@@ -4,44 +4,29 @@ import { ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-nat
 import { SafeAreaView } from 'react-native';
 import BotonAvatar from '../../../../components/botonAvatar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { API_URL } from '@env';
+import { fetchTrabajadoresByCategory } from '../../../../services/categoryService';
+import { Usuario } from '../../../../types/usuario';
 
-interface Trabajador {
-  id: number;
-  nombre: string;
-  foto: string;
-  descripcion: string;
-}
 
 export default function DetalleCategoriaTrabajadores() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   console.log(id);
-  const [trabajadores, setTrabajadores] = useState<Trabajador[]>([]);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchTrabajadores = async () => {
-      try {
-        const response = await fetch(`${API_URL}category/trabajadores/${id}`);
-        
-        if (!response.ok) {
-          throw new Error('Error al cargar los trabajadores');
-        }
-        
-        const data = await response.json();
-        setTrabajadores(data);
-      } catch (err) {
-        console.error('Error:', err);
-        setError('Error al cargar los trabajadores');
-      } finally {
-        setLoading(false);
-      }
-    };
+
 
     if (id) {
-      fetchTrabajadores();
+      fetchTrabajadoresByCategory(id.toString()).then((data) => {
+        setUsuarios(data);
+        setLoading(false);
+      }).catch((error) => {
+        setError(error.message);
+        setLoading(false);
+      });
     }
   }, [id]);
 
@@ -65,21 +50,21 @@ export default function DetalleCategoriaTrabajadores() {
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
-          {trabajadores.length > 0 ? (
-            trabajadores.map((trabajador) => (
+          {usuarios.length > 0 ? (
+            usuarios.map((usuario) => (
               <BotonAvatar
-                key={trabajador.id}
-                textoBoton={trabajador.nombre}
-                textoProfesion={trabajador.descripcion}
+                key={usuario.id}
+                textoBoton={`${usuario.nombre} `}
+                textoProfesion={usuario.descripcion}
                 colorTextoProfesion='#424242'      
-                avatar={trabajador.foto ? { uri: trabajador.foto } : require('../../../../assets/images/perfil.png')}
+                avatar={usuario.foto}
                 colorTexto='#8BC34A'
                 bgColor='#F5F5F5'
                 iconoDerecha={"chevron-forward"}
                 colorIconoDerecha='#00BCD4'
                 onPress={() => router.push({
                   pathname: '/(mas)/(perfil_usuario)/mi-perfil',
-                  params: { id: trabajador.id }
+                  params: { id: usuario.id }
                 })}
               />
             ))

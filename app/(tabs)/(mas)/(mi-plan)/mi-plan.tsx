@@ -46,14 +46,13 @@ useEffect( () => {
                     <Text style={styles.advantage}>• Acceso a contenido premium</Text>
                     <Text style={styles.advantage}>• Sin anuncios</Text> 
                     <Text style={styles.advantage}>• Soporte 24/7</Text>
-                    <Text style={styles.advantage}>Proximo pago: {datosStripe?.billing_cycle_anchor_formatted}</Text>
-                       
+                    <Text style={styles.advantage}>Proximo pago: {datosStripe?.billing_cycle_anchor_formatted}</Text>               
                    
                 </View>
             </View>
 
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/(mas)/(mi-plan)/planes')}>
-            <Text style={styles.buttonText}>Cambiar de plan</Text>
+        <TouchableOpacity style={styles.button} onPress={() => router.push('https://billing.stripe.com/p/login/test_28E28tbjZaxK3us0nKaZi00')}>
+            <Text style={styles.buttonText}>ajustes de suscripción</Text>
         </TouchableOpacity>
         </View>
     )
