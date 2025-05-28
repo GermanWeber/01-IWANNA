@@ -1,15 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, ScrollView, Text, Image, SafeAreaView, TouchableOpacity, Platform, Button } from 'react-native';
 import BotonCategorias from '../../../components/BotonCategorias';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { RatingStars } from '../../../components/rating-stars';
+import { recuperarStorage } from '../../../services/asyncStorage';
+import { BUCKET_URL } from '@env';
 
 const imgPerfil = require('../../../assets/images/perfil.png');
 
 export default function Mas() {
     const router = useRouter();
     const averageRating = 4;
+
+    const [usuario, setUsuario] = useState<any>(null);
+
+    const loadUsuario = async () => {
+        try {
+            const usuarioData = await recuperarStorage('usuario');
+            if (usuarioData) {
+                console.log('Usuario recuperado:', usuarioData);
+                setUsuario(usuarioData);
+            }
+        } catch (error) {
+            console.error('Error al recuperar el usuario:', error);
+        }
+    };
+
+    useEffect(() => {
+        loadUsuario();
+    }, []);
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -20,12 +40,17 @@ export default function Mas() {
 
                         <View style={styles.perfilContent}>
                             <Image
-                                source={imgPerfil}
+                                source={usuario?.foto ? { uri: `${BUCKET_URL}foto-perfil/${usuario?.foto}?t=${new Date().getTime()}` } : imgPerfil}
                                 style={styles.perfilImage}
                             />
                             <View style={styles.perfilInfo}>
-                                <Text style={styles.perfilNombre}>Manuel Perez</Text>
-                                <Text style={styles.perfilPlan}>Plan: Free</Text>
+                                <Text style={styles.perfilNombre}>{usuario?.nombre} {usuario?.apellido}</Text>
+                                {usuario?.id_estado == 2 ? (
+                                <Text style={styles.perfilPlan}>Suscrito</Text>
+                                ):(
+                                <Text style={styles.perfilPlan}>No suscrito</Text>
+
+                                )}
                                 <TouchableOpacity
                                     style={styles.verPerfilButton}
                                     onPress={() => router.push('/(mas)/(perfil_usuario)')}
@@ -83,6 +108,7 @@ export default function Mas() {
                             iconoIzquierda="chatbubbles"
                             onPress={() => router.push('/(mas)/(mensajes)/mensajes')}
                         />
+                        {usuario?.id_estado == 2 ? (
                         <BotonCategorias
                             textoBoton="MI PLAN"
                             colorTexto="#333"
@@ -95,7 +121,22 @@ export default function Mas() {
                             iconoIzquierda="card"
                             onPress={() => router.push('/(mas)/mi-plan')}
                         />
-                        <BotonCategorias
+                        ):(
+
+                            <BotonCategorias
+                            textoBoton="VER PLANES"
+                            colorTexto="#333"
+                            textoBotonSub="Revisa los planes disponibles aquí"
+                            colorTextoSub="#666"
+                            bgColor="#F5F5F5"
+                            iconoDerecha="chevron-forward"
+                            colorIconoDerecha="#8BC34A"
+                            colorIconoIzquierda="#8BC34A"
+                            iconoIzquierda="card"
+                            onPress={() => router.push('/(mas)/planes')}
+                        />
+                        )}
+                            <BotonCategorias
                             textoBoton="MIS POSTS"
                             colorTexto="#333"
                             textoBotonSub="Mira, edita y crea tus posts aquí"

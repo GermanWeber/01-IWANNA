@@ -6,10 +6,13 @@ import { recuperarStorage } from '../../../../services/asyncStorage';
 import { useEffect, useState } from 'react';
 import { BUCKET_URL} from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 const imgPerfil = require('../../../../assets/images/perfil.png');
 
 export default function MiPerfil() {
+
+   
+
+
     const posts = [
         { id: 1, url: 'https://picsum.photos/600/600?random=1' },
         { id: 2, url: 'https://picsum.photos/600/600?random=2' },
@@ -34,6 +37,7 @@ export default function MiPerfil() {
                 console.error('Error al cargar usuario:', error);
             }
         };
+
         cargarUsuario();
     }, []);
 
@@ -76,7 +80,7 @@ export default function MiPerfil() {
                             style={styles.profileImage}
                         />
                         <View style={styles.profileInfo}>
-                            <Text style={styles.profileName}>{usuario.nombre}</Text>
+                            <Text style={styles.profileName}>{usuario.nombre} {usuario.apellido}</Text>
                             {usuario.id_tipo === 1 ? (
                                 <Text style={styles.profileProfession}>Profesor</Text>
                             ):

@@ -72,7 +72,7 @@ export default function EditarPerfil() {
 
         if (usuario) {
             // Validaciones
-            if (!usuario.nombre || !direccion?.descripcion) {
+            if (!usuario.nombre || !usuario.apellido || !direccion?.descripcion) {
                 esValido = false;
             }
 
@@ -300,6 +300,15 @@ export default function EditarPerfil() {
                             value={usuario.nombre}
                             onChangeText={(text) =>
                                 setUsuario((prev) => prev ? { ...prev, nombre: text } : prev)
+                            }
+                        />
+                        <Text style={styles.label}>Apellido</Text>
+                        <TextInput 
+                            style={styles.input}
+                            placeholder={"Ingresa tu apellido"} 
+                            value={usuario.apellido}
+                            onChangeText={(text) =>
+                                setUsuario((prev) => prev ? { ...prev, apellido: text } : prev)
                             }
                         />
                     </View>

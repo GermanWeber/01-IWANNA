@@ -18,7 +18,7 @@ export default function Planes() {
 
   const handleCheckout = async (priceId: string, userId: string) => {
     try {
-      const url = await iniciarCheckout(priceId, userId, setLoading);
+      const url = await iniciarCheckout(priceId, userId, usuario.id, setLoading);
       setCheckoutUrl(url);
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Error al iniciar el pago');
