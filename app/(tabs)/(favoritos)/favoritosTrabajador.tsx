@@ -6,6 +6,7 @@ import BotonAvatar from '../../../components/botonAvatar';
 import { useRouter } from 'expo-router';
 import { API_URL } from '@env';
 import { recuperarStorage } from '../../../services/asyncStorage';
+import { fetchTrabajadores } from '../../../services/favService';
 
 interface Trabajador {
   id: number;
@@ -20,41 +21,28 @@ export default function FavoritosTrabajador() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usuario, setUsuario] = useState<any>(null);
+  
 
   useEffect(() => {
 
-        const cargarUsuario = async () => {
-          try {
-            setLoading(true);
-            const usuario = await recuperarStorage('usuario');
-            setUsuario(usuario) ;
-          } catch (error) {
-            alert(error instanceof Error ? error.message : 'Error al cargar el usuario');
-          } finally {
-            setLoading(false);
-          }
-        };
-        
-    const fetchTrabajadores = async () => {
+    const cargarUsuario = async () => {
       try {
-        const response = await fetch(`${API_URL}favoritos/trabajadores/2`);  // ${usuario.id}
-        
-        if (!response.ok) {
-          throw new Error('Error al cargar los trabajadores');
-        }
-        
-        const data = await response.json();
-        setTrabajadores(data);
-      } catch (err) {
-        console.error('Error:', err);
-        setError('Error al cargar los trabajadores');
+        setLoading(true);
+        const usuario = await recuperarStorage('usuario');
+        setUsuario(usuario) ;
+      } catch (error) {
+        alert(error instanceof Error ? error.message : 'Error al cargar el usuario');
       } finally {
         setLoading(false);
       }
     };
-
+        
     cargarUsuario();
-    fetchTrabajadores();
+    fetchTrabajadores(usuario.id).then((data) => {
+      if (data) {
+        setTrabajadores(data);
+      }
+    });
     
   }, []);
 
