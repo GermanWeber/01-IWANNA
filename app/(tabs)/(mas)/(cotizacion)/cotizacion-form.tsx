@@ -16,6 +16,7 @@ interface InterfaceDireccion {
 const CotizacionForm = () => {
     const router = useRouter();
     const [idUsuario, setIdUsuario] = useState<number | null>(null);
+    const [idUsuarioPerfil, setIdUsuarioPerfil] = useState<string | null>(null);
     const [asunto, setAsunto] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [direccion, setDireccion] = useState<InterfaceDireccion | null>(null);
@@ -35,29 +36,46 @@ const CotizacionForm = () => {
     );
 
     useEffect(() => {
-        const obtenerIdUsuario = async () => {
+        const obtenerIds = async () => {
             try {
                 const usuario = await recuperarStorage('usuario');
+                const idPerfil = await recuperarStorage('idUsuarioPerfil');
+                console.log('ID Perfil obtenido del storage:', idPerfil);
+
                 if (usuario) {
                     setIdUsuario(usuario.id);
-                    console.log('ID del usuario obtenido:', usuario.id);
+                    console.log('=== IDs de Usuarios ===');
+                    console.log('ID del usuario registrado:', usuario.id);
                 } else {
                     Alert.alert('Error', 'No se pudo obtener la información del usuario');
                     router.back();
                 }
+
+                if (idPerfil) {
+                    setIdUsuarioPerfil(idPerfil);
+                    console.log('ID del perfil presionado:', idPerfil);
+                    console.log('=====================');
+                } else {
+                    console.log('No se encontró ID del perfil en el storage');
+                }
             } catch (error) {
-                console.error('Error al obtener ID del usuario:', error);
-                Alert.alert('Error', 'Ocurrió un error al obtener la información del usuario');
+                console.error('Error al obtener IDs:', error);
+                Alert.alert('Error', 'Ocurrió un error al obtener la información');
                 router.back();
             }
         };
 
-        obtenerIdUsuario();
+        obtenerIds();
     }, []);
 
     const handleSubmit = async () => {
         if (!idUsuario) {
             Alert.alert('Error', 'No se pudo identificar al usuario');
+            return;
+        }
+
+        if (!idUsuarioPerfil) {
+            Alert.alert('Error', 'No se pudo identificar al trabajador');
             return;
         }
 
@@ -72,14 +90,19 @@ const CotizacionForm = () => {
                 asunto: asunto,
                 descripcion: descripcion,
                 direccion: direccion.descripcion,
-                id_cliente: idUsuario
+                id_cliente: idUsuario,
+                id_trabajador: idUsuarioPerfil
             };
 
-            console.log('Enviando datos de cotización:', cotizacionData);
+            console.log('=== Datos de la cotización ===');
+            console.log('ID Cliente:', idUsuario);
+            console.log('ID Trabajador:', idUsuarioPerfil);
+            console.log('Datos completos:', cotizacionData);
+            console.log('===========================');
 
             const response = await createCotizacion(cotizacionData);
             console.log('Respuesta de la cotización:', response);
-            
+
             Alert.alert(
                 'Éxito',
                 'Tu cotización ha sido enviada correctamente',
@@ -121,7 +144,7 @@ const CotizacionForm = () => {
                     {/* Ubicación */}
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Ubicación del Trabajo</Text>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.locationButton}
                             onPress={() => router.push('/screens/direccion-cotizacion')}
                         >
@@ -157,7 +180,7 @@ const CotizacionForm = () => {
                     </View>
 
                     {/* Botón de Enviar */}
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.submitButton}
                         onPress={handleSubmit}
                         disabled={isLoading}
