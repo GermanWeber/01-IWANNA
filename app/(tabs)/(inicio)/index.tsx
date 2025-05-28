@@ -8,7 +8,7 @@ import { API_URL } from '@env';
 import { PostType } from '../../../types/post';
 import { useFocusEffect } from 'expo-router';
 const Home = () => {
-    
+
     const [posts, setPosts] = useState<PostType[]>([]);
     const [usuario, setUsuario] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -37,16 +37,16 @@ const Home = () => {
     useFocusEffect(
         useCallback(() => {
             const cargarUsuarioYPosts = async () => {
-            const datos = await recuperarStorage('usuario');
-            if (datos) {
-                setUsuario(datos);
-            }
-            await obtenerPosts();
+                const datos = await recuperarStorage('usuario');
+                if (datos) {
+                    setUsuario(datos);
+                }
+                await obtenerPosts();
             };
             cargarUsuarioYPosts();
         }, [])
     );
-    
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -61,10 +61,11 @@ const Home = () => {
             {/* DATA */}
             <FlatList
                 data={posts}
+
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                <Post datos={item}/>
-            )}/>
+                    <Post datos={item} />
+                )} />
         </SafeAreaView>
     );
 };

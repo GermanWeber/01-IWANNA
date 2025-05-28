@@ -1,19 +1,45 @@
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert} from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { RatingStars } from "../../../components/rating-stars";
 import { recuperarStorage } from "../../../services/asyncStorage";
+import { obtenerPerfil } from "../../../services/perfilService";
+import { obtenerPostsById } from "../../../services/postService";
+import { PostType } from '../../../types/post';
+
+import { BUCKET_URL } from '@env';
 
 export default function PerfilUsuario() {
     const { idUsuario } = useLocalSearchParams();
     const [isLoading, setIsLoading] = useState(false);
+    const [perfil, setPerfil] = useState<any>(null);
+    const [posts, setPosts] = useState<PostType[]>([]);
+
+    useEffect(() => {
+        const cargarPerfil = async () => {
+            try {
+                const respuesta = await obtenerPerfil(Number(idUsuario));
+                // const posts = await obtenerPostsById(Number(idUsuario));
+                const perfil = respuesta;
+                setPerfil(perfil);
+                setPosts(posts);
+
+            } catch (error) {
+                console.error('Error al cargar perfil:', error);
+            }
+
+
+        };
+
+        cargarPerfil();
+    }, [idUsuario]);
 
     const handleCotizar = async () => {
         try {
             setIsLoading(true);
             const usuario = await recuperarStorage('usuario');
-            
+
             if (!usuario) {
                 Alert.alert(
                     "No puedes cotizar :(",
@@ -39,26 +65,11 @@ export default function PerfilUsuario() {
     };
 
     //Aqui deberiamos llamar a la api para recuperar los datos del usuario segun el ID
-    const posts = [
-        { id: 1, url: 'https://picsum.photos/600/600?random=1' },
-        { id: 2, url: 'https://picsum.photos/600/600?random=2' },
-        { id: 3, url: 'https://picsum.photos/600/600?random=3' },
-        { id: 4, url: 'https://picsum.photos/600/600?random=4' },
-        { id: 5, url: 'https://picsum.photos/600/600?random=5' },
-        { id: 6, url: 'https://picsum.photos/600/600?random=6' },
-    ]
-    
+
     const usuario = {
-        id: idUsuario,
-        tipo_usuario: 1,
+
         img_perfil: "https://randomuser.me/api/portraits/men/25.jpg",
-        nombre: "Manuel Perez",
-        profesion: "Maestro parrillera",
-        edad: "20 años",
-        ubicacion: "Santiago, Chile",
-        descripcion: "Maestro parrillero con más de 5 años de experiencia en eventos y restaurantes. Especializado en carnes premium y técnicas de cocción tradicionales. Comprometido con la calidad y la satisfacción del cliente.",
-        correo: "manuel_perez@gmail.com",
-        telefono: "+56 9 3452 5252",
+
         estadisticas: {
             servicios: "150+",
             satisfaccion: "98%",
@@ -66,30 +77,33 @@ export default function PerfilUsuario() {
         },
         calificacion: 4.5,
     }
-    
+
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-            {usuario && (
+            {perfil && (
                 <View style={styles.container}>
+
                     {/* Sección de Perfil */}
                     <View style={styles.profileHeader}>
                         <Image
-                            source={{ uri: usuario.img_perfil }}
+                            source={{ uri: `${BUCKET_URL}foto-perfil/${perfil.foto}` }}
                             style={styles.profileImage}
                         />
                         <View style={styles.profileInfo}>
-                            <Text style={styles.profileName}>{usuario.nombre}</Text>
-                            {usuario.tipo_usuario === 1 ? (
-                                <Text style={styles.profileProfession}>{usuario.profesion}</Text>
-                            ):(<Text style={styles.profileProfession}>Cliente</Text>)}
+                            <Text style={styles.profileName}>{perfil.nombre}</Text>
+                            {perfil.id_tipo === 2 ? (
+                                <Text style={styles.profileProfession}>{perfil.profesion}</Text>
+                            ) : (<Text style={styles.profileProfession}>Cliente</Text>)}
                             <View style={styles.ratingContainer}>
                                 <RatingStars rating={usuario.calificacion} showValue />
                             </View>
                         </View>
                     </View>
+
+
                     {/* Boton de Cotizar */}
-                    {usuario.tipo_usuario === 1 && (
-                        <TouchableOpacity 
+                    {perfil.id_tipo === 2 && (
+                        <TouchableOpacity
                             style={styles.cotizacionButton}
                             onPress={handleCotizar}
                             disabled={isLoading}
@@ -99,70 +113,53 @@ export default function PerfilUsuario() {
                             </Text>
                         </TouchableOpacity>
                     )}
-                    {/* SOLO MUESTRA LA ID DEL USUARIO */}
-                    {/* <View style={{
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        padding: 10,
-                        backgroundColor: '#f0f0f0',
-                        borderRadius: 8,
-                        marginVertical: 10
-                    }}>
-                        <Text style={{
-                            fontSize: 16,
-                            color: '#333',
-                            fontWeight: 'bold'
-                        }}>
-                            ID: {usuario.id}
-                        </Text>
-                    </View> */}
 
                     {/* Sección de usuario Personales */}
                     <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Ionicons name="person-circle-outline" size={24} color="#8BC34A" />
-                        <Text style={styles.sectionTitle}>Datos personales</Text>
-                    </View>
-                    <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>Edad:</Text>
-                        <Text style={styles.infoValue}>{usuario.edad}</Text>
-                    </View>
-                    <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>Ubicación:</Text>
-                        <Text style={styles.infoValue}>{usuario.ubicacion}</Text>
-                    </View>
+                        <View style={styles.sectionHeader}>
+                            <Ionicons name="person-circle-outline" size={24} color="#8BC34A" />
+                            <Text style={styles.sectionTitle}>Datos personales</Text>
+                        </View>
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>Edad:</Text>
+                            <Text style={styles.infoValue}>{perfil.edad}</Text>
+                        </View>
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>Ubicación:</Text>
+                            <Text style={styles.infoValue}>{perfil.direccion}</Text>
+                        </View>
                     </View>
 
                     {/* Sección de Descripción */}
                     <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Ionicons name="document-text-outline" size={24} color="#8BC34A" />
-                        <Text style={styles.sectionTitle}>Sobre Mí</Text>
-                    </View>
-                    <Text style={styles.description}>
-                        {usuario.descripcion}
-                    </Text>
+                        <View style={styles.sectionHeader}>
+                            <Ionicons name="document-text-outline" size={24} color="#8BC34A" />
+                            <Text style={styles.sectionTitle}>Sobre Mí</Text>
+                        </View>
+                        <Text style={styles.description}>
+                            {perfil.descripcion_usuario}
+                        </Text>
                     </View>
 
                     {/* Sección de Contacto */}
                     <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Ionicons name="call-outline" size={24} color="#8BC34A" />
-                        <Text style={styles.sectionTitle}>Contacto</Text>
-                    </View>
-                    <View style={styles.infoItem}>
-                        <Ionicons name="mail-outline" size={20} color="#666" />
-                        <Text style={styles.infoValue}>{usuario.correo}</Text>
-                    </View>
-                    <View style={styles.infoItem}>
-                        <Ionicons name="call-outline" size={20} color="#666" />
-                        <Text style={styles.infoValue}>{usuario.telefono}</Text>
-                    </View>
+                        <View style={styles.sectionHeader}>
+                            <Ionicons name="call-outline" size={24} color="#8BC34A" />
+                            <Text style={styles.sectionTitle}>Contacto</Text>
+                        </View>
+                        <View style={styles.infoItem}>
+                            <Ionicons name="mail-outline" size={20} color="#666" />
+                            <Text style={styles.infoValue}>{perfil.email}</Text>
+                        </View>
+                        <View style={styles.infoItem}>
+                            <Ionicons name="call-outline" size={20} color="#666" />
+                            <Text style={styles.infoValue}>{perfil.telefono}</Text>
+                        </View>
                     </View>
 
 
-                    {/* Sección de Estadísticas */}
-                    {usuario.tipo_usuario === 1 && (
+                    {/* Sección de Estadísticas -------------------------------------*/}
+                    {perfil.id_tipo === 2 && (
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="stats-chart-outline" size={24} color="#8BC34A" />
@@ -184,31 +181,34 @@ export default function PerfilUsuario() {
                             </View>
                         </View>
                     )}
-                    
-                    {/* POSTS */}
-                    {usuario.tipo_usuario === 1 && (
+
+                    {/* POSTS ---------------------------- */}
+                    {perfil.id_tipo === 2 && (
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="document-text-outline" size={24} color="#8BC34A" />
                                 <Text style={styles.sectionTitle}>Publicaciones</Text>
                             </View>
                             <View style={styles.postsContainer}>
-                            {posts.map(post => (
-                                <TouchableOpacity key={post.id} onPress={() => console.log('Post presionado:', post.id)} style={styles.post}>
-                                <Image
-                                    source={{ uri: post.url }}
-                                    style={styles.postImage}
-                                    resizeMode="cover"
-                                />
-                                </TouchableOpacity>
-                            ))}
+                                {posts
+                                    .filter(post => post.archivo) // Solo posts con archivo
+                                    .slice(0, 6) // Máximo 6 posts
+                                    .map(post => (
+                                        <TouchableOpacity key={post.id} onPress={() => console.log('Post presionado:', post.id)} style={styles.post}>
+                                            {/* <Image
+                                                source={{ uri: `${BUCKET_URL}publicaciones/${post.archivo}` }}
+                                                style={styles.postImage}
+                                                resizeMode="cover"
+                                            /> */}
+                                        </TouchableOpacity>
+                                    ))}
                             </View>
                         </View>
                     )}
                 </View>
             )}
         </ScrollView>
-    ); 
+    );
 };
 
 const styles = StyleSheet.create({
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
         color: '#666',
         marginTop: 5,
     },
-    postsContainer:{
+    postsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
