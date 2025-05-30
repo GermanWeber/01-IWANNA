@@ -7,7 +7,8 @@ import { PostType } from '../types/post';
 import { BUCKET_URL } from '@env';
 import { Video, ResizeMode } from 'expo-av';
 import { guardarStorage } from '../services/asyncStorage';
-
+import { btnFavPost, fetchLikesPosts, fetchEstadoLikePost } from '../services/favService';
+import { recuperarStorage } from '../services/asyncStorage';
 type Props = {
     datos: PostType;
 };
@@ -16,18 +17,67 @@ const Post: React.FC<Props> = ({ datos }) => {
     const [cargando, setCargando] = useState(true);
     const [liked, setLiked] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
-
+    const [likes, setLikes] = useState(0);
+    const [usuario, setUsuario] = useState<any>(null);
     // console.log('Datos recibidos en Post:', datos);
 
     const manejarCargaImagen = () => setCargando(false);
     const toggleModal = () => setModalVisible(!modalVisible);
-    const toggleLike = () => setLiked(!liked);
+
+
+    const cargarDatos = async () => {
+        try {
+            // 1. Cargar usuario primero
+            const usuario = await recuperarStorage('usuario');
+            if (!usuario?.id) {
+                throw new Error('No se pudo obtener la información del usuario');
+            }
+            setUsuario(usuario);
+
+            // 2. Verificar que tenemos datos del post
+            if (!datos?.id) {
+                throw new Error('Datos del post no están disponibles');
+            }
+
+            // 3. Cargar likes del post
+            const likesData = await fetchLikesPosts(Number(datos.id));
+            if (likesData) {
+                setLikes(likesData.likes || 0);
+            }
+            
+            // 4. Verificar si el usuario dio like al post
+            const estado = await fetchEstadoLikePost(Number(usuario.id), Number(datos.id));
+            setLiked(estado?.exito || false);
+        } catch (error) {
+            console.error('Error al cargar datos:', error);
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const toggleLike = async (id_post:number, id_usuario:number) => {
+        console.log('Datos recibidos en toggleLike:', id_post, id_usuario);
+        if (usuario && [1,2].includes(usuario.id_estado)) {
+            try {
+                console.log('Entro a like: post', id_post, 'usuario:', id_usuario);
+                await btnFavPost(id_post, id_usuario);
+                // Recargar los datos después de hacer like
+                await cargarDatos();
+            } catch (error) {
+                console.error('Error al actualizar el like:', error);
+            }
+        }
+    };
 
     useFocusEffect(
         useCallback(() => {
             setModalVisible(false);
-        }, [])
+            setCargando(true);
+            cargarDatos();
+        }, [datos?.id]) // Solo volver a ejecutar si el ID del post cambia
     );
+
+
     const isVideo = datos.archivo?.endsWith('.mp4') ?? false;
 
     return (
@@ -42,7 +92,7 @@ const Post: React.FC<Props> = ({ datos }) => {
             >
                 <Image source={{ uri: `${BUCKET_URL}foto-perfil/${datos.foto}` }} style={styles.foto_usuario} />
                 <View>
-                    <Text style={styles.nombre}>{datos.nombre}</Text>
+                    <Text style={styles.nombre}>{datos.nombre} {datos.apellido}</Text>
                     {/* <Text>{profesion}</Text> */}
                 </View>
             </TouchableOpacity>
@@ -69,9 +119,13 @@ const Post: React.FC<Props> = ({ datos }) => {
                 )}
 
                 <View style={styles.contenedor_datos_post}>
-                    <TouchableOpacity style={styles.dato_post} onPress={toggleLike}>
+
+                    <TouchableOpacity style={styles.dato_post} 
+                        onPress={() => {
+                            toggleLike(datos.id, usuario.id);
+                        }}>
                         <Ionicons name={liked ? 'heart' : 'heart-outline'} size={24} color={liked ? '#8BC34A' : '#424242'} />
-                        {/* <Text style={styles.icono}>{likes}</Text> */}
+                        <Text style={styles.icono}>{likes}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.dato_post} onPress={toggleModal}>
@@ -81,7 +135,7 @@ const Post: React.FC<Props> = ({ datos }) => {
                 </View>
 
 
-                <Text style={styles.nombre}>{datos.nombre} </Text>
+                <Text style={styles.nombre}>{datos.nombre} {datos.apellido}</Text>
                 <Text style={styles.descripcion}> {datos.detalle} </Text>
             </View>
 

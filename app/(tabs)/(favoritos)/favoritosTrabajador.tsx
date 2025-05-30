@@ -4,7 +4,6 @@ import { ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-nat
 import { SafeAreaView } from 'react-native';
 import BotonAvatar from '../../../components/botonAvatar';
 import { useRouter } from 'expo-router';
-import { API_URL } from '@env';
 import { recuperarStorage } from '../../../services/asyncStorage';
 import { fetchTrabajadores } from '../../../services/favService';
 
@@ -29,20 +28,24 @@ export default function FavoritosTrabajador() {
       try {
         setLoading(true);
         const usuario = await recuperarStorage('usuario');
-        setUsuario(usuario) ;
+        setUsuario(usuario);
+        
+        if (usuario && usuario.id) {
+          const data = await fetchTrabajadores(usuario.id);
+          if (data) {
+            setTrabajadores(data);
+          }
+        } else {
+          throw new Error('No se pudo obtener la información del usuario');
+        }
       } catch (error) {
-        alert(error instanceof Error ? error.message : 'Error al cargar el usuario');
+        setError(error instanceof Error ? error.message : 'Error al cargar el usuario');
       } finally {
         setLoading(false);
       }
     };
         
     cargarUsuario();
-    fetchTrabajadores(usuario.id).then((data) => {
-      if (data) {
-        setTrabajadores(data);
-      }
-    });
     
   }, []);
 
