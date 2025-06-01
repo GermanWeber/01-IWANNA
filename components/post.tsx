@@ -27,12 +27,6 @@ const Post: React.FC<Props> = ({ datos }) => {
 
     const cargarDatos = async () => {
         try {
-            // 1. Cargar usuario primero
-            const usuario = await recuperarStorage('usuario');
-            if (!usuario?.id) {
-                throw new Error('No se pudo obtener la información del usuario');
-            }
-            setUsuario(usuario);
 
             // 2. Verificar que tenemos datos del post
             if (!datos?.id) {
@@ -46,8 +40,10 @@ const Post: React.FC<Props> = ({ datos }) => {
             }
             
             // 4. Verificar si el usuario dio like al post
-            const estado = await fetchEstadoLikePost(Number(usuario.id), Number(datos.id));
-            setLiked(estado?.exito || false);
+            if (usuario && [1,2].includes(usuario.id_estado)) {
+                const estado = await fetchEstadoLikePost(Number(usuario.id), Number(datos.id));
+                setLiked(estado?.exito || false);
+            }
         } catch (error) {
             console.error('Error al cargar datos:', error);
         } finally {
@@ -56,6 +52,7 @@ const Post: React.FC<Props> = ({ datos }) => {
     };
 
     const toggleLike = async (id_post:number, id_usuario:number) => {
+
         console.log('Datos recibidos en toggleLike:', id_post, id_usuario);
         if (usuario && [1,2].includes(usuario.id_estado)) {
             try {
@@ -70,6 +67,8 @@ const Post: React.FC<Props> = ({ datos }) => {
     };
 
     useFocusEffect(
+
+        
         useCallback(() => {
             setModalVisible(false);
             setCargando(true);
@@ -122,7 +121,7 @@ const Post: React.FC<Props> = ({ datos }) => {
 
                     <TouchableOpacity style={styles.dato_post} 
                         onPress={() => {
-                            toggleLike(datos.id, usuario.id);
+                            toggleLike(datos?.id, usuario?.id);
                         }}>
                         <Ionicons name={liked ? 'heart' : 'heart-outline'} size={24} color={liked ? '#8BC34A' : '#424242'} />
                         <Text style={styles.icono}>{likes}</Text>
