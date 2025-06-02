@@ -40,7 +40,8 @@ import { API_URL } from "@env";
         const response = await fetch(`${API_URL}fav/likes/post/${id_post}`); 
         
         if (!response.ok) {
-          throw new Error('Error al cargar los likes del post');
+          console.error('Error al cargar los likes del post');
+          return null;
         }
         
         const data = await response.json();
@@ -56,7 +57,8 @@ import { API_URL } from "@env";
         const response = await fetch(`${API_URL}fav/likes/trabajador/${id_usuario}`); 
         
         if (!response.ok) {
-          throw new Error('Error al cargar los likes del trabajador');
+          console.error('Error al cargar los likes del trabajador');
+          return null;
         }
         
         const data = await response.json();
@@ -71,8 +73,9 @@ import { API_URL } from "@env";
       try {
         const response = await fetch(`${API_URL}fav/trabajadores/${id_usuario}`); 
         
-        if (!response.ok) {
-          throw new Error('Error al cargar los trabajadores de favoritos');
+        if (response === null) {
+          console.error('Error al cargar los trabajadores de favoritos');
+          return null;
         }
         
         const data = await response.json();
@@ -88,8 +91,9 @@ import { API_URL } from "@env";
       try {
         const response = await fetch(`${API_URL}fav/posts/${id_usuario}`); 
         
-        if (!response.ok) {
-          throw new Error('Error al cargar los posts de favoritos');
+        if (response === null) {
+          console.error('Error al cargar los posts de favoritos');
+          return null;
         }
         
         const data = await response.json();

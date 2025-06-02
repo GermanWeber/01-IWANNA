@@ -108,33 +108,35 @@ export default function Mas() {
                             iconoIzquierda="chatbubbles"
                             onPress={() => router.push('/(mas)/(mensajes)/mensajes')}
                         />
-                        {usuario?.id_estado == 2 ? (
-                        <BotonCategorias
-                            textoBoton="MI PLAN"
-                            colorTexto="#333"
-                            textoBotonSub="Administra tu plan aquí"
-                            colorTextoSub="#666"
-                            bgColor="#F5F5F5"
-                            iconoDerecha="chevron-forward"
-                            colorIconoDerecha="#8BC34A"
-                            colorIconoIzquierda="#8BC34A"
-                            iconoIzquierda="card"
-                            onPress={() => router.push('/(mas)/mi-plan')}
-                        />
-                        ):(
-
-                            <BotonCategorias
-                            textoBoton="VER PLANES"
-                            colorTexto="#333"
-                            textoBotonSub="Revisa los planes disponibles aquí"
-                            colorTextoSub="#666"
-                            bgColor="#F5F5F5"
-                            iconoDerecha="chevron-forward"
-                            colorIconoDerecha="#8BC34A"
-                            colorIconoIzquierda="#8BC34A"
-                            iconoIzquierda="card"
-                            onPress={() => router.push('/(mas)/planes')}
-                        />
+                        
+                        {usuario?.id && (
+                            usuario?.id_estado == 2 ? (
+                                <BotonCategorias
+                                    textoBoton="MI PLAN"
+                                    colorTexto="#333"
+                                    textoBotonSub="Administra tu plan aquí"
+                                    colorTextoSub="#666"
+                                    bgColor="#F5F5F5"
+                                    iconoDerecha="chevron-forward"
+                                    colorIconoDerecha="#8BC34A"
+                                    colorIconoIzquierda="#8BC34A"
+                                    iconoIzquierda="card"
+                                    onPress={() => router.push('/(mas)/mi-plan')}
+                                />
+                            ) : (
+                                <BotonCategorias
+                                    textoBoton="VER PLANES"
+                                    colorTexto="#333"
+                                    textoBotonSub="Revisa los planes disponibles aquí"
+                                    colorTextoSub="#666"
+                                    bgColor="#F5F5F5"
+                                    iconoDerecha="chevron-forward"
+                                    colorIconoDerecha="#8BC34A"
+                                    colorIconoIzquierda="#8BC34A"
+                                    iconoIzquierda="card"
+                                    onPress={() => router.push('/(mas)/planes')}
+                                />
+                            )
                         )}
                             <BotonCategorias
                             textoBoton="MIS POSTS"

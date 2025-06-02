@@ -3,6 +3,9 @@ import { View, Text, StyleSheet, SafeAreaView, FlatList, ActivityIndicator, Refr
 import Post from '../../../components/post';
 import { fetchPosts } from '../../../services/favService';
 import { recuperarStorage } from '../../../services/asyncStorage';
+import { router } from 'expo-router';
+import { TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 
 export default function FavoritosPost() {
@@ -45,7 +48,7 @@ export default function FavoritosPost() {
                     setUsuario(usuario);
                     await cargarPostsFavoritos(Number(usuario.id));
                 } else {
-                    throw new Error('No se pudo obtener la información del usuario');
+                    //throw new Error('No se pudo obtener la información del usuario');
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -64,6 +67,20 @@ export default function FavoritosPost() {
         await cargarPostsFavoritos(Number(usuario.id));
     };
 
+  if (!usuario?.id) {
+    return (
+        <View style={styles.container}>
+          <Ionicons name="sad" size={40} color="#84AE46" />
+          <Text style={{fontWeight: '900'}}>No estas regitrado</Text>
+          <Text >unete a <Text style={{fontWeight: '900', color: '#84AE46'}}>IWANNA </Text></Text>
+          <Text>y obten la experiencia completa</Text>
+          <TouchableOpacity onPress={() => router.push('(auth)')}>
+            <Text style={{color: '#84AE46'}}>Registrate aqui</Text>
+          </TouchableOpacity>
+        </View>
+      );
+}
+
     if (loading) {
           return (
             <View style={styles.loadingContainer}>
@@ -72,30 +89,32 @@ export default function FavoritosPost() {
             </View>
           );
         }
-      
-        if (error) {
-          return (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          );
-        }
-      
+
         return (
           <SafeAreaView style={{ flex: 1 }}>
             <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
             <FlatList
               data={posts}
-              keyExtractor={(item) => item.id.toString()}
+              keyExtractor={(item) => `post-${item.id}`}
               renderItem={({ item }) => <Post datos={item} />}
+              initialNumToRender={5}
+              maxToRenderPerBatch={5}
+              updateCellsBatchingPeriod={50}
+              windowSize={7}
+              removeClippedSubviews={true}
               refreshControl={
                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
               }
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
-                  <Text>No hay publicaciones disponibles</Text>
+                  <Text>No tienes Post en tu lista de favoritos</Text>
                 </View>
               }
+              getItemLayout={(data, index) => ({
+                length: 500, // Ajusta esta altura según el tamaño promedio de tus posts
+                offset: 500 * index,
+                index,
+              })}
             />
           </SafeAreaView>
         );
@@ -104,6 +123,8 @@ export default function FavoritosPost() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
    
   },
   loadingContainer: {
@@ -127,5 +148,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    
   },
 });

@@ -13,20 +13,25 @@ type Props = {
     datos: PostType;
 };
 
-const Post: React.FC<Props> = ({ datos }) => {
-    const [cargando, setCargando] = useState(true);
-    const [liked, setLiked] = useState(false);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [likes, setLikes] = useState(0);
-    const [usuario, setUsuario] = useState<any>(null);
-    // console.log('Datos recibidos en Post:', datos);
+const PostComponent: React.FC<Props> = ({ datos }) => {
+  const [cargando, setCargando] = useState(true);
+  const [liked, setLiked] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [likes, setLikes] = useState(0);
+  const [usuario, setUsuario] = useState<any>(null);
 
-    const manejarCargaImagen = () => setCargando(false);
-    const toggleModal = () => setModalVisible(!modalVisible);
+  const manejarCargaImagen = useCallback(() => setCargando(false), []);
+  const toggleModal = useCallback(() => setModalVisible(prev => !prev), []);
 
 
     const cargarDatos = async () => {
         try {
+            const usuario = await recuperarStorage('usuario');
+            if (!usuario?.id) {
+                //console.error('No se pudo obtener la información del usuario');
+            }
+            setUsuario(usuario);
+          
 
             // 2. Verificar que tenemos datos del post
             if (!datos?.id) {
@@ -40,19 +45,16 @@ const Post: React.FC<Props> = ({ datos }) => {
             }
             
             // 4. Verificar si el usuario dio like al post
-            if (usuario && [1,2].includes(usuario.id_estado)) {
-                const estado = await fetchEstadoLikePost(Number(usuario.id), Number(datos.id));
-                setLiked(estado?.exito || false);
-            }
+            const estado = await fetchEstadoLikePost(Number(usuario.id), Number(datos.id));
+            setLiked(estado?.exito || false);
         } catch (error) {
-            console.error('Error al cargar datos:', error);
+            //console.error('Error al cargar datos:', error);
         } finally {
             setCargando(false);
         }
     };
 
     const toggleLike = async (id_post:number, id_usuario:number) => {
-
         console.log('Datos recibidos en toggleLike:', id_post, id_usuario);
         if (usuario && [1,2].includes(usuario.id_estado)) {
             try {
@@ -67,8 +69,6 @@ const Post: React.FC<Props> = ({ datos }) => {
     };
 
     useFocusEffect(
-
-        
         useCallback(() => {
             setModalVisible(false);
             setCargando(true);
@@ -83,11 +83,10 @@ const Post: React.FC<Props> = ({ datos }) => {
         <View style={styles.container}>
             <TouchableOpacity
                 style={styles.header}
-                onPress={async () => {
+                onPress={useCallback(async () => {
                     await guardarStorage('idUsuarioPerfil', datos.id_usuario.toString());
-                    // console.log('ID del usuario desde post:', datos.id_usuario);
                     router.push(`/(tabs)/(inicio)/${datos.id_usuario}`);
-                }}
+                }, [datos.id_usuario])}
             >
                 <Image source={{ uri: `${BUCKET_URL}foto-perfil/${datos.foto}` }} style={styles.foto_usuario} />
                 <View>
@@ -112,7 +111,7 @@ const Post: React.FC<Props> = ({ datos }) => {
                     <Image
                         source={{ uri: `${BUCKET_URL}publicaciones/${datos.archivo}` }}
                         style={[styles.imagen_post, cargando && { opacity: 0, height: 0 }]}
-                        resizeMode="cover"
+                        resizeMode="cover" //
                         onLoad={manejarCargaImagen}
                     />
                 )}
@@ -120,9 +119,11 @@ const Post: React.FC<Props> = ({ datos }) => {
                 <View style={styles.contenedor_datos_post}>
 
                     <TouchableOpacity style={styles.dato_post} 
-                        onPress={() => {
-                            toggleLike(datos?.id, usuario?.id);
-                        }}>
+                        onPress={useCallback(async () => {
+                            if (usuario?.id && datos?.id) {
+                                await toggleLike(datos.id, usuario.id);
+                            }
+                        }, [usuario?.id, datos?.id, toggleLike])}>
                         <Ionicons name={liked ? 'heart' : 'heart-outline'} size={24} color={liked ? '#8BC34A' : '#424242'} />
                         <Text style={styles.icono}>{likes}</Text>
                     </TouchableOpacity>
@@ -133,8 +134,6 @@ const Post: React.FC<Props> = ({ datos }) => {
                     </TouchableOpacity>
                 </View>
 
-
-                <Text style={styles.nombre}>{datos.nombre} {datos.apellido}</Text>
                 <Text style={styles.descripcion}> {datos.detalle} </Text>
             </View>
 
@@ -142,6 +141,10 @@ const Post: React.FC<Props> = ({ datos }) => {
         </View>
     );
 };
+
+PostComponent.displayName = 'Post';
+
+export const Post = React.memo(PostComponent);
 
 export default Post;
 
@@ -163,8 +166,9 @@ const styles = StyleSheet.create({
     },
     imagen_post: {
         width: '100%',
-        height: 300,
+        height: 600,
         marginVertical: 10,
+        backgroundColor: '#000',
     },
     header: {
         flexDirection: 'row',

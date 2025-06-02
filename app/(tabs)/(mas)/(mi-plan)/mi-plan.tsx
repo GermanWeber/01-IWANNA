@@ -1,8 +1,8 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { recuperarStorage } from '../../../../services/asyncStorage';
-import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 
 
 
@@ -13,109 +13,223 @@ export default function MiPlan() {
     const [loading, setLoading] = useState(false);
     const [datosStripe, setDatosStripe] = useState<any>(null);
 
-useEffect( () => {
-
-    const loadStripeData = async () => {
-      try {
-        const datosStripeStr = await recuperarStorage('stripeData');
-        if (datosStripeStr) {
-          console.log('Datos de Stripe recuperados:', datosStripeStr);
-          // Actualiza el estado con los datos recuperados
-          setDatosStripe(datosStripeStr);
-        }
-      } catch (error) {
-        console.error('Error al recuperar datos de Stripe:', error);
-      }
-    };
-    
-    loadStripeData();
-  }, []);
-
-
+    useEffect(() => {
+        const loadStripeData = async () => {
+            try {
+                const datosStripeStr = await recuperarStorage('stripeData');
+                if (datosStripeStr) {
+                    console.log('Datos de Stripe recuperados:', datosStripeStr);
+                    setDatosStripe(datosStripeStr);
+                }
+            } catch (error) {
+                console.error('Error al recuperar datos de Stripe:', error);
+            }
+        };
+        
+        loadStripeData();
+    }, []);
 
     return (
-        <View style={styles.container}>
-            <View style={[styles.card]}>
-                <View style={styles.cardHeader}>
-                    <Text style={styles.planName}>{datosStripe?.planName}</Text>
-                </View>
-                
-                <View style={styles.advantages}>
-                    <Text style={styles.price}>{datosStripe?.price}/mes</Text>
-                    
-                    <Text style={styles.advantage}>• Acceso a contenido premium</Text>
-                    <Text style={styles.advantage}>• Sin anuncios</Text> 
-                    <Text style={styles.advantage}>• Soporte 24/7</Text>
-                    <Text style={styles.advantage}>Proximo pago: {datosStripe?.billing_cycle_anchor_formatted}</Text>               
-                   
-                </View>
+        
+            <ScrollView>
+            <View style={styles.container}>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Tu Plan Actual</Text>
+                <Text style={styles.headerSubtitle}>Administra tu suscripción en cualquier momento</Text>
             </View>
 
-        <TouchableOpacity style={styles.button} onPress={() => router.push('https://billing.stripe.com/p/login/test_28E28tbjZaxK3us0nKaZi00')}>
-            <Text style={styles.buttonText}>ajustes de suscripción</Text>
-        </TouchableOpacity>
+            <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                    <View style={styles.planBadge}>
+                        <Text style={styles.planBadgeText}>ACTIVO</Text>
+                    </View>
+                    <Text style={styles.planName}>{datosStripe?.planName || 'Plan Premium'}</Text>
+                    <Text style={styles.planPrice}>{datosStripe?.price || '$9.99'}<Text style={styles.planPeriod}>/mes</Text></Text>
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.advantages}>
+                    <View style={styles.advantageItem}>
+                        <Ionicons name="checkmark-circle" size={20} color="#8BC34A" />
+                        <Text style={styles.advantageText}>Postea todo lo que quieras</Text>
+                    </View>
+                    <View style={styles.advantageItem}>
+                        <Ionicons name="checkmark-circle" size={20} color="#8BC34A" />
+                        <Text style={styles.advantageText}>Sin anuncios</Text>
+                    </View>
+                    <View style={styles.advantageItem}>
+                        <Ionicons name="checkmark-circle" size={20} color="#8BC34A" />
+                        <Text style={styles.advantageText}>Soporte prioritario 24/7</Text>
+                    </View>
+                    <View style={styles.advantageItem}>
+                        <Ionicons name="calendar" size={20} color="#666" />
+                        <Text style={styles.nextBilling}>
+                            Próximo pago: <Text style={styles.boldText}>{datosStripe?.billing_cycle_anchor_formatted || '--/--/----'}</Text>
+                        </Text>
+                    </View>
+                </View>
+
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => router.push('https://billing.stripe.com/p/login/test_28E28tbjZaxK3us0nKaZi00')}
+                >
+                    <Text style={styles.buttonText}>Gestionar suscripción</Text>
+                    <Ionicons name="arrow-forward" size={18} color="#fff" style={styles.buttonIcon} />
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.infoBox}>
+                <Ionicons name="information-circle" size={20} color="#2196F3" />
+                <Text style={styles.infoText}>
+                    Puedes cancelar o modificar tu plan en cualquier momento desde el portal de gestión de suscripciones.
+                </Text>
+            </View>
         </View>
+        </ScrollView>
+        
     )
 }
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
+        backgroundColor: '#f5f7fa',
         padding: 20,
-        backgroundColor: '#f5f5f5',
-        flex: 1
+    },
+    header: {
+        marginBottom: 24,
+        alignItems: 'center',
+        paddingHorizontal: 10,
+    },
+    headerTitle: {
+        fontSize: 26,
+        fontWeight: '800',
+        color: '#2c3e50',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    headerSubtitle: {
+        fontSize: 15,
+        color: '#7f8c8d',
+        textAlign: 'center',
+        lineHeight: 22,
     },
     card: {
         backgroundColor: '#fff',
-        borderRadius: 8,
-        borderColor: 'black',
-        borderWidth: 1,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        shadowOffset: { width: 0, height: 2 }
+        borderRadius: 20,
+        padding: 0,
+        overflow: 'hidden',
+        elevation: 4,
+        shadowColor: '#2c3e50',
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
+        marginBottom: 20,
     },
     cardHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+        backgroundColor: '#f8f9fa',
+        padding: 25,
         alignItems: 'center',
-        marginBottom: 10,
-        borderTopStartRadius: 8,
-        borderTopEndRadius: 8,
-        backgroundColor: 'yellow',
-        borderBottomWidth: 4,
-        borderColor: 'black',
-        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ecf0f1',
     },
-    planName: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    price: {
-        fontSize: 16,
-        fontWeight: '600',
+    planBadge: {
+        backgroundColor: '#e3f9e5',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
         marginBottom: 15,
     },
-    advantages: {
-        padding: 15,
+    planBadgeText: {
+        color: '#2ecc71',
+        fontSize: 12,
+        fontWeight: '700',
+        letterSpacing: 0.5,
     },
-    advantage: {
-        fontSize: 14,
-        color: '#333',
+    planName: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: '#2c3e50',
         marginBottom: 5,
     },
-    button: {
-        backgroundColor: '#007AFF',
-        padding: 10,
-        borderRadius: 8,
+    planPrice: {
+        fontSize: 36,
+        fontWeight: '800',
+        color: '#27ae60',
+    },
+    planPeriod: {
+        fontSize: 16,
+        color: '#7f8c8d',
+        fontWeight: '500',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#ecf0f1',
+        marginVertical: 0,
+    },
+    advantages: {
+        padding: 25,
+        paddingBottom: 15,
+    },
+    advantageItem: {
+        flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 20,
-        marginTop: 20
+        marginBottom: 18,
+    },
+    advantageText: {
+        marginLeft: 15,
+        fontSize: 15,
+        color: '#34495e',
+        flex: 1,
+    },
+    nextBilling: {
+        marginLeft: 15,
+        fontSize: 14,
+        color: '#7f8c8d',
+    },
+    boldText: {
+        fontWeight: '600',
+        color: '#2c3e50',
+    },
+    button: {
+        backgroundColor: '#2ecc71',
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        marginHorizontal: 25,
+        marginBottom: 25,
+        marginTop: 10,
+        elevation: 3,
+        shadowColor: '#2ecc71',
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
     },
     buttonText: {
         color: '#fff',
         fontSize: 16,
-        fontWeight: 'bold',
-        
+        fontWeight: '700',
+        letterSpacing: 0.5,
+    },
+    buttonIcon: {
+        marginLeft: 10,
+    },
+    infoBox: {
+        backgroundColor: '#f0f7ff',
+        borderRadius: 12,
+        padding: 16,
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+    },
+    infoText: {
+        flex: 1,
+        marginLeft: 12,
+        color: '#2980b9',
+        fontSize: 14,
+        lineHeight: 20,
     }
 });

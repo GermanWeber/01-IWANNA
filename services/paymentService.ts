@@ -181,7 +181,7 @@ export const getSubscriptionInfo = async (Id: string) => {
 export const iniciarCheckout = async (priceId: string, customerId: string, idUser: string, setLoading: (loading: boolean) => void) => {
   setLoading(true);
   try {
-    console.log('Iniciando checkout con priceId:', priceId, 'customerId:', customerId);
+    console.log('Iniciando checkout con:', { priceId, customerId, idUser });
 
     const response = await fetch(`${API_URL}payment/create-checkout-session`, {
       method: 'POST',
@@ -189,21 +189,25 @@ export const iniciarCheckout = async (priceId: string, customerId: string, idUse
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({ priceId, customerId, idUser }), // Cambiado de userId a customerId
+      body: JSON.stringify({ priceId, customerId, idUser }),
     });
 
-    const responseData = await response.json();
+    console.log('Response status:', response.status);
     
     if (!response.ok) {
-      throw new Error(responseData.error || 'Error en la respuesta del servidor');
+      const errorText = await response.text();
+      console.error('Error en la respuesta del servidor:', errorText);
+      throw new Error(`Error en la respuesta del servidor: ${response.status} ${response.statusText}`);
     }
 
+    const responseData = await response.json();
+    console.log('Datos de respuesta:', responseData);
+    
     if (!responseData?.url) {
       console.error('Respuesta inesperada del servidor:', responseData);
       throw new Error('La respuesta no contiene la URL de checkout');
     }
 
-    console.log('URL de checkout obtenida:', responseData.url);
     return responseData.url;
 
   } catch (error) {
