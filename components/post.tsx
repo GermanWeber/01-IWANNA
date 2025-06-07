@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ComentariosModal from './comentarios';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useRouter } from 'expo-router';
 import { PostType } from '../types/post';
 import { BUCKET_URL } from '@env';
 import { Video, ResizeMode } from 'expo-av';
@@ -19,6 +19,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [likes, setLikes] = useState(0);
   const [usuario, setUsuario] = useState<any>(null);
+  const router = useRouter();
 
   const manejarCargaImagen = useCallback(() => setCargando(false), []);
   const toggleModal = useCallback(() => setModalVisible(prev => !prev), []);
@@ -68,6 +69,18 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
         }
     };
 
+    const handleProfilePress = useCallback(async () => {
+        console.log('Datos recibidos en handleProfilePress:', datos);
+        try {
+            await guardarStorage('idUsuarioPerfil', datos?.id_usuario.toString());
+            console.log('Navegando a perfil de usuario:', datos?.id_usuario);
+            router.push(`/screens/${datos?.id_usuario}`);
+        } catch (error) {
+            console.error('Error al navegar al perfil:', error);
+        }
+    }, [datos?.id_usuario, router]); // Añade todas las dependencias necesarias
+    
+
     useFocusEffect(
         useCallback(() => {
             setModalVisible(false);
@@ -83,10 +96,8 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
         <View style={styles.container}>
             <TouchableOpacity
                 style={styles.header}
-                onPress={useCallback(async () => {
-                    await guardarStorage('idUsuarioPerfil', datos.id_usuario.toString());
-                    router.push(`/(tabs)/(inicio)/${datos.id_usuario}`);
-                }, [datos.id_usuario])}
+                onPress={() => {handleProfilePress(); console.log('Datos recibidos en handleProfilePress:', datos)}}
+
             >
                 <Image source={{ uri: `${BUCKET_URL}foto-perfil/${datos.foto}` }} style={styles.foto_usuario} />
                 <View>
@@ -121,6 +132,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                     <TouchableOpacity style={styles.dato_post} 
                         onPress={useCallback(async () => {
                             if (usuario?.id && datos?.id) {
+
                                 await toggleLike(datos.id, usuario.id);
                             }
                         }, [usuario?.id, datos?.id, toggleLike])}>

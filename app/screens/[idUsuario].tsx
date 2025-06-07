@@ -1,13 +1,13 @@
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
-import { RatingStars } from "../../../components/rating-stars";
-import { recuperarStorage } from "../../../services/asyncStorage";
-import { obtenerPerfil } from "../../../services/perfilService";
-import { obtenerPostsById } from "../../../services/postService";
-import { PostType } from '../../../types/post';
-
+import { RatingStars } from "../../components/rating-stars";
+import { recuperarStorage } from "../../services/asyncStorage";
+import { obtenerPerfil } from "../../services/perfilService";
+import { obtenerPostsById } from "../../services/postService";
+import { PostType } from '../../types/post';
+import { btnFavTrabajador, fetchEstadoLikeTrabajador, fetchFavTrabajadores } from '../../services/favService';
 import { BUCKET_URL } from '@env';
 
 export default function PerfilUsuario() {
@@ -15,30 +15,83 @@ export default function PerfilUsuario() {
     const [isLoading, setIsLoading] = useState(false);
     const [perfil, setPerfil] = useState<any>(null);
     const [posts, setPosts] = useState<PostType[]>([]);
+    const [liked, setLiked] = useState(false);
+  
+    const [usuario, setUsuario] = useState<any>(null);
+
+
+
+    const cargarUsuario = async () => {
+        try {
+            const usuario = await recuperarStorage('usuario');
+            setUsuario(usuario);
+        } catch (error) {
+            console.error('Error al cargar usuario:', error);
+            return null;
+        }
+    };
+
+
+    const mostrarLike = async (id_usuario:any, id_trabajador:any) => {
+        console.log('entrar mostrarLike: usuario', id_usuario, typeof id_usuario, 'trabajador', id_trabajador, typeof id_trabajador);
+        try {
+            const estado = await fetchEstadoLikeTrabajador(id_usuario, id_trabajador);
+            
+            console.log('Estado del like del trabajador:', estado);
+            setLiked(estado?.exito || false);
+        } catch (error) {
+            console.error('Error al cargar el estado del like del trabajador', error);
+        }
+
+    };
+  
 
     useEffect(() => {
-        const cargarPerfil = async () => {
+        const cargarDatos = async () => {
             try {
                 const respuesta = await obtenerPerfil(Number(idUsuario));
-                // const posts = await obtenerPostsById(Number(idUsuario));
-                const perfil = respuesta;
-                setPerfil(perfil);
-                setPosts(posts);
-
+                setPerfil(respuesta);
+    
+                const user = await recuperarStorage('usuario');
+                setUsuario(user);
             } catch (error) {
-                console.error('Error al cargar perfil:', error);
+                console.error('Error al cargar datos:', error);
             }
-
-
         };
-
-        cargarPerfil();
+    
+        cargarDatos();
     }, [idUsuario]);
+    
+    //Este useEffect se ejecuta cuando ambos están definidos
+    useEffect(() => {
+        if (usuario?.id && perfil?.id) {
+            mostrarLike(usuario.id, perfil.id);
+        } 
+    }, [usuario, perfil]);
+
+
+    //funcion de like
+    const handleLike = async (id_usuario: any, id_trabajador: any) => {
+        
+        if (usuario && [1, 2].includes(usuario.id_estado)) {
+            console.log('Datos recibidos en handleLike: usuario:', id_usuario, 'trabajador:', id_trabajador);
+            try {                
+                // Hacer la llamada a la API
+                await btnFavTrabajador(id_usuario, id_trabajador);
+                
+                // Opcional: Recargar el estado desde el servidor para asegurar consistencia
+                await mostrarLike(id_usuario, id_trabajador);
+
+                
+            } catch (error) {
+                console.error('Error al actualizar el like:', error);
+            }
+        }
+    };
+ 
 
     const handleCotizar = async () => {
         try {
-            setIsLoading(true);
-            const usuario = await recuperarStorage('usuario');
 
             if (!usuario) {
                 Alert.alert(
@@ -64,19 +117,9 @@ export default function PerfilUsuario() {
         }
     };
 
-    //Aqui deberiamos llamar a la api para recuperar los datos del usuario segun el ID
+   
 
-    const usuario = {
-
-        img_perfil: "https://randomuser.me/api/portraits/men/25.jpg",
-
-        estadisticas: {
-            servicios: "150+",
-            satisfaccion: "98%",
-            experiencia: "5+"
-        },
-        calificacion: 4.5,
-    }
+      
 
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -85,19 +128,36 @@ export default function PerfilUsuario() {
 
                     {/* Sección de Perfil */}
                     <View style={styles.profileHeader}>
+
                         <Image
                             source={{ uri: `${BUCKET_URL}foto-perfil/${perfil.foto}` }}
                             style={styles.profileImage}
                         />
                         <View style={styles.profileInfo}>
-                            <Text style={styles.profileName}>{perfil.nombre}</Text>
+                            <Text style={styles.profileName}>{perfil.nombre} {perfil.apellido}
+                                {/*logo de verificado */}
+                                {perfil.id_auth === 2 && (
+                                    <Ionicons name="checkmark-circle" size={20} color="#1d9bf0" />
+                                )}
+                            </Text>
                             {perfil.id_tipo === 2 ? (
                                 <Text style={styles.profileProfession}>{perfil.profesion}</Text>
                             ) : (<Text style={styles.profileProfession}>Cliente</Text>)}
                             <View style={styles.ratingContainer}>
-                                <RatingStars rating={usuario.calificacion} showValue />
+                                <RatingStars rating={4.5} showValue />
                             </View>
                         </View>
+
+                        <TouchableOpacity 
+                        style={styles.dato_post} 
+                        onPress={() => handleLike(usuario?.id, perfil?.id)}
+                    >
+                        <Ionicons 
+                            name={liked ? 'heart' : 'heart-outline'} 
+                            size={24} 
+                            color={liked ? '#8BC34A' : '#424242'} 
+                        />                       
+                    </TouchableOpacity>
                     </View>
 
 
@@ -113,6 +173,8 @@ export default function PerfilUsuario() {
                             </Text>
                         </TouchableOpacity>
                     )}
+
+
 
                     {/* Sección de usuario Personales */}
                     <View style={styles.section}>
@@ -167,15 +229,15 @@ export default function PerfilUsuario() {
                             </View>
                             <View style={styles.statsContainer}>
                                 <View style={styles.statItem}>
-                                    <Text style={styles.statValue}>{usuario.estadisticas.servicios}</Text>
+                                    <Text style={styles.statValue}>0</Text>
                                     <Text style={styles.statLabel}>Servicios</Text>
                                 </View>
                                 <View style={styles.statItem}>
-                                    <Text style={styles.statValue}>{usuario.estadisticas.satisfaccion}</Text>
+                                    <Text style={styles.statValue}>0</Text>
                                     <Text style={styles.statLabel}>Satisfacción</Text>
                                 </View>
                                 <View style={styles.statItem}>
-                                    <Text style={styles.statValue}>{usuario.estadisticas.experiencia}</Text>
+                                    <Text style={styles.statValue}>0</Text>
                                     <Text style={styles.statLabel}>Años Exp.</Text>
                                 </View>
                             </View>
@@ -213,111 +275,137 @@ export default function PerfilUsuario() {
 
 const styles = StyleSheet.create({
     scrollContainer: {
-        paddingBottom: 20,
-        backgroundColor: "#fff"
+        backgroundColor: '#f8f9fa',
+        flexGrow: 1,
     },
     container: {
         flex: 1,
-        padding: 20,
+        backgroundColor: '#fff',
+        padding: 16,
     },
     profileHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 30,
-        backgroundColor: '#F5F5F5',
-        padding: 20,
-        borderRadius: 15,
-        elevation: 2,
+        marginBottom: 24,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: 8,
+        elevation: 3,
     },
     profileImage: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+        width: 90,
+        height: 90,
+        borderRadius: 45,
         borderWidth: 3,
         borderColor: '#8BC34A',
+        marginRight: 16,
     },
     profileInfo: {
-        marginLeft: 20,
         flex: 1,
     },
     profileName: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 5,
+        color: '#2c3e50',
+        marginBottom: 4,
     },
     profileProfession: {
         fontSize: 16,
-        color: '#666',
-        marginBottom: 10,
+        color: '#7f8c8d',
+        marginBottom: 8,
     },
     ratingContainer: {
-        marginTop: 5,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    dato_post: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#f1f8e9',
+    },
+    cotizacionButton: {
+        backgroundColor: '#8BC34A',
+        paddingVertical: 14,
+        borderRadius: 30,
+        alignItems: 'center',
+        marginBottom: 24,
+        shadowColor: '#8BC34A',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+
+    cotizacionButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
     },
     section: {
-        backgroundColor: '#F5F5F5',
-        padding: 20,
-        borderRadius: 15,
-        marginBottom: 20,
-        elevation: 2,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.08,
         shadowRadius: 4,
+        elevation: 2,
     },
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 15,
+        marginBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+        paddingBottom: 8,
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-        marginLeft: 10,
+        fontWeight: '600',
+        color: '#2c3e50',
+        marginLeft: 8,
     },
     infoItem: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 10,
+        paddingVertical: 4,
     },
     infoLabel: {
-        fontSize: 16,
-        color: '#666',
+        fontWeight: '600',
+        color: '#7f8c8d',
         width: 100,
     },
     infoValue: {
-        fontSize: 16,
-        color: '#333',
-        marginLeft: 10,
+        flex: 1,
+        color: '#34495e',
+        fontSize: 15,
     },
     description: {
-        fontSize: 16,
-        color: '#333',
-        lineHeight: 24,
+        color: '#34495e',
+        lineHeight: 22,
+        fontSize: 15,
     },
     statsContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
-        marginTop: 10,
+        justifyContent: 'space-between',
+        marginTop: 8,
     },
     statItem: {
         alignItems: 'center',
+        flex: 1,
+        padding: 12,
+        backgroundColor: '#f8f9fa',
+        borderRadius: 12,
+        marginHorizontal: 4,
     },
-    statValue: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#8BC34A',
-    },
-    statLabel: {
-        fontSize: 14,
-        color: '#666',
-        marginTop: 5,
-    },
+    statValue: {},
+    statLabel: {},
     postsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -336,21 +424,6 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         resizeMode: 'cover',
-    },
-    cotizacionButton: {
-        backgroundColor: '#8BC34A',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 20,
-    },
-    cotizacionButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginLeft: 10,
     },
     serviceList: {
         gap: 15,
@@ -414,4 +487,5 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginRight: 5,
     },
+
 });

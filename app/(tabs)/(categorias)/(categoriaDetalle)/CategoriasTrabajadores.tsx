@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import BotonAvatar from '../../../../components/botonAvatar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -15,6 +15,21 @@ export default function DetalleCategoriaTrabajadores() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchTrabajadoresByCategory(id.toString()).then((data) => {
+      setUsuarios(data);
+      setLoading(false);
+    }).catch((error) => {
+      setError(error.message);
+      setLoading(false);
+    });
+    setRefreshing(false);
+  };
+
+  
 
   useEffect(() => {
 
@@ -33,7 +48,8 @@ export default function DetalleCategoriaTrabajadores() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8BC34A" />
+        <ActivityIndicator size="large" color="#000" />
+        <Text>Cargando trabajadores...</Text>
       </View>
     );
   }
@@ -50,11 +66,13 @@ export default function DetalleCategoriaTrabajadores() {
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           {usuarios.length > 0 ? (
             usuarios.map((usuario) => (
               <BotonAvatar
                 key={usuario.id}
-                textoBoton={`${usuario.nombre} `}
+                textoBoton={`${usuario.nombre} ${usuario.apellido}`}
+                id_auth={usuario.id_auth}
                 textoProfesion={usuario.descripcion}
                 colorTextoProfesion='#424242'      
                 avatar={usuario.foto}
@@ -62,10 +80,7 @@ export default function DetalleCategoriaTrabajadores() {
                 bgColor='#F5F5F5'
                 iconoDerecha={"chevron-forward"}
                 colorIconoDerecha='#00BCD4'
-                onPress={() => router.push({
-                  pathname: '/(mas)/(perfil_usuario)/mi-perfil',
-                  params: { id: usuario.id }
-                })}
+                onPress={() => router.push(`/screens/${usuario.id}`)}
               />
             ))
           ) : (
@@ -73,6 +88,7 @@ export default function DetalleCategoriaTrabajadores() {
           )}
         </View>
       </ScrollView>
+      
     </SafeAreaView>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { FlatList, View, Text, Image, StyleSheet, SafeAreaView, StatusBar, ActivityIndicator } from 'react-native';
+import { FlatList, View, Text, Image, StyleSheet, SafeAreaView, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
 import Post from '../../../components/post';
 import { useEffect } from 'react';
 import HeaderPrincipal from '../../../components/Header';
@@ -12,12 +12,11 @@ const Home = () => {
     const [posts, setPosts] = useState<PostType[]>([]);
     const [usuario, setUsuario] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     const obtenerPosts = async () => {
         try {
             const url = `${API_URL}post/`;
-            console.log('Consultando posts en:', url);
-
             const response = await fetch(url);
             const data = await response.json();
 
@@ -38,6 +37,7 @@ const Home = () => {
         useCallback(() => {
             const cargarUsuarioYPosts = async () => {
                 const datos = await recuperarStorage('usuario');
+                
                 if (datos) {
                     setUsuario(datos);
                 }
@@ -47,6 +47,12 @@ const Home = () => {
         }, [])
     );
 
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        obtenerPosts();
+        setRefreshing(false);
+    }, []);
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -55,24 +61,45 @@ const Home = () => {
             </View>
         );
     }
-    return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
-            {/* DATA */}
-            <FlatList
-                data={posts}
-
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                    <Post datos={item} />
-                )} />
-        </SafeAreaView>
-    );
+ return (
+           <SafeAreaView style={{ flex: 1 }}>
+             <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
+             <FlatList
+               data={posts}
+               keyExtractor={(item) => `post-${item.id}`}
+               renderItem={({ item }) => {
+                 console.log('Datos del post en favoritos:', item);
+                 return <Post datos={item} />;
+             }}
+               initialNumToRender={5}
+               maxToRenderPerBatch={5}
+               updateCellsBatchingPeriod={50}
+               windowSize={7}
+               removeClippedSubviews={true}
+               refreshControl={
+                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+               }
+               ListEmptyComponent={
+                 <View style={styles.emptyContainer}>
+                   <Text>No hay publicaciones disponibles</Text>
+                 </View>
+               }
+             />
+           </SafeAreaView>
+         );
 };
+
 
 export default Home;
 
 const styles = StyleSheet.create({
+
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+      },
     contenedor_post: {
         backgroundColor: '#fff',
         marginBottom: 20,

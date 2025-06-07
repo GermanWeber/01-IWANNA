@@ -1,12 +1,12 @@
 import { Stack } from 'expo-router';
-import HeaderPrincipal from '../../../../components/Header';
+import HeaderPrincipal from '../../../../../components/Header';
 
 export default function PlanesLayout() {
   
   return (
     <Stack>
       <Stack.Screen
-        name="mi-plan"
+        name="cancel-layout"
         options={{
           header: (props) => (
             <HeaderPrincipal/>
@@ -15,7 +15,7 @@ export default function PlanesLayout() {
       />
 
       <Stack.Screen
-        name="planes"
+        name="success-layout"
         options={{
           header: (props) => (
             <HeaderPrincipal />
