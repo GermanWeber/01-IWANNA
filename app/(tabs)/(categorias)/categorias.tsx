@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { ScrollView, TextInput, StyleSheet, View, Text, Platform, ActivityIndicator } from 'react-native';
+import { ScrollView, TextInput, StyleSheet, View, Text, Platform, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import BotonCategorias from '../../../components/BotonCategorias';
 import { useRouter } from 'expo-router';
 import { API_URL } from '@env';
+
 
 
 export default function Categorias() {
@@ -33,23 +34,29 @@ export default function Categorias() {
     }
   };
 
+  const fetchCategorias = async () => {
+    try {
+      const response = await fetch(`${API_URL}category`); 
+      const data = await response.json();
+      setAllCategorias(data); 
+      setCategorias(data);    
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching categorias:', err);
+      setError('Error al cargar las categorías');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchCategorias();
+  }, []);
+
   useEffect(() => {
-    const fetchCategorias = async () => {
-      try {
-        const response = await fetch(`${API_URL}category`); 
-        const data = await response.json();
-        setAllCategorias(data); // Guardamos todas las categorías
-        setCategorias(data);    // Y también las establecemos como categorías visibles
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching categorias:', err);
-        setError('Error al cargar las categorías');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-
     fetchCategorias();
   }, []);
 
@@ -74,10 +81,17 @@ export default function Categorias() {
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#8BC34A" />
               <Text style={styles.loadingText}>Cargando categorías...</Text>
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             </View>
           ) : error ? (
             <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={styles.errorText}>Error al cargar las categorías</Text>
+              <TouchableOpacity
+                style={styles.errorButton}
+                onPress={async () => await fetchCategorias()}
+              >
+                <Text style={styles.errorButtonText}>Intentar de nuevo</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             categorias.map((categoria) => (
@@ -106,6 +120,18 @@ export default function Categorias() {
 const styles = StyleSheet.create({
   scrollContainer: {
     paddingBottom: 20,
+  },
+  errorButton: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: '#8BC34A',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  errorButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   container: {
     flex: 1,

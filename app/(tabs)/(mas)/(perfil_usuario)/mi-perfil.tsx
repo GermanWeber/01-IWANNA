@@ -82,7 +82,7 @@ export default function MiPerfil() {
                         <View style={styles.profileInfo}>
                             <Text style={styles.profileName}>{usuario.nombre} {usuario.apellido}</Text>
                             {usuario.id_tipo === 1 ? (
-                                <Text style={styles.profileProfession}>Profesor</Text>
+                                <Text style={styles.profileProfession}>{usuario.profesion}</Text>
                             ):
                             (
                                 <Text style={styles.profileProfession}>Cliente</Text>

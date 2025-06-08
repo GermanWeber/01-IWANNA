@@ -13,6 +13,7 @@ type Props = {
     iconoDerecha?: any;
     colorIconoDerecha?: string;
     avatar?: any;
+    id_auth?: number;
 };
 
 const BotonAvatar: React.FC<Props> = ({
@@ -24,7 +25,8 @@ const BotonAvatar: React.FC<Props> = ({
     onPress,
     iconoDerecha = 'chevron-forward',
     colorIconoDerecha = '#00BCD4',
-    avatar = require('../assets/images/perfil.png')
+    avatar = require('../assets/images/perfil.png'),
+    id_auth
 }) => {
     return (
         <TouchableOpacity
@@ -42,6 +44,10 @@ const BotonAvatar: React.FC<Props> = ({
                     <View style={styles.textContainer}>
                         <Text style={[styles.nombre, { color: colorTexto }]} numberOfLines={1}>
                             {textoBoton}
+                            {/*logo de verificado */}
+                            {id_auth === 2 && (
+                                <Ionicons name="checkmark-circle" size={20} color="#1d9bf0" />
+                            )}
                         </Text>
                         {textoProfesion && (
                             <Text 
@@ -104,6 +110,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F7FAFC',
     },
     textContainer: {
+        
         marginLeft: 16,
         flex: 1,
         marginRight: 8,

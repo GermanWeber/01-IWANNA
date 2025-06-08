@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ComentariosModal from './comentarios';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useRouter } from 'expo-router';
 import { PostType } from '../types/post';
 import { BUCKET_URL } from '@env';
 import { Video, ResizeMode } from 'expo-av';
@@ -19,10 +19,24 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [likes, setLikes] = useState(0);
     const [usuario, setUsuario] = useState<any>(null);
+    const router = useRouter();
 
     const manejarCargaImagen = useCallback(() => setCargando(false), []);
     const toggleModal = useCallback(() => setModalVisible(prev => !prev), []);
 
+
+    const mostrarLike = async (id_usuario: any, id_trabajador: any) => {
+        console.log('entrar mostrarLike: usuario', id_usuario, typeof id_usuario, 'trabajador', id_trabajador, typeof id_trabajador);
+        try {
+            const estado = await fetchEstadoLikePost(id_usuario, id_trabajador);
+
+            console.log('Estado del like del trabajador:', estado);
+            setLiked(estado?.exito || false);
+        } catch (error) {
+            console.error('Error al cargar el estado del like del trabajador', error);
+        }
+
+    };
 
     const cargarDatos = async () => {
         try {
@@ -45,14 +59,15 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
             }
 
             // 4. Verificar si el usuario dio like al post
-            const estado = await fetchEstadoLikePost(Number(usuario.id), Number(datos.id));
-            setLiked(estado?.exito || false);
+            await mostrarLike(usuario.id, datos.id);
         } catch (error) {
             //console.error('Error al cargar datos:', error);
         } finally {
             setCargando(false);
         }
     };
+
+
 
     const toggleLike = async (id_post: number, id_usuario: number) => {
         console.log('Datos recibidos en toggleLike:', id_post, id_usuario);
@@ -67,6 +82,18 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
             }
         }
     };
+
+    const handleProfilePress = useCallback(async () => {
+        console.log('Datos recibidos en handleProfilePress:', datos);
+        try {
+            await guardarStorage('idUsuarioPerfil', datos?.id_usuario.toString());
+            console.log('Navegando a perfil de usuario:', datos?.id_usuario);
+            router.push(`/screens/${datos?.id_usuario}`);
+        } catch (error) {
+            console.error('Error al navegar al perfil:', error);
+        }
+    }, [datos?.id_usuario, router]); // Añade todas las dependencias necesarias
+
 
     useFocusEffect(
         useCallback(() => {
@@ -83,10 +110,8 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
         <View style={styles.container}>
             <TouchableOpacity
                 style={styles.header}
-                onPress={useCallback(async () => {
-                    await guardarStorage('idUsuarioPerfil', datos.id_usuario.toString());
-                    router.push(`(inicio)/${datos.id_usuario}`);
-                }, [datos.id_usuario])}
+                onPress={() => { handleProfilePress(); console.log('Datos recibidos en handleProfilePress:', datos) }}
+
             >
                 <Image source={{ uri: `${BUCKET_URL}foto-perfil/${datos.foto}` }} style={styles.foto_usuario} />
                 <View>
@@ -121,6 +146,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                     <TouchableOpacity style={styles.dato_post}
                         onPress={useCallback(async () => {
                             if (usuario?.id && datos?.id) {
+
                                 await toggleLike(datos.id, usuario.id);
                             }
                         }, [usuario?.id, datos?.id, toggleLike])}>

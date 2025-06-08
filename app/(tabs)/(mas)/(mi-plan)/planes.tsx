@@ -7,19 +7,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../../../navigation/types';
 import { fetchProducts, iniciarCheckout, Product } from '../../../../services/paymentService';
 import { recuperarStorage } from '../../../../services/asyncStorage';
+import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
 // Mapeo de productos de Stripe a la estructura de la UI
 const mapStripeProductToPlan = (product: any) => {
   const isAnual = product.name.toLowerCase().includes('anual');
-  const isGratis = product.name.toLowerCase().includes('gratis');
+  const isMensual = product.name.toLowerCase().includes('mensual');
   
   return {
     id: product.id,
     nombre: product.name,
     precio: product.price.split(' ')[0], // Extrae solo el monto
-    periodo: isGratis ? '' : isAnual ? 'al año' : 'al mes',
+    periodo: isMensual ? 'al mes' : 'al año',
     descripcion: product.description,
     caracteristicas: [
       'Publicación ilimitada de trabajos',
@@ -32,12 +33,12 @@ const mapStripeProductToPlan = (product: any) => {
     color: isAnual ? '#4a90e2' : '#2ecc71', // Azul para anual, verde para mensual
     icon: isAnual ? 'calendar-outline' : 'star-outline',
     priceId: product.priceId,
-    esGratis: isGratis
+    esGratis: isMensual
   };
 };
 
 export default function Planes() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const   navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
@@ -46,26 +47,47 @@ export default function Planes() {
   const [datosStripe, setDatosStripe] = useState<any>(null);
 
   const handleCheckout = async (priceId: string, userId: string) => {
-    console.log('priceId', priceId);
-    console.log('userId', userId);
-    console.log('usuario', usuario.id);
+    if (!priceId || !userId || !usuario?.id) {
+      console.error('Faltan datos requeridos:', { priceId, userId, usuarioId: usuario?.id });
+      alert('Faltan datos necesarios para continuar con el pago');
+      return;
+    }
+    
+    console.log('Iniciando checkout con:', { priceId, userId, usuarioId: usuario.id });
     
     try {
-      const url = await iniciarCheckout(priceId, userId, usuario.id, setLoading);
-      setCheckoutUrl(url);
+      setLoading(true);
+      const url = await iniciarCheckout(priceId, userId, usuario.id);
+      console.log('URL de checkout recibida:', url);
+      if (url) {
+        setCheckoutUrl(url);
+      } else {
+        throw new Error('No se recibió una URL de pago válida');
+      }
     } catch (error) {
+      //console.error('Error en handleCheckout:', error);
       alert(error instanceof Error ? error.message : 'Error al iniciar el pago');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleWebViewNavigation = (event: any) => {
-    const { url } = event.nativeEvent;
-    // Verifica si es una URL de éxito o cancelación
-    if (url.includes('success') || url.includes('cancel')) {
+  const handleWebViewNavigation = (navState: any) => {
+    const { url } = navState;
+    console.log('Navegando a URL:', url);
+    
+    // Si la URL es de éxito o cancelación
+    if (url.includes('success')) {
+      console.log('Redirigiendo a la app desde:', url);
       setCheckoutUrl(null);
-    }
+      
+      router.push(`/screens/mi-plan`)}
+    if (url.includes('cancel')) {
+      console.log('Redirigiendo a la app desde:', url);
+      setCheckoutUrl(null);
+      
+      router.push(`/screens/mi-plan`)}
+    
   };
 
   useEffect(() => {
@@ -114,16 +136,16 @@ export default function Planes() {
   }, []);
 
   const renderPlanCard = (plan: any) => {
-    const isPopular = plan.popular;
-    const isFree = plan.esGratis;
+    const isMensual = plan.esMensual;
+    const isAnual = plan.esAnual;
     
     return (
       <View key={plan.id} style={[
         styles.planCard,
-        isPopular && styles.popularPlan,
+        isMensual && styles.popularPlan,
         { borderColor: plan.color }
       ]}>
-        {isPopular && (
+        {isMensual && (
           <View style={[styles.popularBadge, { backgroundColor: plan.color }]}>
             <Text style={styles.popularBadgeText}>POPULAR</Text>
           </View>
@@ -153,16 +175,28 @@ export default function Planes() {
         <TouchableOpacity 
           style={[styles.selectButton, { backgroundColor: plan.color }]}
           onPress={() => {
-            if (isFree) {
-             
+            console.log('Plan seleccionado:', {
+              planId: plan?.id,
+              planName: plan?.nombre,
+              priceId: plan?.priceId,
+              customerId: datosStripe?.customerId,
+              datosStripe: datosStripe
+            });
+            
+            if (isMensual) {
+              console.log('Plan mensual seleccionado');
             } else {
+              console.log('Iniciando checkout con:', {
+                priceId: plan?.priceId,
+                customerId: datosStripe?.customerId
+              });
               handleCheckout(plan?.priceId, datosStripe?.customerId);
             }
           }}
           disabled={loading}
         >
           <Text style={styles.buttonText}>
-            {loading ? 'Procesando...' : isFree ? 'Seleccionar Gratis' : 'Elegir Plan'}
+            {loading ? 'Procesando...' : isMensual ? 'Seleccionar Plan Mensual' : 'Seleccionar Plan Anual'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -175,12 +209,30 @@ export default function Planes() {
     : [];
 
   if (checkoutUrl) {
+    console.log('Renderizando WebView con URL:', checkoutUrl);
     return (
-      <WebView
-        source={{ uri: checkoutUrl }}
-        onNavigationStateChange={handleWebViewNavigation}
-        
-      />
+      <View style={{ flex: 1 }}>
+        <WebView
+          source={{ uri: checkoutUrl }}
+          onNavigationStateChange={handleWebViewNavigation}
+          startInLoadingState={true}
+          renderLoading={() => (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#2ecc71" />
+            </View>
+          )}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.warn('WebView error: ', nativeEvent);
+          }}
+          onHttpError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.warn('WebView HTTP error: ', nativeEvent);
+          }}
+        />
+      </View>
     );
   }
 
@@ -209,6 +261,7 @@ export default function Planes() {
             ¿Necesitas ayuda para elegir? Contáctanos para asesorarte sobre el plan ideal para ti.
           </Text>
         </View>
+        
       </ScrollView>
     </SafeAreaView>
   );

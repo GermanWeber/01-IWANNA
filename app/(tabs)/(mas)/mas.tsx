@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ScrollView, Text, Image, SafeAreaView, TouchableOpacity, Platform, Button } from 'react-native';
+import { StyleSheet, View, ScrollView, Text, Image, SafeAreaView, TouchableOpacity, Platform, Button, Linking, Alert } from 'react-native';
 import BotonCategorias from '../../../components/BotonCategorias';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { RatingStars } from '../../../components/rating-stars';
 import { recuperarStorage } from '../../../services/asyncStorage';
 import { BUCKET_URL } from '@env';
+
 
 const imgPerfil = require('../../../assets/images/perfil.png');
 
@@ -27,6 +28,26 @@ export default function Mas() {
         }
     };
 
+    const handlePressCalendar = async () => {
+        // Intentar abrir la app nativa de Google Calendar
+        const calendarAppUrl = 'content://com.android.calendar/time/';
+        const webUrl = 'https://calendar.google.com/calendar/u/0/r';
+        
+        try {
+            // Primero intentamos abrir la app nativa
+            const supported = await Linking.canOpenURL(calendarAppUrl);
+            if (supported) {
+                await Linking.openURL(calendarAppUrl);
+            } else {
+                // Si no se puede abrir la app nativa, intentamos con la web
+                await Linking.openURL(webUrl);
+            }
+        } catch (error) {
+            console.error('Error al abrir el calendario:', error);
+            Alert.alert('Error', 'No se pudo abrir Google Calendar. Asegúrate de tener la aplicación instalada.');
+        }
+    };
+
     useEffect(() => {
         loadUsuario();
     }, []);
@@ -44,7 +65,11 @@ export default function Mas() {
                                 style={styles.perfilImage}
                             />
                             <View style={styles.perfilInfo}>
-                                <Text style={styles.perfilNombre}>{usuario?.nombre} {usuario?.apellido}</Text>
+                                <Text style={styles.perfilNombre}>{usuario?.nombre} {usuario?.apellido}
+                                    {usuario.id_auth === 2 && (
+                                        <Ionicons name="checkmark-circle" size={20} color="#1d9bf0" />
+                                    )}
+                                </Text>
                                 {usuario?.id_estado == 2 ? (
                                 <Text style={styles.perfilPlan}>Suscrito</Text>
                                 ):(
@@ -73,19 +98,23 @@ export default function Mas() {
                             </View>
                         </View>
                         {/* Sección boton autenticación */}
+                        {usuario?.id_auth == 1? (
                         <View style={styles.authSection}>
-                            <View>
-                                <Text style={{ color: 'red' }}>No estas autentificado</Text>
-                                <Text>Inicia el proceso y accede a los beneficios</Text>
-                            </View>
-                            <View style={styles.authButton}>
-                                <Button 
-                                title="IR"
-                                color="#8BC34A"
-                                onPress={() => router.push('/(mas)/(auth2)/auth2-info')}
-                                />
+                            <View style={styles.authContent}>
+                                <View>
+                                    <Text style={styles.authTitle}>No estás autenticado</Text>
+                                    <Text style={styles.authSubtitle}>Inicia el proceso y accede a todos los beneficios</Text>
+                                </View>
+                                <TouchableOpacity 
+                                    style={styles.authButton}
+                                    onPress={() => router.push('/(mas)/(auth2)/auth2-info')}
+                                >
+                                    <Text style={styles.authButtonText}>IR</Text>
+                                    
+                                </TouchableOpacity>
                             </View>
                         </View>
+                        ) : null}
                     </View>
 
                     
@@ -162,18 +191,21 @@ export default function Mas() {
                             iconoIzquierda="cart"
                             onPress={() => router.push('/(mas)/(cotizacion)/cotizacion')}
                         />
+
+                        {usuario?.id_estado == 2 ? (
                         <BotonCategorias
                             textoBoton="MI AGENDA"
                             colorTexto="#333"
-                            textoBotonSub="Revisa tu agenda de trabajo aquí"
+                            textoBotonSub="Lleva tu agenda de trabajo organizada con Google Calendar"
                             colorTextoSub="#666"
                             bgColor="#F5F5F5"
                             iconoDerecha="chevron-forward"
                             colorIconoDerecha="#8BC34A"
                             colorIconoIzquierda="#8BC34A"
                             iconoIzquierda="calendar"
-                            onPress={() => router.push('/(mas)/agenda')}
+                            onPress={() => handlePressCalendar()}
                         />
+                        ) : null}
                     </View>
 
                     {/* Sección de Información */}
@@ -303,15 +335,40 @@ const styles = StyleSheet.create({
         marginLeft: 5,
     },
     authSection: {
-        justifyContent: 'center',
-        gap: 20,
+        backgroundColor: '#FFF8F8',
+        borderRadius: 10,
+        margin: 20,
+        padding: 15,
+        borderLeftWidth: 4,
+        borderLeftColor: '#FF5252',
+    },
+    authContent: {
         flexDirection: 'row',
-        marginVertical: 20,      
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    authTitle: {
+        color: '#D32F2F',
+        fontWeight: '600',
+        fontSize: 15,
+        marginBottom: 3,
+    },
+    authSubtitle: {
+        color: '#616161',
+        fontSize: 13,
     },
     authButton: {
-        display: 'flex',
         flexDirection: 'row',
-        alignItems: 'flex-end',
-        justifyContent: 'flex-end',
+        alignItems: 'center',
+        backgroundColor: '#8BC34A',
+        borderRadius: 20,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        elevation: 2,
+    },
+    authButtonText: {
+        color: 'white',
+        fontWeight: '600',
+        marginRight: 5,
     },
 });

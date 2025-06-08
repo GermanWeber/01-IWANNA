@@ -20,7 +20,7 @@ import { API_URL } from "@env";
 
     export const fetchEstadoLikeTrabajador = async (id_usuario:number, id_trabajador:number) => {
       try {
-        const response = await fetch(`${API_URL}fav/isliked/user/${id_usuario}trabajador/${id_trabajador}/`); 
+        const response = await fetch(`${API_URL}fav/isliked/user/${id_usuario}/trabajador/${id_trabajador}/`); 
         
         if (!response.ok) {
           throw new Error('Error al cargar el estado del like del trabajador');
@@ -69,7 +69,7 @@ import { API_URL } from "@env";
       } 
     };
 
-    export const fetchTrabajadores = async (id_usuario:number) => {
+    export const fetchFavTrabajadores = async (id_usuario:number) => {
       try {
         const response = await fetch(`${API_URL}fav/trabajadores/${id_usuario}`); 
         

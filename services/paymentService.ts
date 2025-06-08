@@ -178,8 +178,8 @@ export const getSubscriptionInfo = async (Id: string) => {
 };
 
 //crear la sesión de pago
-export const iniciarCheckout = async (priceId: string, customerId: string, idUser: string, setLoading: (loading: boolean) => void) => {
-  setLoading(true);
+export const iniciarCheckout = async (priceId: string, customerId: string, idUser: string, setLoading?: (loading: boolean) => void) => {
+  setLoading?.(true);
   try {
     console.log('Iniciando checkout con:', { priceId, customerId, idUser });
 
@@ -200,21 +200,37 @@ export const iniciarCheckout = async (priceId: string, customerId: string, idUse
       throw new Error(`Error en la respuesta del servidor: ${response.status} ${response.statusText}`);
     }
 
-    const responseData = await response.json();
-    console.log('Datos de respuesta:', responseData);
+    const responseText = await response.text();
+    console.log('Respuesta en texto plano:', responseText);
     
-    if (!responseData?.url) {
-      console.error('Respuesta inesperada del servidor:', responseData);
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+      console.log('Datos de respuesta parseados:', responseData);
+    } catch (e) {
+      console.error('Error al parsear la respuesta JSON:', e);
+      throw new Error('Formato de respuesta inválido del servidor');
+    }
+    
+    console.log('URL de checkout:', responseData?.url);
+    
+    if (!responseData || !responseData.url) {
+      console.error('Respuesta inesperada del servidor. Estructura completa:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: responseText
+      });
       throw new Error('La respuesta no contiene la URL de checkout');
     }
 
     return responseData.url;
 
   } catch (error) {
-    console.error('Error en iniciarCheckout:', error);
+    //console.error('Error en iniciarCheckout:', error);
     throw error instanceof Error ? error : new Error('Error desconocido al iniciar el pago');
   } finally {
-    setLoading(false);
+    setLoading?.(false);
   }
 };
 

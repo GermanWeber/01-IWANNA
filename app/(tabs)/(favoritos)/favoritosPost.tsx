@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, FlatList, ActivityIndicator, RefreshControl, StatusBar } from 'react-native';
 import Post from '../../../components/post';
 import { fetchPosts } from '../../../services/favService';
@@ -6,6 +6,7 @@ import { recuperarStorage } from '../../../services/asyncStorage';
 import { router } from 'expo-router';
 import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 
 
 export default function FavoritosPost() {
@@ -13,69 +14,81 @@ export default function FavoritosPost() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [usuario, setUsuario] = useState<any>(null);
+  const [datos, setDatos] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const cargarPostsFavoritos = async (userId: number) => {
     try {
-      setLoading(true);
-      const postsData = await fetchPosts(userId);
-      console.log('Posts cargados:', postsData);
-      if (postsData && postsData.length > 0) {
-        setPosts(postsData);
-      } else {
-        setPosts([]);
-      }
+      setRefreshing(true);
+      const postsFavoritos = await fetchPosts(userId);
+      setPosts(postsFavoritos);
       setError(null);
     } catch (err) {
       console.error('Error al cargar posts favoritos:', err);
-      setError('Error al cargar los posts favoritos');
+      setError('No se pudieron cargar los posts favoritos');
       setPosts([]);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    const cargarUsuarioYPosts = async () => {
-      try {
-        setLoading(true);
-        const usuario = await recuperarStorage('usuario');
-        console.log('Usuario cargado:', usuario);
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-        if (usuario?.id) {
-          setUsuario(usuario);
-          await cargarPostsFavoritos(Number(usuario.id));
-        } else {
-          //throw new Error('No se pudo obtener la información del usuario');
+      const cargarUsuarioYPosts = async () => {
+        try {
+          setLoading(true);
+          const datosUsuario = await recuperarStorage('usuario');
+
+          if (!isActive) return;
+
+          if (datosUsuario) {
+            setDatos(datosUsuario);
+            await cargarPostsFavoritos(Number(datosUsuario.id));
+          } else {
+            setError('No se pudo cargar la información del usuario');
+          }
+        } catch (error) {
+          if (isActive) {
+            console.log('Error al cargar datos:', error);
+            setError('Error al cargar los datos');
+          }
+        } finally {
+          if (isActive) {
+            setLoading(false);
+          }
         }
-      } catch (error) {
-        console.error('Error:', error);
-        setError(error instanceof Error ? error.message : 'Error al cargar los datos');
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
-    cargarUsuarioYPosts();
-  }, []);
+      cargarUsuarioYPosts();
+
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
 
   const onRefresh = async () => {
-    if (!usuario?.id) return;
+    if (!datos?.id) return;
     setRefreshing(true);
-    await cargarPostsFavoritos(Number(usuario.id));
+    await cargarPostsFavoritos(Number(datos.id));
   };
 
-  if (!usuario?.id) {
+  if (!datos?.id) {
     return (
-      <View style={styles.container}>
-        <Ionicons name="sad" size={40} color="#84AE46" />
-        <Text style={{ fontWeight: '900' }}>No estas regitrado</Text>
-        <Text >unete a <Text style={{ fontWeight: '900', color: '#84AE46' }}>IWANNA </Text></Text>
-        <Text>y obten la experiencia completa</Text>
-        <TouchableOpacity onPress={() => router.push('(auth)')}>
-          <Text style={{ color: '#84AE46' }}>Registrate aqui</Text>
+      <View style={styles.authContainer}>
+        <Ionicons name="sad" size={50} color="#8BC34A" />
+        <Text style={styles.authTitle}>No estás registrado</Text>
+        <Text style={styles.authSubtitle}>
+          Únete a <Text style={styles.highlight}>IWANNA</Text>
+        </Text>
+        <Text style={styles.authMessage}>y obtén la experiencia completa</Text>
+        <TouchableOpacity
+          style={styles.authButton}
+          onPress={() => router.push('(auth)')}
+        >
+          <Text style={styles.authButtonText}>Regístrate aquí</Text>
         </TouchableOpacity>
       </View>
     );
@@ -90,13 +103,17 @@ export default function FavoritosPost() {
     );
   }
 
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
       <FlatList
         data={posts}
         keyExtractor={(item) => `post-${item.id}`}
-        renderItem={({ item }) => <Post datos={item} />}
+        renderItem={({ item }) => {
+          console.log('Datos del post en favoritos:', item);
+          return <Post datos={item} />;
+        }}
         initialNumToRender={5}
         maxToRenderPerBatch={5}
         updateCellsBatchingPeriod={50}
@@ -121,6 +138,45 @@ export default function FavoritosPost() {
 }
 
 const styles = StyleSheet.create({
+
+  authContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#FFFFFF',
+  },
+  authTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 16,
+    color: '#212121',
+  },
+  authSubtitle: {
+    fontSize: 18,
+    marginTop: 8,
+    color: '#424242',
+  },
+  highlight: {
+    color: '#8BC34A',
+    fontWeight: 'bold',
+  },
+  authMessage: {
+    fontSize: 16,
+    color: '#757575',
+    marginBottom: 24,
+  },
+  authButton: {
+    backgroundColor: '#8BC34A',
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  authButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',

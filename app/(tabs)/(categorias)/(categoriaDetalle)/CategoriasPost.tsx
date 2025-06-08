@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useLocalSearchParams } from 'expo-router';
-import { obtenerPostsById } from '../../../../services/postService';
+import { fetchPostsByCategory } from '../../../../services/categoryService';
 import Post from '../../../../components/post';
 import { useState } from 'react';
 import { PostType } from '../../../../types/post';
@@ -19,9 +19,10 @@ export default function DetalleCategoriaPosts() {
   const fetchPosts = async () => {
     try {
       setError(null);
-      const post = await obtenerPostsById(Number(id));
+      const post = await fetchPostsByCategory(Number(id));
       if (post) {
-        setPosts(Array.isArray(post) ? post : [post]);
+        console.log('Datos recibidos en fetchPosts:', post);
+        setPosts(post);
       }
     } catch (err) {
       console.error('Error fetching posts:', err);
@@ -59,23 +60,36 @@ export default function DetalleCategoriaPosts() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
-      <FlatList
-        data={posts}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <Post datos={item} />}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text>No hay publicaciones disponibles</Text>
-          </View>
-        }
-      />
-    </SafeAreaView>
-  );
+           <SafeAreaView style={{ flex: 1 }}>
+             <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
+             <FlatList
+               data={posts}
+               keyExtractor={(item) => `post-${item.id}`}
+               renderItem={({ item }) => {
+                 console.log('Datos del post en favoritos:', item);
+                 return <Post datos={item} />;
+             }}
+               initialNumToRender={5}
+               maxToRenderPerBatch={5}
+               updateCellsBatchingPeriod={50}
+               windowSize={7}
+               removeClippedSubviews={true}
+               refreshControl={
+                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+               }
+               ListEmptyComponent={
+                 <View style={styles.emptyContainer}>
+                   <Text>No hay publicaciones disponibles</Text>
+                 </View>
+               }
+               getItemLayout={(data, index) => ({
+                 length: 500, // Ajusta esta altura según el tamaño promedio de tus posts
+                 offset: 500 * index,
+                 index,
+               })}
+             />
+           </SafeAreaView>
+         );
 }
 
 const styles = StyleSheet.create({
