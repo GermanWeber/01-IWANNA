@@ -37,3 +37,5 @@ yarn-error.*
 
 # variables de entorno
 .env
+
+.cursor

@@ -18,3 +18,20 @@ export interface CotizacionResponse {
   fecha?: string;
   id_trabajador: string;
 }
+
+export type RespuestaCotizacionRequest = {
+  id_cotizacion: number;
+  mensaje: string;
+  valor_estimado: number;
+};
+
+export type RespuestaCotizacionResponse = {
+  message: string;
+  respuesta: {
+    id: number;
+    id_cotizacion: number;
+    mensaje: string;
+    valor_estimado: number;
+    fecha_respuesta: string;
+  };
+};

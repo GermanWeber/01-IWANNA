@@ -1,82 +1,43 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useState, useEffect, useCallback } from 'react';
 import Accordion from 'react-native-collapsible/Accordion';
 import { MaterialIcons } from '@expo/vector-icons';
 import CotizacionCard from '../../../../components/card-cotizacion';
+import { getCotizaciones } from '../../../../services/cotizacionService';
+import { recuperarStorage } from '../../../../services/asyncStorage';
 
-// Datos de ejemplo para las cotizaciones
-const cotizaciones = [
-  {
-    id: '1',
-    nombre: 'Juan',
-    apellido: 'Pérez',
-    fecha: '13/05/2025',
-    motivo: 'Instalación eléctrica en departamento',
-    imagen: 'https://randomuser.me/api/portraits/men/1.jpg',
-    estado: 'No Respondida',
-  },
-  {
-    id: '2',
-    nombre: 'María',
-    apellido: 'González',
-    fecha: '12/05/2025',
-    motivo: 'Reparación de tuberías en baño',
-    imagen: 'https://randomuser.me/api/portraits/women/2.jpg',
-    estado: 'Respondida',
-  },
-  {
-    id: '3',
-    nombre: 'Carlos',
-    apellido: 'Rodríguez',
-    fecha: '11/05/2025',
-    motivo: 'Pintura de interiores',
-    imagen: 'https://randomuser.me/api/portraits/men/3.jpg',
-    estado: 'No Respondida',  
-  },
-  {
-    id: '4',
-    nombre: 'Pedro',
-    apellido: 'García',
-    fecha: '11/05/2025',
-    motivo: 'Pintura de interiores',
-    imagen: 'https://randomuser.me/api/portraits/men/4.jpg',
-    estado: 'No Respondida',
-  },
-  {
-    id: '5',
-    nombre: 'Ana',
-    apellido: 'García',
-    fecha: '11/05/2025',
-    motivo: 'Pintura de interiores',
-    imagen: 'https://randomuser.me/api/portraits/women/5.jpg',
-    estado: 'No Respondida',
-  },
-  {
-    id: '6',
-    nombre: 'Luis',
-    apellido: 'Torres',
-    fecha: '11/05/2025',
-    motivo: 'Pintura de interiores',
-    imagen: 'https://randomuser.me/api/portraits/men/6.jpg',
-    estado: 'No Respondida',
-  },
-  {
-    id: '7',
-    nombre: 'Luisa',
-    apellido: 'Parada',
-    fecha: '11/05/2025',
-    motivo: 'Pintura de interiores',
-    imagen: 'https://randomuser.me/api/portraits/women/7.jpg',
-    estado: 'No Respondida',
-  },
-];
+type CotizacionBackend = {
+  id: number;
+  id_cliente: number;
+  nombre_cliente: string;
+  apellido_cliente: string;
+  id_trabajador: number;
+  asunto: string;
+  descripcion: string;
+  direccion: string;
+  f_creacion: string;
+  id_estado: number;
+  respondida: number;
+};
+
+type Cotizacion = {
+  id: string;
+  nombre: string;
+  apellido: string;
+  fecha: string;
+  motivo: string;
+  imagen: string;
+  estado: string;
+};
 
 
 type Section = {
   title: string;
   key: string;
 };
+
+
 
 const SECTIONS: Section[] = [
   { title: 'No Respondidas', key: 'noRespondidas' },
@@ -86,20 +47,68 @@ const SECTIONS: Section[] = [
 export default function Cotizacion() {
   const router = useRouter();
   const [activeSections, setActiveSections] = useState<number[]>([]);
+  const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [userName, setName] = useState<string | null>(null)
+
+  const fetchCotizaciones = async () => {
+    try {
+      const usuario = await recuperarStorage('usuario');
+      if (usuario?.id) {
+        setUserId(Number(usuario.id));
+        setName(String(usuario.nombre))
+
+        const resultado = await getCotizaciones(Number(usuario.id));
+        console.log('ID del trabajador:', usuario.id);
+        console.log('Cotizaciones recibidas del backend:', resultado);
+        setCotizaciones(resultado.map((cot: CotizacionBackend) => ({
+          id: cot.id.toString(),
+          nombre: cot.nombre_cliente,
+          apellido: cot.apellido_cliente,
+          fecha: cot.f_creacion,
+          motivo: cot.asunto,
+          estado: cot.respondida === 1 ? 'Respondida' : 'No Respondida'
+        })));
+      } else {
+        console.error('No se pudo obtener el ID del usuario');
+      }
+    } catch (error) {
+      console.error('Error al cargar cotizaciones:', error);
+    }
+  };
+
+  // Usar useFocusEffect para recargar las cotizaciones cuando la pantalla recibe el foco
+  useFocusEffect(
+    useCallback(() => {
+      fetchCotizaciones();
+    }, [])
+  );
 
   const handleCardPress = (id: string) => {
-    // Navegar a la pantalla de detalle de la cotización
+    console.log('ID de la cotización tocada:', id);
     router.push(`/(mas)/(cotizacion)/cotizacion-interior?id=${id}`);
   };
 
-  // Filtrar cotizaciones (ejemplo: asumimos que las primeras 2 no están respondidas)
+  // Filtrar cotizaciones basado en el campo respondida
   const noRespondidas = cotizaciones.filter((cotizacion) => cotizacion.estado === 'No Respondida');
   const respondidas = cotizaciones.filter((cotizacion) => cotizacion.estado === 'Respondida');
 
   const _renderHeader = (section: Section, _: number, isActive: boolean) => {
+    const count = section.key === 'noRespondidas' ? noRespondidas.length : respondidas.length;
+
     return (
-      <View style={styles.header}>
-        <Text style={styles.headerText}>{section.title}</Text>
+      <View style={[styles.header, isActive && styles.headerActive]}>
+        <View style={styles.headerContent}>
+          <MaterialIcons
+            name={section.key === 'noRespondidas' ? 'pending-actions' : 'check-circle'}
+            size={24}
+            color={section.key === 'noRespondidas' ? '#FF9500' : '#34C759'}
+          />
+          <Text style={styles.headerText}>{section.title}</Text>
+          <View style={styles.countContainer}>
+            <Text style={styles.countText}>{count}</Text>
+          </View>
+        </View>
         <MaterialIcons
           name={isActive ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
           size={24}
@@ -111,34 +120,50 @@ export default function Cotizacion() {
 
   const _renderContent = (section: Section, _: number, isActive: boolean) => {
     const data = section.key === 'noRespondidas' ? noRespondidas : respondidas;
-    
+
     return (
       <View style={styles.content}>
-        <ScrollView 
-          style={styles.contentScrollView}
-          showsVerticalScrollIndicator={true}
-          nestedScrollEnabled={true}
-        >
-          {data.length > 0 ? (
-            data.map((cotizacion) => (
-              <View key={cotizacion.id} style={{ marginBottom: 10 }}>
+        {data.length > 0 ? (
+          <ScrollView
+            style={styles.contentScrollView}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled={true}
+            contentContainerStyle={styles.scrollContent}
+          >
+            {data.map((cotizacion) => (
+              <View key={cotizacion.id} style={styles.cardContainer}>
                 <CotizacionCard
                   {...cotizacion}
                   onPress={() => handleCardPress(cotizacion.id)}
                 />
               </View>
-            ))
-          ) : (
-            <Text style={styles.emptyText}>No hay cotizaciones</Text>
-          )}
-        </ScrollView>
+            ))}
+          </ScrollView>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <MaterialIcons
+              name={section.key === 'noRespondidas' ? 'pending-actions' : 'check-circle'}
+              size={48}
+              color="#ccc"
+            />
+            <Text style={styles.emptyText}>
+              {section.key === 'noRespondidas'
+                ? 'No hay cotizaciones pendientes'
+                : 'No hay cotizaciones respondidas'}
+            </Text>
+          </View>
+        )}
       </View>
     );
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Cotizaciones Recibidas</Text>
+      <View style={styles.headerContainer}>
+        <Text style={styles.title}>
+          Cotizaciones de <Text style={styles.titleHighlight}>{userName?.toUpperCase()}</Text>
+        </Text>
+      </View>
       <View style={styles.accordionContainer}>
         <Accordion<Section>
           sections={SECTIONS}
@@ -148,7 +173,7 @@ export default function Cotizacion() {
           onChange={setActiveSections}
           underlayColor="transparent"
           sectionContainerStyle={styles.sectionContainer}
-          expandMultiple={false}
+          expandMultiple={true}
         />
       </View>
     </View>
@@ -159,51 +184,100 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
-    padding: 16,
+  },
+  headerContainer: {
+    padding: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
     color: '#333',
-  },
-  sectionContainer: {
-    marginBottom: 10,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#fff',
-  },
-  headerText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-  },
-  content: {
-    padding: 10,
-    backgroundColor: '#fff',
-    maxHeight: 300, // Altura máxima para el contenido del acordeón
-  },
-  contentScrollView: {
-    paddingHorizontal: 5,
-  },
-  emptyText: {
     textAlign: 'center',
-    color: '#666',
-    marginTop: 10,
+  },
+  titleHighlight: {
+    color: '#007AFF',
   },
   accordionContainer: {
     flex: 1,
+    padding: 16,
+  },
+  sectionContainer: {
+    marginBottom: 20,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  headerActive: {
+    backgroundColor: '#f8f9fa',
+    borderBottomWidth: 0,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  headerText: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginLeft: 16,
+    color: '#333',
+  },
+  countContainer: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginLeft: 12,
+  },
+  countText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  content: {
+    backgroundColor: '#fff',
+    minHeight: 300,
+  },
+  contentScrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+  },
+  cardContainer: {
+    marginBottom: 12,
+  },
+  emptyContainer: {
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });

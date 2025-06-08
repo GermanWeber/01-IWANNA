@@ -8,29 +8,29 @@ import { NavigationIndependentTree } from '@react-navigation/native';
 
 const Tab = createMaterialTopTabNavigator();
 
-export default function Favoritos(){
-  return ( 
+export default function Favoritos() {
+  return (
     <SafeAreaView style={{ flex: 1 }}>
-        <NavigationIndependentTree>       
-            <View style={{ flex: 1,}}>
-           
+      <NavigationIndependentTree>
+        <View style={{ flex: 1, }}>
 
-                <Tab.Navigator
-                    screenOptions={{
-                    tabBarLabelStyle: { fontSize: 14, fontWeight: 'bold' },
-                    tabBarIndicatorStyle: { backgroundColor: '#8BC34A' },
-                    }}
-                >
-                    <Tab.Screen name="Posts" component={FavoritosPost} />
-                    <Tab.Screen name="Trabajadores" component={FavoritosTrabajador} />
-                </Tab.Navigator>
-            </View>
-        </NavigationIndependentTree>
+
+          <Tab.Navigator
+            screenOptions={{
+              tabBarLabelStyle: { fontSize: 14, fontWeight: 'bold' },
+              tabBarIndicatorStyle: { backgroundColor: '#8BC34A' },
+            }}
+          >
+            <Tab.Screen name="Posts" component={FavoritosPost} />
+            <Tab.Screen name="Trabajadores" component={FavoritosTrabajador} />
+          </Tab.Navigator>
+        </View>
+      </NavigationIndependentTree>
     </SafeAreaView>
 
-    );
+  );
 
-  
+
 }
 
 const styles = StyleSheet.create({

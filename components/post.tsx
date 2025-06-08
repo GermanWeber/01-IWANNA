@@ -14,14 +14,14 @@ type Props = {
 };
 
 const PostComponent: React.FC<Props> = ({ datos }) => {
-  const [cargando, setCargando] = useState(true);
-  const [liked, setLiked] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [likes, setLikes] = useState(0);
-  const [usuario, setUsuario] = useState<any>(null);
+    const [cargando, setCargando] = useState(true);
+    const [liked, setLiked] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [likes, setLikes] = useState(0);
+    const [usuario, setUsuario] = useState<any>(null);
 
-  const manejarCargaImagen = useCallback(() => setCargando(false), []);
-  const toggleModal = useCallback(() => setModalVisible(prev => !prev), []);
+    const manejarCargaImagen = useCallback(() => setCargando(false), []);
+    const toggleModal = useCallback(() => setModalVisible(prev => !prev), []);
 
 
     const cargarDatos = async () => {
@@ -31,7 +31,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                 //console.error('No se pudo obtener la información del usuario');
             }
             setUsuario(usuario);
-          
+
 
             // 2. Verificar que tenemos datos del post
             if (!datos?.id) {
@@ -43,7 +43,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
             if (likesData) {
                 setLikes(likesData.likes || 0);
             }
-            
+
             // 4. Verificar si el usuario dio like al post
             const estado = await fetchEstadoLikePost(Number(usuario.id), Number(datos.id));
             setLiked(estado?.exito || false);
@@ -54,9 +54,9 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
         }
     };
 
-    const toggleLike = async (id_post:number, id_usuario:number) => {
+    const toggleLike = async (id_post: number, id_usuario: number) => {
         console.log('Datos recibidos en toggleLike:', id_post, id_usuario);
-        if (usuario && [1,2].includes(usuario.id_estado)) {
+        if (usuario && [1, 2].includes(usuario.id_estado)) {
             try {
                 console.log('Entro a like: post', id_post, 'usuario:', id_usuario);
                 await btnFavPost(id_post, id_usuario);
@@ -85,7 +85,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                 style={styles.header}
                 onPress={useCallback(async () => {
                     await guardarStorage('idUsuarioPerfil', datos.id_usuario.toString());
-                    router.push(`/(tabs)/(inicio)/${datos.id_usuario}`);
+                    router.push(`(inicio)/${datos.id_usuario}`);
                 }, [datos.id_usuario])}
             >
                 <Image source={{ uri: `${BUCKET_URL}foto-perfil/${datos.foto}` }} style={styles.foto_usuario} />
@@ -118,7 +118,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
 
                 <View style={styles.contenedor_datos_post}>
 
-                    <TouchableOpacity style={styles.dato_post} 
+                    <TouchableOpacity style={styles.dato_post}
                         onPress={useCallback(async () => {
                             if (usuario?.id && datos?.id) {
                                 await toggleLike(datos.id, usuario.id);

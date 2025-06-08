@@ -1,155 +1,276 @@
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
+import { getCotizacionesId, createRespuestaCot, updateRespondido, getRespuestaId } from '../../../../services/cotizacionService';
+import { RespuestaCotizacionRequest } from '../../../../types/cotizacion';
 
-// Datos de ejemplo que normalmente vendrían de la API
-type Quote = {
-  id: string;
-  nombre: string;
-  apellido: string;
-  email: string;
-  telefono: string;
+type DetalleCotizacion = {
+  id: number;
+  id_cliente: number;
+  nombre_cliente: string;
+  apellido_cliente: string;
+  id_trabajador: number;
   asunto: string;
   descripcion: string;
-  fecha: string;
-  imagen: string;
-  estado: string;
+  direccion: string;
+  f_creacion: string;
+  respondida: number;
+};
+
+type RespuestaCotizacion = {
+  id: number;
+  id_cotizacion: number;
+  mensaje: string;
+  valor_estimado: number;
+  f_respuesta: string;
 };
 
 export default function CotizacionInterior() {
+  const router = useRouter();
   const { id } = useLocalSearchParams();
+  const [cotizacion, setCotizacion] = useState<DetalleCotizacion | null>(null);
+  const [respuesta, setRespuesta] = useState('');
   const [precio, setPrecio] = useState('');
-  const [mensaje, setMensaje] = useState('');
-  const [cotizacion, setCotizacion] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [respuestaCotizacion, setRespuestaCotizacion] = useState<RespuestaCotizacion | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Simulando la carga de datos
-  useEffect(() => {
-    // Aquí iría la llamada a la API para obtener los detalles de la cotización
-    const fetchCotizacion = async () => {
-      try {
-        // Datos de ejemplo
-        const data: Quote = {
-          id: id as string,
-          nombre: 'Juan',
-          apellido: 'Pérez',
-          email: 'juan@example.com',
-          telefono: '+56 9 1234 5678',
-          asunto: 'Instalación eléctrica en departamento',
-          descripcion: 'Necesito instalar tomacorrientes y luces en mi departamento de 3 habitaciones. El trabajo incluye la instalación de 10 tomacorrientes dobles y 8 luces LED empotradas. También necesito un nuevo tablero eléctrico. El departamento es de aproximadamente 80m2. Por favor, incluir en la cotización el costo de materiales y mano de obra.',
-          fecha: '13/05/2025',
-          imagen: 'https://randomuser.me/api/portraits/men/1.jpg',
-          estado: 'Pendiente'
-        };
-        setCotizacion(data);
-      } catch (error) {
-        console.error('Error al cargar la cotización:', error);
-      } finally {
-        setLoading(false);
+  const fetchDetalleCotizacion = async () => {
+    try {
+      setLoading(true);
+      console.log('ID de la cotización a buscar:', id);
+      const resultado = await getCotizacionesId(Number(id));
+      console.log('Respuesta del servicio:', resultado);
+      setCotizacion(resultado);
+
+      // Si la cotización está respondida, obtener la respuesta
+      if (resultado.respondida === 1) {
+        const respuestaData = await getRespuestaId(Number(id));
+        console.log('Respuesta de la cotización:', respuestaData);
+        setRespuestaCotizacion(respuestaData);
       }
-    };
 
-    fetchCotizacion();
-  }, [id]);
-
-  const handleEnviarCotizacion = () => {
-    if (!precio || !mensaje) {
-      alert('Por favor completa todos los campos');
-      return;
+      setLoading(false);
+      setError(null);
+    } catch (error) {
+      console.error('Error al cargar detalles de la cotización:', error);
+      setError('No se pudo cargar la cotización. Por favor, intenta más tarde.');
+      setLoading(false);
     }
-    
-    // Aquí iría la lógica para enviar la cotización
-    console.log('Enviando cotización:', { precio, mensaje });
-    alert('Cotización enviada exitosamente');
-    // Navegar atrás o actualizar el estado
   };
 
-  if (loading || !cotizacion) {
+  useEffect(() => {
+    fetchDetalleCotizacion();
+  }, [id]);
+
+  const handleEnviarRespuesta = async () => {
+    if (!respuesta.trim() || !precio.trim()) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+
+    try {
+      setSending(true);
+      const data: RespuestaCotizacionRequest = {
+        id_cotizacion: Number(id),
+        mensaje: respuesta,
+        valor_estimado: Number(precio)
+      };
+
+      console.log('Enviando respuesta:', data);
+      const resultado = await createRespuestaCot(data);
+      console.log('Respuesta enviada:', resultado);
+
+      await updateRespondido(Number(id));
+      console.log('Estado de respuesta actualizado');
+
+      // // Obtener la respuesta actualizada
+      // const respuestaActualizada = await getRespuestaId(Number(id));
+      // setRespuestaCotizacion(respuestaActualizada);
+
+      // // Actualizar el estado de la cotización
+      // if (cotizacion) {
+      //   setCotizacion({
+      //     ...cotizacion,
+      //     respondida: 1
+      //   });
+      // }
+
+      Alert.alert(
+        'Éxito',
+        'Respuesta enviada correctamente',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.back()
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error al enviar respuesta:', error);
+      Alert.alert('Error', 'No se pudo enviar la respuesta. Por favor intenta nuevamente.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Cargando...</Text>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Cargando cotización...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <MaterialIcons name="error-outline" size={48} color="#FF3B30" />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={fetchDetalleCotizacion}
+        >
+          <Text style={styles.retryButtonText}>Reintentar</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!cotizacion) {
+    return (
+      <View style={styles.errorContainer}>
+        <MaterialIcons name="error-outline" size={48} color="#FF6B6B" />
+        <Text style={styles.errorText}>No se encontró la cotización</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* Sección del usuario */}
-        <View style={styles.usuarioContainer}>
-          <Image 
-            source={{ uri: cotizacion.imagen }} 
-            style={styles.avatar} 
-          />
-          <View style={styles.usuarioInfo}>
-            <Text style={styles.nombre}>
-              {cotizacion.nombre} {cotizacion.apellido}
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Detalles de la Cotización</Text>
+      </View>
+
+      <View style={styles.content}>
+        {/* Información del Cliente */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons name="person" size={24} color="#007AFF" />
+            <Text style={styles.sectionTitle}>Información del Cliente</Text>
+          </View>
+          <View style={styles.sectionContent}>
+            <Text style={styles.clientName}>
+              {cotizacion?.nombre_cliente} {cotizacion?.apellido_cliente}
             </Text>
-            <Text style={styles.fecha}>{cotizacion.fecha}</Text>
-            <Text style={styles.contacto}>{cotizacion.email}</Text>
-            <Text style={styles.contacto}>{cotizacion.telefono}</Text>
           </View>
         </View>
 
-        {/* Sección del asunto */}
-        <View style={styles.seccion}>
-          <Text style={styles.tituloSeccion}>Asunto</Text>
-          <Text style={styles.asunto}>{cotizacion.asunto}</Text>
-        </View>
-
-        {/* Sección de descripción */}
-        <View style={styles.seccion}>
-          <Text style={styles.tituloSeccion}>Descripción</Text>
-          <Text style={styles.descripcion}>{cotizacion.descripcion}</Text>
-        </View>
-
-        {/* Sección de respuesta */}
-        <View style={styles.seccion}>
-          <Text style={styles.tituloSeccion}>Tu Cotización</Text>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Mensaje</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Escribe aquí los detalles de tu cotización..."
-              multiline
-              numberOfLines={4}
-              value={mensaje}
-              onChangeText={setMensaje}
-              placeholderTextColor="#999"
-            />
+        {/* Detalles de la Cotización */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons name="description" size={24} color="#007AFF" />
+            <Text style={styles.sectionTitle}>Detalles de la Cotización</Text>
           </View>
-          
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Precio de la cotización (CLP)</Text>
-            <View style={styles.precioContainer}>
-              <Text style={styles.precioSimbolo}>$</Text>
-              <TextInput
-                style={styles.inputPrecio}
-                placeholder="0"
-                keyboardType="numeric"
-                value={precio}
-                onChangeText={setPrecio}
-                placeholderTextColor="#999"
-              />
+          <View style={styles.sectionContent}>
+            <View style={styles.detailRow}>
+              <MaterialIcons name="subject" size={20} color="#666" />
+              <Text style={styles.detailLabel}>Asunto:</Text>
+              <Text style={styles.detailText}>{cotizacion?.asunto}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <MaterialIcons name="info" size={20} color="#666" />
+              <Text style={styles.detailLabel}>Descripción:</Text>
+              <Text style={styles.detailText}>{cotizacion?.descripcion}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <MaterialIcons name="location-on" size={20} color="#666" />
+              <Text style={styles.detailLabel}>Dirección:</Text>
+              <Text style={styles.detailText}>{cotizacion?.direccion}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <MaterialIcons name="event" size={20} color="#666" />
+              <Text style={styles.detailLabel}>Fecha de Creación:</Text>
+              <Text style={styles.detailText}>
+                {new Date(cotizacion?.f_creacion || '').toLocaleDateString()}
+              </Text>
             </View>
           </View>
         </View>
-      </ScrollView>
 
-      {/* Botón de envío fijo en la parte inferior */}
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          style={styles.botonEnviar}
-          onPress={handleEnviarCotizacion}
-        >
-          <Text style={styles.textoBoton}>
-            <MaterialIcons name="send" size={18} color="white" /> Enviar Cotización
-          </Text>
-        </TouchableOpacity>
+        {cotizacion?.respondida === 1 && respuestaCotizacion ? (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="check-circle" size={24} color="#34C759" />
+              <Text style={styles.sectionTitle}>Respuesta del Trabajador</Text>
+            </View>
+            <View style={styles.sectionContent}>
+              <View style={styles.responseCard}>
+                <View style={styles.responseHeader}>
+                  <MaterialIcons name="attach-money" size={24} color="#34C759" />
+                  <Text style={styles.responsePrice}>
+                    ${respuestaCotizacion.valor_estimado}
+                  </Text>
+                </View>
+                <View style={styles.responseMessage}>
+                  <MaterialIcons name="message" size={20} color="#666" />
+                  <Text style={styles.responseText}>{respuestaCotizacion.mensaje}</Text>
+                </View>
+                <View style={styles.responseFooter}>
+                  <MaterialIcons name="event" size={16} color="#666" />
+                  <Text style={styles.responseDate}>
+                    Respondida el {new Date(respuestaCotizacion.f_respuesta).toLocaleDateString()}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="reply" size={24} color="#FF9500" />
+              <Text style={styles.sectionTitle}>Responder Cotización</Text>
+            </View>
+            <View style={styles.sectionContent}>
+              <View style={styles.formContainer}>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Valor Estimado ($)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={precio}
+                    onChangeText={setPrecio}
+                    keyboardType="numeric"
+                    placeholder="Ingrese el valor estimado"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Mensaje de Respuesta</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    value={respuesta}
+                    onChangeText={setRespuesta}
+                    multiline
+                    numberOfLines={4}
+                    placeholder="Escriba su respuesta..."
+                    placeholderTextColor="#999"
+                  />
+                </View>
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={handleEnviarRespuesta}
+                >
+                  <Text style={styles.submitButtonText}>Enviar Respuesta</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -158,95 +279,125 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-  loadingContainer: {
-    flex: 1,
+  header: {
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-  },
-  usuarioContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  avatar: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    marginRight: 16,
-  },
-  usuarioInfo: {
-    flex: 1,
-  },
-  nombre: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  fecha: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  contacto: {
-    fontSize: 14,
-    color: '#4a90e2',
-    marginBottom: 2,
-  },
-  seccion: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  tituloSeccion: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    paddingBottom: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  asunto: {
-    fontSize: 16,
-    color: '#444',
-    lineHeight: 24,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
   },
-  descripcion: {
-    fontSize: 15,
-    color: '#555',
-    lineHeight: 22,
+  content: {
+    padding: 16,
   },
-  inputGroup: {
+  section: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
     marginBottom: 16,
+    overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  label: {
-    fontSize: 15,
-    color: '#555',
-    marginBottom: 8,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    backgroundColor: '#f8f9fa',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginLeft: 12,
+  },
+  sectionContent: {
+    padding: 16,
+  },
+  clientName: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  detailLabel: {
+    fontSize: 16,
     fontWeight: '500',
+    color: '#666',
+    marginLeft: 8,
+    marginRight: 8,
+  },
+  detailText: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+  },
+  responseCard: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 16,
+  },
+  responseHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  responsePrice: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#34C759',
+    marginLeft: 8,
+  },
+  responseMessage: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  responseText: {
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 8,
+    flex: 1,
+  },
+  responseFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  responseDate: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 4,
+  },
+  formContainer: {
+    gap: 16,
+  },
+  inputContainer: {
+    gap: 8,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
   },
   input: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -255,43 +406,54 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
   },
   textArea: {
-    minHeight: 100,
+    height: 100,
     textAlignVertical: 'top',
   },
-  precioContainer: {
-    flexDirection: 'row',
+  submitButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    padding: 16,
     alignItems: 'center',
+    marginTop: 8,
   },
-  precioSimbolo: {
-    fontSize: 20,
-    marginRight: 8,
-    color: '#333',
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
-  inputPrecio: {
+  loadingContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  footer: {
-    padding: 16,
-    backgroundColor: 'white',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  botonEnviar: {
-    backgroundColor: '#4a90e2',
-    borderRadius: 8,
-    padding: 16,
+    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f8f9fa',
   },
-  textoBoton: {
-    color: 'white',
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#FF3B30',
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 16,
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
