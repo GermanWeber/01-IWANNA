@@ -22,6 +22,20 @@ export default function CotizacionLayout() {
       />
 
       <Stack.Screen
+        name="cotizacion-cliente"
+        options={{
+          header: () => <HeaderPrincipal />
+        }}
+      />
+
+      <Stack.Screen
+        name="cotizacion-interior-cliente"
+        options={{
+          header: () => <HeaderPrincipal />
+        }}
+      />
+
+      <Stack.Screen
         name="cotizacion-form"
         options={{
           header: () => <HeaderPrincipal />

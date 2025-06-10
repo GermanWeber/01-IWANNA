@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, View, Text, StyleSheet, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 type CotizacionCardProps = {
@@ -9,149 +9,162 @@ type CotizacionCardProps = {
   fecha: string;
   motivo: string;
   estado: string;
-  onPress?: () => void;
+  onPress: () => void;
 };
 
-const CotizacionCard: React.FC<CotizacionCardProps> = ({
-  nombre,
-  apellido,
-  fecha,
-  motivo,
-  estado,
-  onPress,
-}) => {
-  const isRespondida = estado === 'Respondida';
+export default function CotizacionCard({ id, nombre, apellido, fecha, motivo, estado, onPress }: CotizacionCardProps) {
+  const getEstadoColor = () => {
+    switch (estado) {
+      case 'Respondida':
+        return '#34C759';
+      case 'Aceptada':
+        return '#1565C0';
+      case 'Terminada':
+        return '#28A745';
+      case 'Rechazada':
+        return '#C62828';
+      default:
+        return '#FF9500';
+    }
+  };
+
+  const getEstadoIcon = () => {
+    switch (estado) {
+      case 'Respondida':
+        return 'check-circle';
+      case 'Aceptada':
+        return 'assignment-turned-in';
+      case 'Terminada':
+        return 'task-alt';
+      case 'Rechazada':
+        return 'cancel';
+      default:
+        return 'pending-actions';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   return (
-    <TouchableOpacity onPress={onPress} style={styles.container}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.header}>
         <View style={styles.userInfo}>
-          <MaterialIcons
-            name="person"
-            size={24}
-            color={isRespondida ? '#4CAF50' : '#007AFF'}
-          />
+          <View style={styles.avatarContainer}>
+            <MaterialIcons name="person" size={24} color="#007AFF" />
+          </View>
           <View style={styles.nameContainer}>
-            <Text style={styles.name}>{`${nombre} ${apellido}`}</Text>
-            <Text style={styles.date}>{new Date(fecha).toLocaleDateString()}</Text>
+            <Text style={styles.name}>{nombre} {apellido}</Text>
+            <Text style={styles.date}>{formatDate(fecha)}</Text>
           </View>
         </View>
-        <View style={[styles.statusBadge, isRespondida ? styles.respondidaBadge : styles.pendienteBadge]}>
-          <MaterialIcons
-            name={isRespondida ? 'check-circle' : 'pending-actions'}
-            size={16}
-            color="#fff"
-          />
-          <Text style={styles.statusText}>{estado}</Text>
+        <View style={[styles.estadoContainer, { backgroundColor: getEstadoColor() + '15' }]}>
+          <MaterialIcons name={getEstadoIcon()} size={16} color={getEstadoColor()} />
+          <Text style={[styles.estado, { color: getEstadoColor() }]}>{estado}</Text>
         </View>
       </View>
 
       <View style={styles.content}>
-        <MaterialIcons name="description" size={20} color="#666" />
-        <Text style={styles.motivo} numberOfLines={2}>{motivo}</Text>
-      </View>
-
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.button} onPress={onPress}>
-          <Text style={styles.buttonText}>Ver Detalles</Text>
-          <MaterialIcons name="arrow-forward" size={16} color="#007AFF" />
-        </TouchableOpacity>
+        <View style={styles.motivoContainer}>
+          <MaterialIcons name="description" size={20} color="#666" />
+          <Text style={styles.motivo} numberOfLines={2}>{motivo}</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
+  card: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    padding: 12,
+    marginBottom: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
+  avatarContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F0F8FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
   nameContainer: {
-    marginLeft: 12,
     flex: 1,
   },
   name: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   date: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
   },
-  statusBadge: {
+  estadoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-    marginLeft: 8,
+    marginLeft: 6,
   },
-  respondidaBadge: {
-    backgroundColor: '#4CAF50',
-  },
-  pendienteBadge: {
-    backgroundColor: '#FF6B6B',
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
+  estado: {
+    fontSize: 11,
     fontWeight: '600',
-    marginLeft: 4,
+    marginLeft: 3,
   },
   content: {
+    marginTop: 6,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    padding: 8,
+  },
+  motivoContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 12,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
   },
   motivo: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 14,
+    fontSize: 13,
     color: '#666',
-    lineHeight: 20,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  buttonText: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '600',
-    marginRight: 4,
-  },
+    marginLeft: 6,
+    flex: 1,
+    lineHeight: 18,
+  }
 });
-
-export default CotizacionCard;

@@ -35,3 +35,24 @@ export type RespuestaCotizacionResponse = {
     fecha_respuesta: string;
   };
 };
+
+export type RechazoCotizacionRequest = {
+  id_cotizacion: number;
+  motivo: string;
+  rechazado_por: string;
+};
+
+export type RechazoCotizacionResponse = {
+  message: string;
+  respuesta: {
+    id: number;
+    id_cotizacion: number;
+    motivo: string;
+    fecha_rechazo: string;
+    rechazado_por: string;
+  };
+};
+
+export type RechazoCotizacionError = {
+  error: string;
+};
