@@ -32,7 +32,7 @@ export default function Mas() {
         // Intentar abrir la app nativa de Google Calendar
         const calendarAppUrl = 'content://com.android.calendar/time/';
         const webUrl = 'https://calendar.google.com/calendar/u/0/r';
-        
+
         try {
             // Primero intentamos abrir la app nativa
             const supported = await Linking.canOpenURL(calendarAppUrl);
@@ -66,14 +66,14 @@ export default function Mas() {
                             />
                             <View style={styles.perfilInfo}>
                                 <Text style={styles.perfilNombre}>{usuario?.nombre} {usuario?.apellido}
-                                    {usuario.id_auth === 2 && (
+                                    {usuario?.id_auth === 2 && (
                                         <Ionicons name="checkmark-circle" size={20} color="#1d9bf0" />
                                     )}
                                 </Text>
                                 {usuario?.id_estado == 2 ? (
-                                <Text style={styles.perfilPlan}>Suscrito</Text>
-                                ):(
-                                <Text style={styles.perfilPlan}>No suscrito</Text>
+                                    <Text style={styles.perfilPlan}>Suscrito</Text>
+                                ) : (
+                                    <Text style={styles.perfilPlan}>No suscrito</Text>
 
                                 )}
                                 <TouchableOpacity
@@ -98,28 +98,28 @@ export default function Mas() {
                             </View>
                         </View>
                         {/* Sección boton autenticación */}
-                        {usuario?.id_auth == 1? (
-                        <View style={styles.authSection}>
-                            <View style={styles.authContent}>
-                                <View>
-                                    <Text style={styles.authTitle}>No estás autenticado</Text>
-                                    <Text style={styles.authSubtitle}>Inicia el proceso y accede a todos los beneficios</Text>
+                        {usuario?.id_auth == 1 ? (
+                            <View style={styles.authSection}>
+                                <View style={styles.authContent}>
+                                    <View>
+                                        <Text style={styles.authTitle}>No estás autenticado</Text>
+                                        <Text style={styles.authSubtitle}>Inicia el proceso y accede a todos los beneficios</Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        style={styles.authButton}
+                                        onPress={() => router.push('/(mas)/(auth2)/auth2-info')}
+                                    >
+                                        <Text style={styles.authButtonText}>IR</Text>
+
+                                    </TouchableOpacity>
                                 </View>
-                                <TouchableOpacity 
-                                    style={styles.authButton}
-                                    onPress={() => router.push('/(mas)/(auth2)/auth2-info')}
-                                >
-                                    <Text style={styles.authButtonText}>IR</Text>
-                                    
-                                </TouchableOpacity>
                             </View>
-                        </View>
                         ) : null}
                     </View>
 
-                    
-                    
-                    
+
+
+
 
                     {/* Sección de Opciones */}
 
@@ -137,7 +137,7 @@ export default function Mas() {
                             iconoIzquierda="chatbubbles"
                             onPress={() => router.push('/(mas)/(mensajes)/mensajes')}
                         />
-                        
+
                         {usuario?.id && (
                             usuario?.id_estado == 2 ? (
                                 <BotonCategorias
@@ -167,7 +167,7 @@ export default function Mas() {
                                 />
                             )
                         )}
-                            <BotonCategorias
+                        <BotonCategorias
                             textoBoton="MIS POSTS"
                             colorTexto="#333"
                             textoBotonSub="Mira, edita y crea tus posts aquí"
@@ -193,18 +193,18 @@ export default function Mas() {
                         />
 
                         {usuario?.id_estado == 2 ? (
-                        <BotonCategorias
-                            textoBoton="MI AGENDA"
-                            colorTexto="#333"
-                            textoBotonSub="Lleva tu agenda de trabajo organizada con Google Calendar"
-                            colorTextoSub="#666"
-                            bgColor="#F5F5F5"
-                            iconoDerecha="chevron-forward"
-                            colorIconoDerecha="#8BC34A"
-                            colorIconoIzquierda="#8BC34A"
-                            iconoIzquierda="calendar"
-                            onPress={() => handlePressCalendar()}
-                        />
+                            <BotonCategorias
+                                textoBoton="MI AGENDA"
+                                colorTexto="#333"
+                                textoBotonSub="Lleva tu agenda de trabajo organizada con Google Calendar"
+                                colorTextoSub="#666"
+                                bgColor="#F5F5F5"
+                                iconoDerecha="chevron-forward"
+                                colorIconoDerecha="#8BC34A"
+                                colorIconoIzquierda="#8BC34A"
+                                iconoIzquierda="calendar"
+                                onPress={() => handlePressCalendar()}
+                            />
                         ) : null}
                     </View>
 
