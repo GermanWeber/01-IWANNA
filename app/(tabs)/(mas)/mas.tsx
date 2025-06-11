@@ -66,7 +66,7 @@ export default function Mas() {
                             />
                             <View style={styles.perfilInfo}>
                                 <Text style={styles.perfilNombre}>{usuario?.nombre} {usuario?.apellido}
-                                    {usuario.id_auth === 2 && (
+                                    {usuario?.id_auth === 2 && (
                                         <Ionicons name="checkmark-circle" size={20} color="#1d9bf0" />
                                     )}
                                 </Text>
