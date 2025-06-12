@@ -8,4 +8,5 @@ export type PostType = {
   nombre: string; 
   apellido: string;
   foto: string; 
+  id_auth: number;
 };

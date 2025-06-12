@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ComentariosModal from './comentarios';
 import { router, useFocusEffect, useRouter } from 'expo-router';
@@ -9,6 +9,9 @@ import { Video, ResizeMode } from 'expo-av';
 import { guardarStorage } from '../services/asyncStorage';
 import { btnFavPost, fetchLikesPosts, fetchEstadoLikePost } from '../services/favService';
 import { recuperarStorage } from '../services/asyncStorage';
+import {ModalDenunciaPost} from './modalDenunciaPost';
+import { List } from 'react-native-paper';
+
 type Props = {
     datos: PostType;
 };
@@ -20,6 +23,8 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
   const [likes, setLikes] = useState(0);
   const [usuario, setUsuario] = useState<any>(null);
   const router = useRouter();
+  const [modalDots, setModalDots] = useState(false);
+  const [modalDenunciar, setModalDenunciar] = useState(false);
 
   const manejarCargaImagen = useCallback(() => setCargando(false), []);
   const toggleModal = useCallback(() => setModalVisible(prev => !prev), []);
@@ -83,6 +88,16 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
         }
     };
 
+    const handleDotPress = async () => {
+        console.log('Datos recibidos en handleDotPress');
+        setModalDots(!modalDots);
+        
+    };
+
+    const handleDenunciarPost = async () => {
+        console.log('Datos recibidos en handleDenunciarPost');
+    };
+
     const handleProfilePress = useCallback(async () => {
         console.log('Datos recibidos en handleProfilePress:', datos);
         try {
@@ -106,19 +121,57 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
 
     const isVideo = datos.archivo?.endsWith('.mp4') ?? false;
 
+
+    
+
     return (
         <View style={styles.container}>
-            <TouchableOpacity
-                style={styles.header}
-                onPress={() => {handleProfilePress(); console.log('Datos recibidos en handleProfilePress:', datos)}}
+            <View style={styles.header}>
+                <TouchableOpacity
+                    style={styles.headerPerfil}
+                    onPress={() => {handleProfilePress(); console.log('Datos recibidos en handleProfilePress:', datos)}}
 
-            >
-                <Image source={{ uri: `${BUCKET_URL}foto-perfil/${datos.foto}` }} style={styles.foto_usuario} />
-                <View>
-                    <Text style={styles.nombre}>{datos.nombre} {datos.apellido}</Text>
-                    {/* <Text>{profesion}</Text> */}
+                >
+                    <Image source={{ uri: `${BUCKET_URL}foto-perfil/${datos.foto}` }} style={styles.foto_usuario} />
+                    <View>
+                        <Text style={styles.nombre}>{datos?.nombre} {datos?.apellido}
+                            {/*logo de verificado */}
+                            {datos?.id_auth === 2 && (
+                                <Ionicons name="checkmark-circle" size={20} color="#1d9bf0" />
+                            )}
+                        </Text>
+                        {/* <Text>{profesion}</Text> */}
+                    </View>
+                </TouchableOpacity>
+
+                <View style={styles.headerPerfil}>
+                    {/* boton modal de denuncia */}
+                    {usuario ? (
+                        <TouchableOpacity           
+                        onPress={() => {handleDotPress()}}
+                    >
+                        <Ionicons name="ellipsis-vertical" size={24} color="#424242" />
+                    </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity           
+                    >
+                        <Ionicons name="ellipsis-vertical" size={24} color="#424242" />
+                    </TouchableOpacity>
+                    )}
+                    {modalDots && (
+                        <View 
+                        style={styles.modalDots}>
+                            <TouchableOpacity 
+                            onPress={() => {setModalDots(false); setModalDenunciar(true)}}>
+                                <Text style={styles.denunciarText}>Denunciar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                    
+
+
                 </View>
-            </TouchableOpacity>
+            </View>
 
             <View style={styles.content}>
                 {isVideo ? (
@@ -163,9 +216,32 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                 <Text style={styles.descripcion}> {datos.detalle} </Text>
             </View>
 
+            {modalDenunciar && (
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={modalDenunciar}
+                    onRequestClose={() => setModalDenunciar(false)}
+                    presentationStyle="overFullScreen"
+                    hardwareAccelerated={true}
+                >
+                    <View style={styles.modalOverlay}>
+                        <TouchableWithoutFeedback onPress={() => setModalDenunciar(false)}>
+                            <View style={styles.modalBackground}>
+                                <View style={styles.modalContainer}>
+                                    <ModalDenunciaPost datos={datos} usuario={usuario} />
+                                </View>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </Modal>
+            )}
+
             {/* <ComentariosModal modalVisible={modalVisible} toggleModal={toggleModal} datos={{ id, detalle, archivo, fecha_creacion, id_usuario }} /> */}
         </View>
     );
+
+
 };
 
 PostComponent.displayName = 'Post';
@@ -175,6 +251,23 @@ export const Post = React.memo(PostComponent);
 export default Post;
 
 const styles = StyleSheet.create({
+    modalDots: {
+        position: 'absolute',
+        zIndex: 1,
+        top: 40,
+        right: 0,
+        backgroundColor: '#fff',
+        padding: 10,
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
     container: {
         backgroundColor: '#fff',
         marginBottom: 15,
@@ -187,8 +280,15 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     nombre: {
+        fontSize: 20,
         fontWeight: 'bold',
-        fontSize: 15,
+        color: '#424242',
+        
+    },
+    headerPerfil: {
+        flexDirection: 'row',
+        paddingHorizontal: 15,
+        paddingTop: 10,
     },
     imagen_post: {
         width: '100%',
@@ -198,7 +298,9 @@ const styles = StyleSheet.create({
     },
     header: {
         flexDirection: 'row',
-        paddingHorizontal: 15,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingRight: 15,
         paddingTop: 10,
     },
     content: {
@@ -222,5 +324,61 @@ const styles = StyleSheet.create({
         marginLeft: 5,
         color: '#666',
         fontSize: 14,
+    },
+    modalOverlay: {
+        position: 'absolute',
+        zIndex: 2,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'flex-end',   
+    },
+    modalBackground: {
+        flex: 1,
+       backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContainer: {
+        position: 'absolute',
+        backgroundColor: 'white',
+        marginHorizontal: 15,
+        borderRadius: 10,
+        width: '92%',
+        bottom: 0,
+    },
+    keyboardAvoiding: {
+        flex: 1,
+       
+    },
+    buttonContainer: {
+        padding: 15,
+    },
+    denunciarButton: {
+        borderRadius: 10,
+        borderColor: 'red',
+        borderWidth: 1,
+        backgroundColor: '#f0f0f0',
+        padding: 15,
+        alignItems: 'center',
+    },
+    denunciarText: {
+        color: 'red',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    cancelButton: {
+        padding: 15,
+        alignItems: 'center',
+        marginTop: 10,
+        backgroundColor: '#f0f0f0',
+        borderRadius: 10,
+        borderColor: 'blue',
+        borderWidth: 1,
+    },
+    cancelText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#007AFF',
     },
 });
