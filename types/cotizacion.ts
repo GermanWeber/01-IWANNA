@@ -18,3 +18,41 @@ export interface CotizacionResponse {
   fecha?: string;
   id_trabajador: string;
 }
+
+export type RespuestaCotizacionRequest = {
+  id_cotizacion: number;
+  mensaje: string;
+  valor_estimado: number;
+};
+
+export type RespuestaCotizacionResponse = {
+  message: string;
+  respuesta: {
+    id: number;
+    id_cotizacion: number;
+    mensaje: string;
+    valor_estimado: number;
+    fecha_respuesta: string;
+  };
+};
+
+export type RechazoCotizacionRequest = {
+  id_cotizacion: number;
+  motivo: string;
+  rechazado_por: string;
+};
+
+export type RechazoCotizacionResponse = {
+  message: string;
+  respuesta: {
+    id: number;
+    id_cotizacion: number;
+    motivo: string;
+    fecha_rechazo: string;
+    rechazado_por: string;
+  };
+};
+
+export type RechazoCotizacionError = {
+  error: string;
+};

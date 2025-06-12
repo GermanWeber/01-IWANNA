@@ -24,7 +24,7 @@ const Register_one = () => {
     };
 
     const handleClientePress = async () => {
-        const tipo = 1;
+        const tipo = 3;
         setTipoUsuario(tipo);
         try {
             await AsyncStorage.setItem('tipoUsuario', tipo.toString());
@@ -32,7 +32,7 @@ const Register_one = () => {
                 pathname: 'Register_two_cliente',
                 params: { tipoUsuario: tipo }
             });
-           // alert(`Has seleccionado el tipo de usuario: ${tipo}`);
+            // alert(`Has seleccionado el tipo de usuario: ${tipo}`);
         } catch (error) {
             console.error('Error al guardar el tipo de usuario:', error);
             alert('Error al guardar la selección');
@@ -62,12 +62,12 @@ const Register_one = () => {
                     source={require('../../assets/images/icons/logo-sin-fondo-manusc.png')}
                     style={styles.logo}
                 />
-                
+
                 <Text style={styles.title}>¿Cómo quieres registrarte?</Text>
                 <Text style={styles.subtitle}>Selecciona el tipo de cuenta que deseas crear</Text>
 
                 <Animated.View style={[styles.buttonContainer, { transform: [{ scale: scaleAnim }] }]}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.button}
                         onPress={handleClientePress}
                         onPressIn={handlePressIn}
@@ -77,7 +77,7 @@ const Register_one = () => {
                         <Text style={styles.buttonText}>Cliente</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={[styles.button, styles.trabajadorButton]}
                         onPress={handleTrabajadorPress}
                         onPressIn={handlePressIn}

@@ -15,13 +15,26 @@ export default function Mas() {
     const averageRating = 4;
 
     const [usuario, setUsuario] = useState<any>(null);
+    const [tipoUsuario, setTipoUsuario] = useState<string | null>(null);
 
     const loadUsuario = async () => {
         try {
+            console.log('Iniciando carga de usuario...');
             const usuarioData = await recuperarStorage('usuario');
+            const tipoUsuarioData = await recuperarStorage('tipoUsuario');
+            console.log('Datos recuperados del storage:');
+            console.log('tipoUsuarioData:', tipoUsuarioData);
+            console.log('tipo de dato:', typeof tipoUsuarioData);
+
             if (usuarioData) {
                 console.log('Usuario recuperado:', usuarioData);
                 setUsuario(usuarioData);
+            }
+            if (tipoUsuarioData) {
+                console.log('Tipo de usuario recuperado:', tipoUsuarioData);
+                setTipoUsuario(tipoUsuarioData);
+            } else {
+                console.log('No se encontró tipoUsuario en el storage');
             }
         } catch (error) {
             console.error('Error al recuperar el usuario:', error);
@@ -32,7 +45,7 @@ export default function Mas() {
         // Intentar abrir la app nativa de Google Calendar
         const calendarAppUrl = 'content://com.android.calendar/time/';
         const webUrl = 'https://calendar.google.com/calendar/u/0/r';
-        
+
         try {
             // Primero intentamos abrir la app nativa
             const supported = await Linking.canOpenURL(calendarAppUrl);
@@ -71,9 +84,9 @@ export default function Mas() {
                                     )}
                                 </Text>
                                 {usuario?.id_estado == 2 ? (
-                                <Text style={styles.perfilPlan}>Suscrito</Text>
-                                ):(
-                                <Text style={styles.perfilPlan}>No suscrito</Text>
+                                    <Text style={styles.perfilPlan}>Suscrito</Text>
+                                ) : (
+                                    <Text style={styles.perfilPlan}>No suscrito</Text>
 
                                 )}
                                 <TouchableOpacity
@@ -98,28 +111,28 @@ export default function Mas() {
                             </View>
                         </View>
                         {/* Sección boton autenticación */}
-                        {usuario?.id_auth == 1? (
-                        <View style={styles.authSection}>
-                            <View style={styles.authContent}>
-                                <View>
-                                    <Text style={styles.authTitle}>No estás autenticado</Text>
-                                    <Text style={styles.authSubtitle}>Inicia el proceso y accede a todos los beneficios</Text>
+                        {usuario?.id_auth == 1 ? (
+                            <View style={styles.authSection}>
+                                <View style={styles.authContent}>
+                                    <View>
+                                        <Text style={styles.authTitle}>No estás autenticado</Text>
+                                        <Text style={styles.authSubtitle}>Inicia el proceso y accede a todos los beneficios</Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        style={styles.authButton}
+                                        onPress={() => router.push('/(mas)/(auth2)/auth2-info')}
+                                    >
+                                        <Text style={styles.authButtonText}>IR</Text>
+
+                                    </TouchableOpacity>
                                 </View>
-                                <TouchableOpacity 
-                                    style={styles.authButton}
-                                    onPress={() => router.push('/(mas)/(auth2)/auth2-info')}
-                                >
-                                    <Text style={styles.authButtonText}>IR</Text>
-                                    
-                                </TouchableOpacity>
                             </View>
-                        </View>
                         ) : null}
                     </View>
 
-                    
-                    
-                    
+
+
+
 
                     {/* Sección de Opciones */}
 
@@ -137,7 +150,22 @@ export default function Mas() {
                             iconoIzquierda="chatbubbles"
                             onPress={() => router.push('/(mas)/(mensajes)/mensajes')}
                         />
-                        
+
+                        {usuario?.id_tipo === 3 && (
+                            <BotonCategorias
+                                textoBoton="MIS COTIZACIONES"
+                                colorTexto="#333"
+                                textoBotonSub="Revisa las cotizaciones que has enviado"
+                                colorTextoSub="#666"
+                                bgColor="#F5F5F5"
+                                iconoDerecha="chevron-forward"
+                                colorIconoDerecha="#8BC34A"
+                                colorIconoIzquierda="#8BC34A"
+                                iconoIzquierda="cart"
+                                onPress={() => router.push('/(mas)/(cotizacion)/cotizacion-cliente')}
+                            />
+                        )}
+
                         {usuario?.id && (
                             usuario?.id_estado == 2 ? (
                                 <BotonCategorias
@@ -167,44 +195,48 @@ export default function Mas() {
                                 />
                             )
                         )}
+                        {usuario?.id_tipo !== 3 && (
                             <BotonCategorias
-                            textoBoton="MIS POSTS"
-                            colorTexto="#333"
-                            textoBotonSub="Mira, edita y crea tus posts aquí"
-                            colorTextoSub="#666"
-                            bgColor="#F5F5F5"
-                            iconoDerecha="chevron-forward"
-                            colorIconoDerecha="#8BC34A"
-                            colorIconoIzquierda="#8BC34A"
-                            iconoIzquierda="image"
-                            onPress={() => router.push('/(mas)/(posts)/mis-posts')}
-                        />
-                        <BotonCategorias
-                            textoBoton="COTIZACIONES"
-                            colorTexto="#333"
-                            textoBotonSub="Revisa tus cotizaciones entrantes aquí"
-                            colorTextoSub="#666"
-                            bgColor="#F5F5F5"
-                            iconoDerecha="chevron-forward"
-                            colorIconoDerecha="#8BC34A"
-                            colorIconoIzquierda="#8BC34A"
-                            iconoIzquierda="cart"
-                            onPress={() => router.push('/(mas)/(cotizacion)/cotizacion')}
-                        />
+                                textoBoton="MIS POSTS"
+                                colorTexto="#333"
+                                textoBotonSub="Mira, edita y crea tus posts aquí"
+                                colorTextoSub="#666"
+                                bgColor="#F5F5F5"
+                                iconoDerecha="chevron-forward"
+                                colorIconoDerecha="#8BC34A"
+                                colorIconoIzquierda="#8BC34A"
+                                iconoIzquierda="image"
+                                onPress={() => router.push('/(mas)/(posts)/mis-posts')}
+                            />
+                        )}
+                        {usuario?.id_tipo !== 3 && (
+                            <BotonCategorias
+                                textoBoton="COTIZACIONES"
+                                colorTexto="#333"
+                                textoBotonSub="Revisa tus cotizaciones entrantes aquí"
+                                colorTextoSub="#666"
+                                bgColor="#F5F5F5"
+                                iconoDerecha="chevron-forward"
+                                colorIconoDerecha="#8BC34A"
+                                colorIconoIzquierda="#8BC34A"
+                                iconoIzquierda="cart"
+                                onPress={() => router.push('/(mas)/(cotizacion)/cotizacion')}
+                            />
+                        )}
 
                         {usuario?.id_estado == 2 ? (
-                        <BotonCategorias
-                            textoBoton="MI AGENDA"
-                            colorTexto="#333"
-                            textoBotonSub="Lleva tu agenda de trabajo organizada con Google Calendar"
-                            colorTextoSub="#666"
-                            bgColor="#F5F5F5"
-                            iconoDerecha="chevron-forward"
-                            colorIconoDerecha="#8BC34A"
-                            colorIconoIzquierda="#8BC34A"
-                            iconoIzquierda="calendar"
-                            onPress={() => handlePressCalendar()}
-                        />
+                            <BotonCategorias
+                                textoBoton="MI AGENDA"
+                                colorTexto="#333"
+                                textoBotonSub="Lleva tu agenda de trabajo organizada con Google Calendar"
+                                colorTextoSub="#666"
+                                bgColor="#F5F5F5"
+                                iconoDerecha="chevron-forward"
+                                colorIconoDerecha="#8BC34A"
+                                colorIconoIzquierda="#8BC34A"
+                                iconoIzquierda="calendar"
+                                onPress={() => handlePressCalendar()}
+                            />
                         ) : null}
                     </View>
 

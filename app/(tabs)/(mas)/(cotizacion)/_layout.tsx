@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import HeaderPrincipal from '../../../../components/Header';
 
 export default function CotizacionLayout() {
-  
+
   return (
     <Stack>
       <Stack.Screen
@@ -16,8 +16,22 @@ export default function CotizacionLayout() {
         name="cotizacion-interior"
         options={{
           header: (props) => (
-            <HeaderPrincipal/>
+            <HeaderPrincipal />
           ),
+        }}
+      />
+
+      <Stack.Screen
+        name="cotizacion-cliente"
+        options={{
+          header: () => <HeaderPrincipal />
+        }}
+      />
+
+      <Stack.Screen
+        name="cotizacion-interior-cliente"
+        options={{
+          header: () => <HeaderPrincipal />
         }}
       />
 
