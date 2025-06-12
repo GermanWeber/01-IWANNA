@@ -146,6 +146,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
 
                 <View style={styles.headerPerfil}>
                     {/* boton modal de denuncia */}
+                    {/* solo puedes comentar si eres usuario */}
                     {usuario ? (
                         <TouchableOpacity           
                         onPress={() => {handleDotPress()}}
