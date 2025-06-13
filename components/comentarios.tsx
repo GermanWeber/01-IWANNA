@@ -25,6 +25,7 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
             minute: '2-digit',
         });
     };
+
     const enviarComentario = async () => {
         if (!comentario.trim()) return;
 
@@ -48,6 +49,7 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
             console.error('Error al enviar comentario:', error);
         }
     };
+
     const handleCerrarModoRespuesta = () => {
         setComentarioSeleccionado(null);
     }
@@ -74,7 +76,10 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
         <View style={styles.comentario}>
             <Image source={{ uri: `${BUCKET_URL}foto-perfil/${item.foto}` }} style={styles.foto_perfil} />
             <View style={styles.contenido_comentario}>
-                <Text style={styles.nombre_usuario}>{item.nombre_usuario}</Text>
+                <View>
+                    <Text style={styles.nombre_usuario}>{item.nombre_usuario}</Text>
+                    <Text style={styles.fecha}> {formatearFecha(item.fecha_creacion)}</Text>
+                </View>
                 <Text style={styles.texto_comentario}>{item.contenido}</Text>
                 <View style={styles.acciones_comentario}>
                     <TouchableOpacity 
@@ -92,19 +97,18 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
                         <Ionicons name="chatbubble-outline" size={16} color="#424242" />
                         {/* <Text style={styles.contador}>{item.respuestas.length}</Text> */}
                     </TouchableOpacity>
-                    <Text style={styles.fecha}> {formatearFecha(item.fecha_creacion)}</Text>
                 </View>
                 <View style={styles.botones_respuesta}>
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={() => setComentarioSeleccionado({ id: item.id, usuario: item.nombre_usuario })}>
                         <Text style={styles.boton_respuesta}>Responder</Text>
                     </TouchableOpacity>
-                    {/* {item.id.length > 0 && (
+                    {item.total_respuestas > 0 && (
                         <TouchableOpacity onPress={() => toggleRespuestasVisibles(item.id)}>
                             <Text style={styles.boton_respuesta}>
                                 {respuestasVisibles.has(item.id) ? 'Ocultar respuestas' : 'Ver respuestas'}
                             </Text>
                         </TouchableOpacity>
-                    )} */}
+                    )}
                 </View>
                 {/* {respuestasVisibles.has(item.id_comentario) && item.respuestas.length > 0 && (
                     <View style={styles.respuestasContainer}>
