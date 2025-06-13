@@ -9,4 +9,5 @@ export type PostType = {
   apellido: string;
   foto: string; 
   id_auth: number;
+  total_comentarios: string;
 };

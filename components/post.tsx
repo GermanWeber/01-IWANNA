@@ -210,7 +210,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
 
                     <TouchableOpacity style={styles.dato_post} onPress={toggleModal}>
                         <Ionicons name="chatbubble-outline" size={24} color="#424242" />
-                        {/* <Text style={styles.icono}>{cant_comentarios}</Text> */}
+                        {<Text style={styles.icono}>{datos.total_comentarios}</Text> }
                     </TouchableOpacity>
                 </View>
 
@@ -238,7 +238,11 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                 </Modal>
             )}
 
-            {/* <ComentariosModal modalVisible={modalVisible} toggleModal={toggleModal} datos={{ id, detalle, archivo, fecha_creacion, id_usuario }} /> */}
+            {<ComentariosModal
+                modalVisible={modalVisible}
+                toggleModal={toggleModal}
+                postId={datos.id}
+            />}
         </View>
     );
 

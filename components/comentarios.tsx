@@ -1,57 +1,52 @@
-import React, { useState } from 'react';
-import { Modal, FlatList, View, Text, Image, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Modal, FlatList, View, Text, Image, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { Comentario, ComentariosModalProps } from '../types/comentarios';
+import { crearComentarioPost, getComentariosPost } from '../services/comentariosService';
+import { recuperarStorage } from '../services/asyncStorage';
+import { BUCKET_URL } from '@env';
 
-type Comentario = {
-    id_post: number;
-    id_comentario: number;
-    id_usuario: number;
-    tipo_usuario: number;
-    usuario: string;
-    img_perfil: string;
-    comentario: string;
-    likes: number;
-    fecha: string;
-    hora: string;
-    respuestas: Comentario[];
-};
-
-interface ComentariosModalProps {
-    modalVisible: boolean;
-    toggleModal: () => void;
-    datos: {
-        id: number;
-        id_usuario: number,
-        nombre: string;
-        tipo_usuario: number;
-        profesion: string;
-        img_perfil: string;
-        img_post: string;
-        descripcion: string;
-        likes: number;
-        cant_comentarios: number;
-        comentarios: Comentario[];
-    };
-}
-
-const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggleModal, datos }) => {
+const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggleModal, postId }) => {
     const [comentario, setComentario] = useState('');
     const [comentarioSeleccionado, setComentarioSeleccionado] = useState<{ id: number, usuario: string } | null>(null);
     const [respuestasVisibles, setRespuestasVisibles] = useState<Set<number>>(new Set());
     const [likedComments, setLikedComments] = useState<number[]>([]);
-
-    // FUNCIONES
-    const obtenerDatosPorIdComentario = (idComentario: number) => {
-        const comentarioEncontrado = datos.comentarios.find(c => c.id_comentario === idComentario);
-        return comentarioEncontrado ? comentarioEncontrado : null;
-    };
+    const [comentariosPost, setComentariosPost] = useState<Comentario[]>([]);
+    const [loading, setLoading] = useState(false);
     
-    // HANDLES
-    const handleResponder = (idComentario: number) => {
-        const comentario = obtenerDatosPorIdComentario(idComentario);
-        if(comentario) {
-            setComentarioSeleccionado({ id: comentario.id_comentario, usuario: comentario.usuario });
+    const formatearFecha = (fechaISO: string) => {
+        const fecha = new Date(fechaISO);
+        return fecha.toLocaleString('es-CL', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
+    const enviarComentario = async () => {
+        if (!comentario.trim()) return;
+
+        try {
+            const usuario = await recuperarStorage("usuario");
+            if (!usuario || !usuario.id) {
+                console.error("No se encontró el usuario en el storage");
+                return;
+            }
+
+        const usuario_id = usuario.id;
+
+            await crearComentarioPost(postId, usuario_id, comentario);
+            setComentario('');
+            
+            // Opcional: recargar comentarios después de enviar
+            const nuevosComentarios = await getComentariosPost(postId);
+            setComentariosPost(nuevosComentarios);
+
+        } catch (error) {
+            console.error('Error al enviar comentario:', error);
         }
     };
 
@@ -79,53 +74,51 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
 
     const renderComentario = ({ item }: { item: Comentario }) => (
         <View style={styles.comentario}>
-            <TouchableOpacity onPress={() => router.push(`(tabs)/(inicio)/${item.id_usuario}`)}>
-                <Image source={{ uri: item.img_perfil }} style={styles.foto_perfil} />
-            </TouchableOpacity>
+            <Image source={{ uri: `${BUCKET_URL}foto-perfil/${item.foto}` }} style={styles.foto_perfil} />
             <View style={styles.contenido_comentario}>
-                <TouchableOpacity onPress={() => router.push(`(tabs)/(inicio)/${item.id_usuario}`)}>
-                    <Text style={styles.nombre_usuario}>{item.usuario}</Text>
-                </TouchableOpacity>
-                <Text style={styles.texto_comentario}>{item.comentario}</Text>
+                <View>
+                    <Text style={styles.nombre_usuario}>{item.nombre_usuario}</Text>
+                    <Text style={styles.fecha}> {formatearFecha(item.fecha_creacion)}</Text>
+                </View>
+                <Text style={styles.texto_comentario}>{item.contenido}</Text>
                 <View style={styles.acciones_comentario}>
                     <TouchableOpacity 
                         style={styles.accion} 
-                        onPress={() => toggleLike(item.id_comentario)}
+                        onPress={() => toggleLike(item.id)}
                     >
                         <Ionicons 
-                            name={likedComments.includes(item.id_comentario) ? "heart" : "heart-outline"} 
+                            name={likedComments.includes(item.id) ? "heart" : "heart-outline"} 
                             size={16} 
-                            color={likedComments.includes(item.id_comentario) ? "#8BC34A" : "#424242"} 
+                            color={likedComments.includes(item.id) ? "#8BC34A" : "#424242"} 
                         />
-                        <Text style={styles.contador}>{item.likes}</Text>
+                        {/* <Text style={styles.contador}>{item.likes}</Text> */}
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.accion}>
                         <Ionicons name="chatbubble-outline" size={16} color="#424242" />
-                        <Text style={styles.contador}>{item.respuestas.length}</Text>
+                        {/* <Text style={styles.contador}>{item.respuestas.length}</Text> */}
                     </TouchableOpacity>
-                    <Text style={styles.fecha}>{item.fecha} {item.hora}</Text>
                 </View>
                 <View style={styles.botones_respuesta}>
-                    <TouchableOpacity onPress={() => handleResponder(item.id_comentario)}>
+                    <TouchableOpacity onPress={() => setComentarioSeleccionado({ id: item.id, usuario: item.nombre_usuario })}>
                         <Text style={styles.boton_respuesta}>Responder</Text>
                     </TouchableOpacity>
-                    {item.respuestas.length > 0 && (
-                        <TouchableOpacity onPress={() => toggleRespuestasVisibles(item.id_comentario)}>
+                    {item.total_respuestas > 0 && (
+                        <TouchableOpacity onPress={() => toggleRespuestasVisibles(item.id)}>
                             <Text style={styles.boton_respuesta}>
-                                {respuestasVisibles.has(item.id_comentario) ? 'Ocultar respuestas' : 'Ver respuestas'}
+                                {respuestasVisibles.has(item.id) ? 'Ocultar respuestas' : 'Ver respuestas'}
                             </Text>
                         </TouchableOpacity>
                     )}
                 </View>
-                {respuestasVisibles.has(item.id_comentario) && item.respuestas.length > 0 && (
+                {/* {respuestasVisibles.has(item.id_comentario) && item.respuestas.length > 0 && (
                     <View style={styles.respuestasContainer}>
                         {item.respuestas.map((resp, index) => (
                             <View key={index} style={styles.respuesta}>
-                                <TouchableOpacity onPress={() => router.push(`(tabs)/(inicio)/${item.id_usuario}`)}>
+                                <TouchableOpacity onPress={() => router.push((tabs)/(inicio)/${item.id_usuario})}>
                                     <Image source={{ uri: resp.img_perfil }} style={styles.foto_perfil_pequena} />
                                 </TouchableOpacity>
                                 <View style={styles.contenido_comentario}>
-                                    <TouchableOpacity onPress={() => router.push(`(tabs)/(inicio)/${item.id_usuario}`)}>
+                                    <TouchableOpacity onPress={() => router.push((tabs)/(inicio)/${item.id_usuario})}>
                                         <Text style={styles.nombre_usuario}>{resp.usuario}</Text>
                                     </TouchableOpacity>
                                     <Text style={styles.texto_comentario}>{resp.comentario}</Text>
@@ -147,10 +140,28 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
                             </View>
                         ))}
                     </View>
-                )}
+                )} */}
             </View>
         </View>
     );
+
+    useEffect(() => {
+        if (modalVisible) {
+            const fetchDatos = async () => {
+            try {
+                setLoading(true);
+                const data = await getComentariosPost(postId);
+                setComentariosPost(data);
+            } catch (error) {
+                console.error('Error al obtener comentarios:', error);
+            } finally {
+                setLoading(false);
+            }
+            };
+
+            fetchDatos();
+        }
+    }, [modalVisible]);
 
     return (
         <Modal
@@ -168,13 +179,29 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
                         </TouchableOpacity>
                     </View>
                     <View style={styles.comentariosContainer}>
-                        <FlatList
-                            data={datos.comentarios}
-                            keyExtractor={(item) => item.id_comentario.toString()}
-                            renderItem={renderComentario}
-                            showsVerticalScrollIndicator={false}
-                            contentContainerStyle={styles.comentariosList}
-                        />
+                        {loading ? (
+                            <View style={stylesComentarios.loadingContainer}>
+                                <ActivityIndicator size="large" color="#8BC34A" />
+                                <Text style={stylesComentarios.loadingText}>Cargando comentarios...</Text>
+                            </View>
+                        ) : comentariosPost.length === 0 ? (
+                            <View style={stylesComentarios.noComentariosContainer}>
+                                <Text style={stylesComentarios.noComentariosText}>
+                                    No hay comentarios aún.
+                                </Text>
+                                <Text style={stylesComentarios.llamadoAccion}>
+                                    ¡Sé el primero en comentar y empieza la conversación!
+                                </Text>
+                            </View>
+                        ) : (
+                            <FlatList
+                                data={comentariosPost}
+                                keyExtractor={(item) => item.id.toString()}
+                                renderItem={renderComentario}
+                                showsVerticalScrollIndicator={false}
+                                contentContainerStyle={styles.comentariosList}
+                            />
+                        )}
                     </View>
                     <View style={styles.inputContainer}>
                         {comentarioSeleccionado && (
@@ -192,7 +219,7 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
                                 value={comentario}
                                 onChangeText={setComentario}
                             />
-                            <TouchableOpacity style={styles.sendButton}>
+                            <TouchableOpacity style={styles.sendButton} onPress={enviarComentario} disabled={loading}>
                                 <Ionicons name="send" size={20} color="#8BC34A" />
                             </TouchableOpacity>
                         </View>
@@ -332,4 +359,43 @@ const styles = StyleSheet.create({
     }
 });
 
+const stylesComentarios = StyleSheet.create({
+    noComentariosContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 40,
+        paddingHorizontal: 30,
+    },
+    noComentariosText: {
+        fontSize: 16,
+        color: '#888',
+        textAlign: 'center',
+        marginBottom: 10,
+    },
+    llamadoAccion: {
+        fontSize: 18,
+        color: '#555555',
+        textAlign: 'center',
+        fontWeight: 'bold',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 20,
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: '#8BC34A',
+    },
+});
+
 export default ComentariosModal;
+
+function setLoading(arg0: boolean) {
+    throw new Error('Function not implemented.');
+}
+function getPostConComentarios(postId: number) {
+    throw new Error('Function not implemented.');
+}
