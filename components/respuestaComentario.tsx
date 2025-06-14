@@ -4,6 +4,8 @@ import { RespuestaComentario, RespuestaComentarioProps } from '../types/comentar
 import { getRespuestasComentario } from '../services/comentariosService';
 import { BUCKET_URL } from '@env';
 
+const foto_default = require('../assets/images/perfil.png');
+
 const RespuestasComentario: React.FC<RespuestaComentarioProps> = ({
     respuestasVisibles,
     toggleRespuestasVisibles,
@@ -55,14 +57,12 @@ const RespuestasComentario: React.FC<RespuestaComentarioProps> = ({
             ) : (
                 respuestas.map((respuesta) => (
                     <View key={respuesta.id} style={styles.respuesta}>
-                        <Image
-                            source={{ uri: `${BUCKET_URL}/${respuesta.foto}` }}
-                            style={styles.foto_perfil_pequena}
+                        <Image source={respuesta.foto ? { uri: `${BUCKET_URL}foto-perfil/${respuesta.foto}` } : foto_default} style={styles.foto_perfil_pequena}
                         />
                         <View style={styles.contenido_comentario}>
                             <Text style={styles.nombre_usuario}>{respuesta.nombre_usuario}</Text>
-                            <Text style={styles.texto_comentario}>{respuesta.contenido}</Text>
                             <Text style={styles.fecha}>{formatearFecha(respuesta.fecha_creacion)}</Text>
+                            <Text style={styles.texto_comentario}>{respuesta.contenido}</Text>
                         </View>
                     </View>
                 ))

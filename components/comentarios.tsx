@@ -3,9 +3,11 @@ import { Modal, FlatList, View, Text, Image, TouchableOpacity, StyleSheet, TextI
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Comentario, ComentariosModalProps } from '../types/comentarios';
-import { crearComentarioPost, getComentariosPost } from '../services/comentariosService';
+import { crearComentarioPost, crearRespuestasComentario, getComentariosPost } from '../services/comentariosService';
 import { recuperarStorage } from '../services/asyncStorage';
 import { BUCKET_URL } from '@env';
+import RespuestasComentario from './respuestaComentario';
+const foto_default = require('../assets/images/perfil.png');
 
 const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggleModal, postId }) => {
     const [comentario, setComentario] = useState('');
@@ -36,14 +38,20 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
                 return;
             }
 
-        const usuario_id = usuario.id;
-
-            await crearComentarioPost(postId, usuario_id, comentario);
-            setComentario('');
+            const usuario_id = usuario.id;
+            if(comentarioSeleccionado){
+                await crearRespuestasComentario(comentarioSeleccionado["id"], usuario_id, comentario);
+                setComentario('');
+                const nuevosComentarios = await getComentariosPost(postId);
+                setComentariosPost(nuevosComentarios);
+            } else {
+                await crearComentarioPost(postId, usuario_id, comentario);
+                setComentario('');
+                
+                const nuevosComentarios = await getComentariosPost(postId);
+                setComentariosPost(nuevosComentarios);
+            }
             
-            // Opcional: recargar comentarios después de enviar
-            const nuevosComentarios = await getComentariosPost(postId);
-            setComentariosPost(nuevosComentarios);
 
         } catch (error) {
             console.error('Error al enviar comentario:', error);
@@ -74,7 +82,8 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
 
     const renderComentario = ({ item }: { item: Comentario }) => (
         <View style={styles.comentario}>
-            <Image source={{ uri: `${BUCKET_URL}foto-perfil/${item.foto}` }} style={styles.foto_perfil} />
+            <Image source={item.foto ? { uri: `${BUCKET_URL}foto-perfil/${item.foto}` } : foto_default} style={styles.foto_perfil}
+                        />
             <View style={styles.contenido_comentario}>
                 <View>
                     <Text style={styles.nombre_usuario}>{item.nombre_usuario}</Text>
@@ -110,37 +119,15 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
                         </TouchableOpacity>
                     )}
                 </View>
-                {/* {respuestasVisibles.has(item.id_comentario) && item.respuestas.length > 0 && (
-                    <View style={styles.respuestasContainer}>
-                        {item.respuestas.map((resp, index) => (
-                            <View key={index} style={styles.respuesta}>
-                                <TouchableOpacity onPress={() => router.push((tabs)/(inicio)/${item.id_usuario})}>
-                                    <Image source={{ uri: resp.img_perfil }} style={styles.foto_perfil_pequena} />
-                                </TouchableOpacity>
-                                <View style={styles.contenido_comentario}>
-                                    <TouchableOpacity onPress={() => router.push((tabs)/(inicio)/${item.id_usuario})}>
-                                        <Text style={styles.nombre_usuario}>{resp.usuario}</Text>
-                                    </TouchableOpacity>
-                                    <Text style={styles.texto_comentario}>{resp.comentario}</Text>
-                                    <View style={styles.acciones_comentario}>
-                                        <TouchableOpacity 
-                                            style={styles.accion} 
-                                            onPress={() => toggleLike(resp.id_comentario)}
-                                        >
-                                            <Ionicons 
-                                                name={likedComments.includes(resp.id_comentario) ? "heart" : "heart-outline"} 
-                                                size={16} 
-                                                color={likedComments.includes(resp.id_comentario) ? "#8BC34A" : "#424242"} 
-                                            />
-                                            <Text style={styles.contador}>{resp.likes}</Text>
-                                        </TouchableOpacity>
-                                        <Text style={styles.fecha}>{resp.fecha} {resp.hora}</Text>
-                                    </View>
-                                </View>
-                            </View>
-                        ))}
-                    </View>
-                )} */}
+                <View>
+                    {respuestasVisibles.has(item.id) && (
+                        <RespuestasComentario
+                            respuestasVisibles={true}
+                            toggleRespuestasVisibles={() => toggleRespuestasVisibles(item.id)}
+                            comentarioId={item.id}
+                        />
+                    )}
+                </View>
             </View>
         </View>
     );

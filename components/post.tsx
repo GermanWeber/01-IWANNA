@@ -11,6 +11,7 @@ import { btnFavPost, fetchLikesPosts, fetchEstadoLikePost } from '../services/fa
 import { recuperarStorage } from '../services/asyncStorage';
 import {ModalDenunciaPost} from './modalDenunciaPost';
 import { List } from 'react-native-paper';
+const foto_default = require('../assets/images/perfil.png');
 
 type Props = {
     datos: PostType;
@@ -132,7 +133,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                     onPress={() => {handleProfilePress(); console.log('Datos recibidos en handleProfilePress:', datos)}}
 
                 >
-                    <Image source={{ uri: `${BUCKET_URL}foto-perfil/${datos.foto}` }} style={styles.foto_usuario} />
+                    <Image source={datos.foto ? { uri: `${BUCKET_URL}foto-perfil/${datos.foto}` } : foto_default} style={styles.foto_usuario} />
                     <View>
                         <Text style={styles.nombre}>{datos?.nombre} {datos?.apellido}
                             {/*logo de verificado */}
