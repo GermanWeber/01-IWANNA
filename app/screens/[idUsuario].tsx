@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert } from "react-native";
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert, Modal, TouchableWithoutFeedback } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { RatingStars } from "../../components/rating-stars";
 import { recuperarStorage } from "../../services/asyncStorage";
@@ -9,6 +9,7 @@ import { obtenerPostsById } from "../../services/postService";
 import { PostType } from '../../types/post';
 import { btnFavTrabajador, fetchEstadoLikeTrabajador, fetchFavTrabajadores } from '../../services/favService';
 import { BUCKET_URL } from '@env';
+import ModalDenunciaTrabajador from "../../components/modalDenunciaTrabajador";
 
 export default function PerfilUsuario() {
     const { idUsuario } = useLocalSearchParams();
@@ -16,6 +17,8 @@ export default function PerfilUsuario() {
     const [perfil, setPerfil] = useState<any>(null);
     const [posts, setPosts] = useState<PostType[]>([]);
     const [liked, setLiked] = useState(false);
+    const [modalDots, setModalDots] = useState(false);
+    const [modalDenunciar, setModalDenunciar] = useState(false);
   
     const [usuario, setUsuario] = useState<any>(null);
 
@@ -60,6 +63,7 @@ export default function PerfilUsuario() {
         };
     
         cargarDatos();
+        cargarUsuario();
     }, [idUsuario]);
     
     //Este useEffect se ejecuta cuando ambos están definidos
@@ -87,6 +91,12 @@ export default function PerfilUsuario() {
                 console.error('Error al actualizar el like:', error);
             }
         }
+    };
+
+    const handleDotPress = async () => {
+        console.log('Datos recibidos en handleDotPress');
+        setModalDots(!modalDots);
+        
     };
  
 
@@ -147,17 +157,42 @@ export default function PerfilUsuario() {
                                 <RatingStars rating={4.5} showValue />
                             </View>
                         </View>
+                        <View style={styles.botonesPerfil}>
+                            {/* boton modal de denuncia */}
+                            {/* solo puedes comentar si eres usuario */}
+                            {usuario ? (
+                            <TouchableOpacity           
+                            onPress={() => {handleDotPress()}}
+                            >
+                                <Ionicons name="ellipsis-vertical" size={24} color="#424242" />
+                            </TouchableOpacity>
+                            ) : (
+                                <TouchableOpacity           
+                            >
+                                <Ionicons name="ellipsis-vertical" size={24} color="#424242" />
+                            </TouchableOpacity>
+                            )}
+                            {modalDots && (
+                                <View 
+                                style={styles.modalDots}>
+                                    <TouchableOpacity 
+                                    onPress={() => {setModalDots(false); setModalDenunciar(true)}}>
+                                        <Text style={styles.denunciarText}>Denunciar</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
 
-                        <TouchableOpacity 
-                        style={styles.dato_post} 
-                        onPress={() => handleLike(usuario?.id, perfil?.id)}
-                    >
-                        <Ionicons 
-                            name={liked ? 'heart' : 'heart-outline'} 
-                            size={24} 
-                            color={liked ? '#8BC34A' : '#424242'} 
-                        />                       
-                    </TouchableOpacity>
+                            <TouchableOpacity 
+                            style={styles.dato_post} 
+                            onPress={() => handleLike(usuario?.id, perfil?.id)}
+                        >
+                            <Ionicons 
+                                name={liked ? 'heart' : 'heart-outline'} 
+                                size={24} 
+                                color={liked ? '#8BC34A' : '#424242'} 
+                            />                       
+                        </TouchableOpacity>
+                        </View>
                     </View>
 
 
@@ -269,11 +304,89 @@ export default function PerfilUsuario() {
                     )}
                 </View>
             )}
+
+            {modalDenunciar && (
+                            <Modal
+                                animationType="slide"
+                                transparent={true}
+                                visible={modalDenunciar}
+                                onRequestClose={() => setModalDenunciar(false)}
+                                presentationStyle="overFullScreen"
+                                hardwareAccelerated={true}
+                            >
+                                <View style={styles.modalOverlay}>
+                                    <TouchableWithoutFeedback onPress={() => setModalDenunciar(false)}>
+                                        <View style={styles.modalBackground}>
+                                            <View style={styles.modalContainer}>
+                                                <ModalDenunciaTrabajador 
+                                                    datos={perfil} 
+                                                    usuario={usuario}
+                                                    onClose={() => setModalDenunciar(false)}
+                                                />
+                                            </View>
+                                        </View>
+                                    </TouchableWithoutFeedback>
+                                </View>
+                            </Modal>
+                        )}
+            
         </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
+    botonesPerfil: {
+        gap: 40,
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    modalOverlay: {
+        position: 'absolute',
+        zIndex: 2,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'flex-end',   
+    },
+    modalBackground: {
+        flex: 1,
+       backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContainer: {
+        position: 'absolute',
+        backgroundColor: 'white',
+        marginHorizontal: 15,
+        borderRadius: 10,
+        width: '92%',
+        bottom: 0,
+    },
+    denunciarText: {
+        color: 'red',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    modalDots: {
+        position: 'absolute',
+        zIndex: 1,
+        width: 100,
+        top: 30,
+        right: -20,
+        backgroundColor: '#fff',
+        padding: 10,
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
     scrollContainer: {
         backgroundColor: '#f8f9fa',
         flexGrow: 1,

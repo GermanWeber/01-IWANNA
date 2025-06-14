@@ -6,7 +6,7 @@ import { StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { API_URL } from '@env';
-
+import { recuperarStorage } from '../../../../services/asyncStorage';
 interface Chat {
   id: number;
   id_usuario: number;
@@ -23,30 +23,47 @@ export default function Mensajes() {
     const [chats, setChats] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [usuario, setUsuario] = useState<any>(null);
+    
+
+    const loadUsuario = async () => {
+            try {
+                console.log('Iniciando carga de usuario...');
+                const usuarioData = await recuperarStorage('usuario');
+                
+                if (usuarioData) {
+                    console.log('Usuario recuperado:', usuarioData);
+                    setUsuario(usuarioData);
+                }
+            } catch (error) {
+                console.error('Error al recuperar el usuario:', error);
+            }
+        };
+
+    const fetchChats = async () => {
+      try {
+        // Obtener el ID del usuario autenticado (ajusta según tu sistema de autenticación)
+        const userId = usuario?.id; // Reemplaza con el ID del usuario logueado
+        const response = await fetch(`${API_URL}chat/trabajador/${userId}`);
+        
+        if (!response.ok) {
+          throw new Error('Error al obtener los chats');
+        }
+        
+        const data = await response.json();
+        setChats(data);
+        console.log('Chats recibidos:', data);
+
+      } catch (err) {
+        console.error('Error:', err);
+        setError('Error al cargar los mensajes');
+      } finally {
+        setLoading(false);
+      }
+    };
 
     useEffect(() => {
-      const fetchChats = async () => {
-        try {
-          // Obtener el ID del usuario autenticado (ajusta según tu sistema de autenticación)
-          const userId = 1; // Reemplaza con el ID del usuario logueado
-          const response = await fetch(`${API_URL}chat/trabajador/${userId}`);
-          
-          if (!response.ok) {
-            throw new Error('Error al obtener los chats');
-          }
-          
-          const data = await response.json();
-          setChats(data);
-          console.log('Chats recibidos:', data);
-
-        } catch (err) {
-          console.error('Error:', err);
-          setError('Error al cargar los mensajes');
-        } finally {
-          setLoading(false);
-        }
-      };
-
+      loadUsuario();
       fetchChats();
     }, []);
 

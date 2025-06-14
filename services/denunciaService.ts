@@ -29,7 +29,7 @@ export const denunciaPost = async (id_post: number, id_usuario: number, tipo_den
     }
 };
 
-export const denunciaTrabajador = async (id_trabajador:number, id_usuario:number, tipo_denuncia:string, detalle:string) => {
+export const denunciaTrabajador = async (id_trabajador:number, id_usuario:number, tipo_denuncia:string, detalle_denuncia:string) => {
     try {
         const response = await fetch(`${API_URL}denuncia/trabajador`, {
             method: 'POST',
@@ -40,7 +40,7 @@ export const denunciaTrabajador = async (id_trabajador:number, id_usuario:number
                 idTrabajador: id_trabajador,
                 idUsuario: id_usuario,
                 tipo_denuncia,
-                detalle
+                detalle_denuncia
             })
         }); 
         

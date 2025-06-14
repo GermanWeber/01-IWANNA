@@ -65,7 +65,7 @@ export default function MiPlan() {
                     <View style={styles.advantageItem}>
                         <Ionicons name="calendar" size={20} color="#666" />
                         <Text style={styles.nextBilling}>
-                            Próximo pago: <Text style={styles.boldText}>{datosStripe?.billing_cycle_anchor_formatted || '--/--/----'}</Text>
+                            Próximo pago: <Text style={styles.boldText}>{datosStripe?.dateEndFormatted || '--/--/----'}</Text>
                         </Text>
                     </View>
                 </View>
