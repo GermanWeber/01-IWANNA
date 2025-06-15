@@ -151,14 +151,20 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
 
                 >
                     <Image source={datos.foto ? { uri: `${BUCKET_URL}foto-perfil/${datos.foto}` } : foto_default} style={styles.foto_usuario} />
-                    <View>
-                        <Text style={styles.nombre}>{datos?.nombre} {datos?.apellido}
-                            {/*logo de verificado */}
+                    <View >
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={styles.nombre}>
+                                {datos?.nombre} {datos?.apellido}
+                            </Text>
                             {datos?.id_auth === 2 && (
-                                <Ionicons name="checkmark-circle" size={20} color="#1d9bf0" />
+                                <View style={{ marginLeft: 5, marginTop: 2 }}>
+                                    <Ionicons name="checkmark-circle" size={18} color="#1d9bf0" />
+                                </View>
                             )}
+                        </View>
+                        <Text style={{ fontSize: 14, color: '#555' }}>
+                            {datos.profesion}
                         </Text>
-                        {/* <Text>{profesion}</Text> */}
                     </View>
                 </TouchableOpacity>
 

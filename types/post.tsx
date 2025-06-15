@@ -7,6 +7,7 @@ export type PostType = {
   id_estado: number;
   nombre: string; 
   apellido: string;
+  profesion: string;
   foto: string; 
   id_auth: number;
 };
