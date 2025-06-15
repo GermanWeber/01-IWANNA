@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView 
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { recuperarStorage } from '../../../../services/asyncStorage';
-import { createCotizacion } from '../../../../services/cotizacionService';
-import { CotizacionRequest, CotizacionResponse } from '../../../../types/cotizacion';
+import { recuperarStorage } from '../../services/asyncStorage';
+import { createCotizacion } from '../../services/cotizacionService';
+import { CotizacionRequest, CotizacionResponse } from '../../types/cotizacion';
 
 interface InterfaceDireccion {
     descripcion: string;

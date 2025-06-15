@@ -118,7 +118,7 @@ export default function PerfilUsuario() {
             }
 
             // Si el usuario existe, procedemos con la cotización
-            router.push('/(mas)/(cotizacion)/cotizacion-form');
+            router.push('/screens/cotizacion-form');
         } catch (error) {
             console.error('Error al verificar usuario:', error);
             Alert.alert("Error", "Ocurrió un error al verificar tu sesión");
