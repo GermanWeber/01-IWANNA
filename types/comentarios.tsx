@@ -13,7 +13,16 @@ export interface ComentariosModalProps {
     modalVisible: boolean;
     toggleModal: () => void;
     postId: number;
+    actualizarCantidadComentarios: () => void;
 }
+
+export type ComentarioItemProps = {
+    comentario: Comentario;
+    onResponder: (comentario: Comentario) => void;
+    recargarRespuestas: boolean;
+    setRecargarRespuestasPorComentario: React.Dispatch<React.SetStateAction<{ [idComentario: number]: boolean }>>;
+    recargarRespuestasPorComentario: { [idComentario: number]: boolean };
+};
 
 export type RespuestaComentario = {
     id: number;
@@ -29,4 +38,5 @@ export interface RespuestaComentarioProps {
     respuestasVisibles: boolean;
     toggleRespuestasVisibles: () => void;
     comentarioId: number;
+    recargar:boolean;
 }

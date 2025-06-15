@@ -118,7 +118,7 @@ export default function PerfilUsuario() {
             }
 
             // Si el usuario existe, procedemos con la cotización
-            router.push('/(mas)/(cotizacion)/cotizacion-form');
+            router.push('/screens/cotizacion-form');
         } catch (error) {
             console.error('Error al verificar usuario:', error);
             Alert.alert("Error", "Ocurrió un error al verificar tu sesión");
@@ -126,10 +126,6 @@ export default function PerfilUsuario() {
             setIsLoading(false);
         }
     };
-
-   
-
-      
 
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -183,9 +179,9 @@ export default function PerfilUsuario() {
                             )}
 
                             <TouchableOpacity 
-                            style={styles.dato_post} 
-                            onPress={() => handleLike(usuario?.id, perfil?.id)}
-                        >
+                                style={styles.dato_post} 
+                                onPress={() => handleLike(usuario?.id, perfil?.id)}
+                            >
                             <Ionicons 
                                 name={liked ? 'heart' : 'heart-outline'} 
                                 size={24} 
@@ -197,7 +193,7 @@ export default function PerfilUsuario() {
 
 
                     {/* Boton de Cotizar */}
-                    {perfil.id_tipo === 2 && (
+                    {(perfil.id_tipo === 2 && usuario.id_tipo === 3)&& (
                         <TouchableOpacity
                             style={styles.cotizacionButton}
                             onPress={handleCotizar}

@@ -14,6 +14,7 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="direccion" options={{ headerShown: false }} />
           <Stack.Screen name="[idUsuario]" options={{ headerShown: false }} />
+          <Stack.Screen name="cotizacion-form" options={{ headerShown: false }} />
         </Stack>
     </SafeAreaView>
   );

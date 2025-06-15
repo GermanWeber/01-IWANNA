@@ -18,7 +18,7 @@ export const createCotizacion = async (data: CotizacionRequest): Promise<Cotizac
 
         if (!response.ok) {
             const errorData = await response.text();
-            console.error('Error response:', errorData);
+            console.log('Error response:', errorData);
             throw new Error(`Error ${response.status}: ${response.statusText} - ${errorData}`);
         }
 
@@ -26,7 +26,7 @@ export const createCotizacion = async (data: CotizacionRequest): Promise<Cotizac
         console.log('Respuesta del API:', result);
         return result;
     } catch (error) {
-        console.error('Error al crear cotización:', error);
+        console.log('Error al crear cotización:', error);
         throw error;
     }
 };
@@ -47,7 +47,7 @@ export const createRespuestaCot = async (data: RespuestaCotizacionRequest): Prom
 
         if (!response.ok) {
             const errorData = await response.text();
-            console.error('Error response:', errorData);
+            console.log('Error response:', errorData);
             throw new Error(`Error ${response.status}: ${response.statusText} - ${errorData}`);
         }
 
@@ -55,7 +55,7 @@ export const createRespuestaCot = async (data: RespuestaCotizacionRequest): Prom
         console.log('Respuesta del API:', result);
         return result;
     } catch (error) {
-        console.error('Error al crear respuesta de cotización:', error);
+        console.log('Error al crear respuesta de cotización:', error);
         throw error;
     }
 };
@@ -76,7 +76,7 @@ export const createRechazoCot = async (data: RechazoCotizacionRequest): Promise<
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error('Error response:', errorData);
+            console.log('Error response:', errorData);
             throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
         }
 
@@ -84,14 +84,14 @@ export const createRechazoCot = async (data: RechazoCotizacionRequest): Promise<
         console.log('Respuesta del API:', result);
         return result;
     } catch (error) {
-        console.error('Error al crear rechazo de cotización:', error);
+        console.log('Error al crear rechazo de cotización:', error);
         throw error;
     }
 };
 
 export const getCotizaciones = async (id_trabajador: number) => {
     try {
-        const url = `${API_URL}cotizacion/${id_trabajador}`;
+        const url = `${API_URL}cotizacion/cliente/${id_trabajador}`;
         console.log('Consultando cotizaciones en:', url);
 
         const response = await fetch(url);
@@ -103,7 +103,7 @@ export const getCotizaciones = async (id_trabajador: number) => {
 
         return data;
     } catch (error) {
-        console.error('Error:', error);
+        console.log('Error:', error);
         throw error;
     }
 };
@@ -122,7 +122,7 @@ export const getRechazo = async (id_rechazo: number) => {
 
         return data;
     } catch (error) {
-        console.error('Error:', error);
+        console.log('Error:', error);
         throw error;
     }
 };
@@ -141,7 +141,7 @@ export const getCotizacionesCli = async (id_cliente: number) => {
 
         return data;
     } catch (error) {
-        console.error('Error:', error);
+        console.log('Error:', error);
         throw error;
     }
 };
@@ -160,7 +160,7 @@ export const getCotizacionesId = async (id: number) => {
 
         return data;
     } catch (error) {
-        console.error('Error:', error);
+        console.log('Error:', error);
         throw error;
     }
 }
@@ -179,7 +179,7 @@ export const getRespuestaId = async (id: number) => {
 
         return data;
     } catch (error) {
-        console.error('Error:', error);
+        console.log('Error:', error);
         throw error;
     }
 }
@@ -203,7 +203,7 @@ export const updateRespondido = async (id: number, id_estado: number): Promise<{
 
         if (!response.ok) {
             const errorData = await response.text();
-            console.error('Error response:', errorData);
+            console.log('Error response:', errorData);
             throw new Error(`Error ${response.status}: ${response.statusText} - ${errorData}`);
         }
 
@@ -211,7 +211,7 @@ export const updateRespondido = async (id: number, id_estado: number): Promise<{
         console.log('Respuesta del API:', result);
         return result;
     } catch (error) {
-        console.error('Error al actualizar estado de respuesta:', error);
+        console.log('Error al actualizar estado de respuesta:', error);
         throw error;
     }
 };

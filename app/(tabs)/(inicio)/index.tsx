@@ -68,7 +68,6 @@ const Home = () => {
                data={posts}
                keyExtractor={(item) => `post-${item.id}`}
                renderItem={({ item }) => {
-                 //console.log('Datos del post en favoritos:', item);
                  return <Post datos={item} />;
              }}
                initialNumToRender={5}

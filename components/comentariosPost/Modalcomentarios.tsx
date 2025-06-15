@@ -2,29 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { Modal, FlatList, View, Text, Image, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Comentario, ComentariosModalProps } from '../types/comentarios';
-import { crearComentarioPost, getComentariosPost } from '../services/comentariosService';
-import { recuperarStorage } from '../services/asyncStorage';
+import { Comentario, ComentariosModalProps } from '../../types/comentarios';
+import { crearComentarioPost, crearRespuestasComentario, getCantidadRespuestasComentarios, getComentariosPost } from '../../services/comentariosService';
+import { recuperarStorage } from '../../services/asyncStorage';
 import { BUCKET_URL } from '@env';
+import RespuestasComentario from './respuestaComentario';
+import ComentarioItem from './comentarioItem';
 
-const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggleModal, postId }) => {
+const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggleModal, postId, actualizarCantidadComentarios}) => {
     const [comentario, setComentario] = useState('');
     const [comentarioSeleccionado, setComentarioSeleccionado] = useState<{ id: number, usuario: string } | null>(null);
-    const [respuestasVisibles, setRespuestasVisibles] = useState<Set<number>>(new Set());
-    const [likedComments, setLikedComments] = useState<number[]>([]);
     const [comentariosPost, setComentariosPost] = useState<Comentario[]>([]);
     const [loading, setLoading] = useState(false);
-    
-    const formatearFecha = (fechaISO: string) => {
-        const fecha = new Date(fechaISO);
-        return fecha.toLocaleString('es-CL', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    };
+    const [recargarRespuestasPorComentario, setRecargarRespuestasPorComentario] = useState<{ [comentarioId: number]: boolean }>({});
+    const [usuario, setUsuario] = useState<any>(null);
+
 
     const enviarComentario = async () => {
         if (!comentario.trim()) return;
@@ -36,14 +28,28 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
                 return;
             }
 
-        const usuario_id = usuario.id;
-
-            await crearComentarioPost(postId, usuario_id, comentario);
-            setComentario('');
+            const usuario_id = usuario.id;
             
-            // Opcional: recargar comentarios después de enviar
-            const nuevosComentarios = await getComentariosPost(postId);
-            setComentariosPost(nuevosComentarios);
+            //pregunta si el comentario es una respuesta a otro comentario
+            if(comentarioSeleccionado){
+                await crearRespuestasComentario(comentarioSeleccionado["id"], usuario_id, comentario);
+                setComentario('');
+                const nuevosComentarios = await getComentariosPost(postId);
+                setComentariosPost(nuevosComentarios);
+                actualizarCantidadComentarios();
+                setRecargarRespuestasPorComentario(prev => ({
+                    ...prev,
+                    [comentarioSeleccionado.id]: !prev[comentarioSeleccionado.id], // Toggle
+                }));
+            } else {
+                await crearComentarioPost(postId, usuario_id, comentario);
+                setComentario('');
+                
+                const nuevosComentarios = await getComentariosPost(postId);
+                setComentariosPost(nuevosComentarios);
+                actualizarCantidadComentarios();
+            }
+            
 
         } catch (error) {
             console.error('Error al enviar comentario:', error);
@@ -54,115 +60,46 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
         setComentarioSeleccionado(null);
     }
 
-    const toggleRespuestasVisibles = (idComentario: number) => {
-        const newSet = new Set(respuestasVisibles);
-        if (newSet.has(idComentario)) {
-            newSet.delete(idComentario);
-        } else {
-            newSet.add(idComentario);
-        }
-        setRespuestasVisibles(newSet);
-    };
-
-    const toggleLike = (idComentario: number) => {
-        setLikedComments(prev => 
-            prev.includes(idComentario) 
-                ? prev.filter(id => id !== idComentario)
-                : [...prev, idComentario]
-        );
-    };
-
     const renderComentario = ({ item }: { item: Comentario }) => (
-        <View style={styles.comentario}>
-            <Image source={{ uri: `${BUCKET_URL}foto-perfil/${item.foto}` }} style={styles.foto_perfil} />
-            <View style={styles.contenido_comentario}>
-                <View>
-                    <Text style={styles.nombre_usuario}>{item.nombre_usuario}</Text>
-                    <Text style={styles.fecha}> {formatearFecha(item.fecha_creacion)}</Text>
-                </View>
-                <Text style={styles.texto_comentario}>{item.contenido}</Text>
-                <View style={styles.acciones_comentario}>
-                    <TouchableOpacity 
-                        style={styles.accion} 
-                        onPress={() => toggleLike(item.id)}
-                    >
-                        <Ionicons 
-                            name={likedComments.includes(item.id) ? "heart" : "heart-outline"} 
-                            size={16} 
-                            color={likedComments.includes(item.id) ? "#8BC34A" : "#424242"} 
-                        />
-                        {/* <Text style={styles.contador}>{item.likes}</Text> */}
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.accion}>
-                        <Ionicons name="chatbubble-outline" size={16} color="#424242" />
-                        {/* <Text style={styles.contador}>{item.respuestas.length}</Text> */}
-                    </TouchableOpacity>
-                </View>
-                <View style={styles.botones_respuesta}>
-                    <TouchableOpacity onPress={() => setComentarioSeleccionado({ id: item.id, usuario: item.nombre_usuario })}>
-                        <Text style={styles.boton_respuesta}>Responder</Text>
-                    </TouchableOpacity>
-                    {item.total_respuestas > 0 && (
-                        <TouchableOpacity onPress={() => toggleRespuestasVisibles(item.id)}>
-                            <Text style={styles.boton_respuesta}>
-                                {respuestasVisibles.has(item.id) ? 'Ocultar respuestas' : 'Ver respuestas'}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-                {/* {respuestasVisibles.has(item.id_comentario) && item.respuestas.length > 0 && (
-                    <View style={styles.respuestasContainer}>
-                        {item.respuestas.map((resp, index) => (
-                            <View key={index} style={styles.respuesta}>
-                                <TouchableOpacity onPress={() => router.push((tabs)/(inicio)/${item.id_usuario})}>
-                                    <Image source={{ uri: resp.img_perfil }} style={styles.foto_perfil_pequena} />
-                                </TouchableOpacity>
-                                <View style={styles.contenido_comentario}>
-                                    <TouchableOpacity onPress={() => router.push((tabs)/(inicio)/${item.id_usuario})}>
-                                        <Text style={styles.nombre_usuario}>{resp.usuario}</Text>
-                                    </TouchableOpacity>
-                                    <Text style={styles.texto_comentario}>{resp.comentario}</Text>
-                                    <View style={styles.acciones_comentario}>
-                                        <TouchableOpacity 
-                                            style={styles.accion} 
-                                            onPress={() => toggleLike(resp.id_comentario)}
-                                        >
-                                            <Ionicons 
-                                                name={likedComments.includes(resp.id_comentario) ? "heart" : "heart-outline"} 
-                                                size={16} 
-                                                color={likedComments.includes(resp.id_comentario) ? "#8BC34A" : "#424242"} 
-                                            />
-                                            <Text style={styles.contador}>{resp.likes}</Text>
-                                        </TouchableOpacity>
-                                        <Text style={styles.fecha}>{resp.fecha} {resp.hora}</Text>
-                                    </View>
-                                </View>
-                            </View>
-                        ))}
-                    </View>
-                )} */}
-            </View>
-        </View>
+        <ComentarioItem
+            comentario={item}
+            onResponder={(comentario) => {
+                setComentarioSeleccionado({ id: comentario.id, usuario: comentario.nombre_usuario });
+            }}
+            recargarRespuestas={recargarRespuestasPorComentario[item.id] ?? false}
+            recargarRespuestasPorComentario={recargarRespuestasPorComentario}
+            setRecargarRespuestasPorComentario={setRecargarRespuestasPorComentario}
+        />
     );
 
     useEffect(() => {
         if (modalVisible) {
             const fetchDatos = async () => {
-            try {
-                setLoading(true);
-                const data = await getComentariosPost(postId);
-                setComentariosPost(data);
-            } catch (error) {
-                console.error('Error al obtener comentarios:', error);
-            } finally {
-                setLoading(false);
-            }
+                try {
+                    setLoading(true);
+                    const data = await getComentariosPost(postId);
+                    setComentariosPost(data);
+                } catch (error) {
+                    console.error('Error al obtener comentarios:', error);
+                } finally {
+                    setLoading(false);
+                }
+                
             };
 
+            const cargarUsuario = async () => {
+                const datos = await recuperarStorage('usuario');
+                                
+                if (datos) {
+                    setUsuario(datos);
+                }
+            }
+            
+            cargarUsuario();
             fetchDatos();
         }
     }, [modalVisible]);
-
+    
     return (
         <Modal
             animationType="slide"
@@ -203,7 +140,8 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
                             />
                         )}
                     </View>
-                    <View style={styles.inputContainer}>
+                    {usuario ? (
+                        <View style={styles.inputContainer}>
                         {comentarioSeleccionado && (
                             <View style={styles.modoRespuestaContainer}>
                                 <Text style={[{color:"#757575"}]}>responder a {comentarioSeleccionado?.usuario}</Text>
@@ -223,7 +161,15 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
                                 <Ionicons name="send" size={20} color="#8BC34A" />
                             </TouchableOpacity>
                         </View>
-                    </View>
+                    </View>): 
+                    (
+                        <View style={styles.inputContainer}>
+                            <Text style={{ color: '#666', fontSize: 14, textAlign: 'center' }}>
+                                Debe registrarse para comentar
+                            </Text>
+                        </View>
+                    )}
+                    
                 </View>
             </View>
         </Modal>
@@ -257,7 +203,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     comentariosList: {
-        paddingBottom: 20,
+        paddingBottom: 100,
     },
     comentario: {
         flexDirection: 'row',
@@ -333,6 +279,7 @@ const styles = StyleSheet.create({
         padding: 10,
         borderTopWidth: 1,
         borderColor: '#ddd',
+        minHeight: 40,
     },
     input: {
         flex: 1,
@@ -392,10 +339,3 @@ const stylesComentarios = StyleSheet.create({
 });
 
 export default ComentariosModal;
-
-function setLoading(arg0: boolean) {
-    throw new Error('Function not implemented.');
-}
-function getPostConComentarios(postId: number) {
-    throw new Error('Function not implemented.');
-}

@@ -1,17 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, ActivityIndicator, StyleSheet } from 'react-native';
-import { RespuestaComentario, RespuestaComentarioProps } from '../types/comentarios';
-import { getRespuestasComentario } from '../services/comentariosService';
+import { RespuestaComentario, RespuestaComentarioProps } from '../../types/comentarios';
+import { getRespuestasComentario } from '../../services/comentariosService';
 import { BUCKET_URL } from '@env';
+
+const foto_default = require('../../assets/images/perfil.png');
 
 const RespuestasComentario: React.FC<RespuestaComentarioProps> = ({
     respuestasVisibles,
     toggleRespuestasVisibles,
     comentarioId,
+    recargar = false,
 }) => {
     const [respuestas, setRespuestas] = useState<RespuestaComentario[]>([]);
     const [loading, setLoading] = useState(false);
 
+    const obtenerRespuestas = async () => {
+        try {
+            setLoading(true);
+            const data = await getRespuestasComentario(comentarioId);
+            setRespuestas(data);
+        } catch (error) {
+            console.error('Error al obtener respuestas:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    
     const formatearFecha = (fechaISO: string) => {
         const fecha = new Date(fechaISO);
         return fecha.toLocaleString('es-CL', {
@@ -41,6 +56,12 @@ const RespuestasComentario: React.FC<RespuestaComentarioProps> = ({
         fetchDatos();
     }, [respuestasVisibles]);
 
+    useEffect(() => {
+        if (recargar) {
+            obtenerRespuestas();
+        }
+    }, [recargar]);
+    
     if (!respuestasVisibles) return null;
 
     return (
@@ -55,14 +76,12 @@ const RespuestasComentario: React.FC<RespuestaComentarioProps> = ({
             ) : (
                 respuestas.map((respuesta) => (
                     <View key={respuesta.id} style={styles.respuesta}>
-                        <Image
-                            source={{ uri: `${BUCKET_URL}/${respuesta.foto}` }}
-                            style={styles.foto_perfil_pequena}
+                        <Image source={respuesta.foto ? { uri: `${BUCKET_URL}foto-perfil/${respuesta.foto}` } : foto_default} style={styles.foto_perfil_pequena}
                         />
                         <View style={styles.contenido_comentario}>
                             <Text style={styles.nombre_usuario}>{respuesta.nombre_usuario}</Text>
-                            <Text style={styles.texto_comentario}>{respuesta.contenido}</Text>
                             <Text style={styles.fecha}>{formatearFecha(respuesta.fecha_creacion)}</Text>
+                            <Text style={styles.texto_comentario}>{respuesta.contenido}</Text>
                         </View>
                     </View>
                 ))
@@ -74,7 +93,6 @@ const RespuestasComentario: React.FC<RespuestaComentarioProps> = ({
 const styles = StyleSheet.create({
     respuestasContainer: {
         marginTop: 10,
-        marginLeft: 50, // indentación para que parezcan respuestas
         paddingBottom: 10,
     },
     respuesta: {
