@@ -75,20 +75,20 @@ export default function Planes() {
   const handleWebViewNavigation = (navState: any) => {
     const { url } = navState;
     console.log('Navegando a URL:', url);
-    
-    // Si la URL es de éxito o cancelación
+
     if (url.includes('success')) {
       console.log('Redirigiendo a la app desde:', url);
       setCheckoutUrl(null);
-      
-      router.push(`/screens/mi-plan`)}
+      router.push(`../(mi-plan)/(respuesta-suscripcion)/success-layout`);
+    }
+
     if (url.includes('cancel')) {
       console.log('Redirigiendo a la app desde:', url);
       setCheckoutUrl(null);
-      
-      router.push(`/screens/mi-plan`)}
-    
+      router.push(`../(mi-plan)/(respuesta-suscripcion)/cancel-layout`);
+    }
   };
+
 
   useEffect(() => {
 
@@ -237,13 +237,26 @@ export default function Planes() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+  <SafeAreaView style={styles.safeArea}>
+    {checkoutUrl ? (
+      <WebView
+        source={{ uri: checkoutUrl }}
+        onNavigationStateChange={handleWebViewNavigation}
+        startInLoadingState={true}
+        renderLoading={() => (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#2ecc71" />
+            <Text style={styles.loadingText}>Redirigiendo a Stripe...</Text>
+          </View>
+        )}
+      />
+    ) : (
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>Elige el plan perfecto</Text>
           <Text style={styles.subtitle}>Selecciona el plan que mejor se adapte a tus necesidades</Text>
         </View>
-        
+
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#2ecc71" />
@@ -254,17 +267,18 @@ export default function Planes() {
             {planes.map((plan: any) => renderPlanCard(plan))}
           </View>
         )}
-        
+
         <View style={styles.infoBox}>
           <Ionicons name="information-circle-outline" size={24} color="#3498db" />
           <Text style={styles.infoText}>
             ¿Necesitas ayuda para elegir? Contáctanos para asesorarte sobre el plan ideal para ti.
           </Text>
         </View>
-        
       </ScrollView>
-    </SafeAreaView>
-  );
+    )}
+  </SafeAreaView>
+);
+
 }
 
 const styles = StyleSheet.create({

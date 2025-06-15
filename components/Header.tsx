@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Image, TouchableOpacity, StyleSheet, Platform, StatusBar } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { recuperarStorage } from '../services/asyncStorage';
@@ -19,23 +19,7 @@ export default function Header({
 }: HeaderProps) {
     const router = useRouter();
     const [usuario, setUsuario] = useState<any>(null);
-
-    //CARGA USUARIO DESDE STORAGE Y LO GUARDA
-    useEffect(() => {
-        const cargarUsuario = async () => {
-            try {
-                const datos = await recuperarStorage('usuario');
-                console.log("datos: ", datos);
-                if (datos) {
-                    setUsuario(datos);
-                }
-            } catch (error) {
-                console.error('Error al cargar usuario:', error);
-            }
-        };
-        cargarUsuario();
-    }, []);
-
+    const [profileUri, setProfileUri] = useState<string | null>(null);
     const handleProfilePress = async () => {
         try {
             if (usuario) {
@@ -48,6 +32,18 @@ export default function Header({
             router.push('/(auth)');
         }
     };
+
+    useFocusEffect(
+        React.useCallback(() => {
+            const cargarUsuario = async () => {
+            const datos = await recuperarStorage('usuario');
+            if (datos) {
+                setUsuario(datos);
+            }
+            };
+            cargarUsuario();
+        }, [])
+    );
 
     return (
         <View style={styles.container}>
@@ -106,9 +102,15 @@ export default function Header({
                             >
                                 <View style={styles.profileImageContainer}>
                                     <Image
-                                        source={usuario?.foto ? { uri: `${BUCKET_URL}foto-perfil/${usuario.foto}?t=${new Date().getTime()}` } : imgPerfil}
+                                        key={usuario?.foto || 'defaultFoto'}
+                                        source={
+                                            usuario?.foto
+                                            ? { uri: `${BUCKET_URL}foto-perfil/${usuario.foto}`, cache: 'force-cache' }
+                                            : imgPerfil
+                                        }
                                         style={styles.userImage}
                                     />
+
                                 </View>
                             </TouchableOpacity>
                         )}

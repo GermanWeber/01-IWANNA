@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, ScrollView, Text, Image, SafeAreaView, TouchableOpacity, Platform, Button, Linking, Alert } from 'react-native';
 import BotonCategorias from '../../../components/BotonCategorias';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { RatingStars } from '../../../components/rating-stars';
 import { recuperarStorage } from '../../../services/asyncStorage';
@@ -64,6 +64,11 @@ export default function Mas() {
     useEffect(() => {
         loadUsuario();
     }, []);
+    const pathname = usePathname();
+    useEffect(() => {
+        
+        console.log('Ruta actual:', pathname);
+    }, [pathname]);
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>

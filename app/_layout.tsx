@@ -14,11 +14,11 @@ export default function RootLayout() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen  name="screens" options={{ headerShown: false }}/>
-        </Stack>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen  name="screens" options={{ headerShown: false }}/>
+          </Stack>
     </SafeAreaView>
   );
 }
