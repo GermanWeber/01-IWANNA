@@ -93,7 +93,6 @@ const RespuestasComentario: React.FC<RespuestaComentarioProps> = ({
 const styles = StyleSheet.create({
     respuestasContainer: {
         marginTop: 10,
-        marginLeft: 50, // indentación para que parezcan respuestas
         paddingBottom: 10,
     },
     respuesta: {
