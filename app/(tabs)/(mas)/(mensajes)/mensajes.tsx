@@ -42,8 +42,8 @@ export default function Mensajes() {
 
     const fetchChats = async () => {
       try {
-        // Obtener el ID del usuario autenticado (ajusta según tu sistema de autenticación)
-        const userId = usuario?.id; // Reemplaza con el ID del usuario logueado
+        
+        const userId = usuario?.id; 
         const response = await fetch(`${API_URL}chat/trabajador/${userId}`);
         
         if (!response.ok) {

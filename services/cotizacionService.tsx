@@ -186,7 +186,7 @@ export const getRespuestaId = async (id: number) => {
 
 
 
-
+///////////////////////////
 export const updateRespondido = async (id: number, id_estado: number): Promise<{ message: string; cotizacionId: number; nuevoEstado: number }> => {
     try {
         const url = `${API_URL.replace(/\/$/, '')}/cotizacion/responder/${id}`;

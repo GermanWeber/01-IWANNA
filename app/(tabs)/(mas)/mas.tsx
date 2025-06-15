@@ -226,17 +226,18 @@ export default function Mas() {
 
                         {usuario?.id_estado == 2 ? (
                             <BotonCategorias
-                                textoBoton="MI AGENDA"
-                                colorTexto="#333"
-                                textoBotonSub="Lleva tu agenda de trabajo organizada con Google Calendar"
-                                colorTextoSub="#666"
-                                bgColor="#F5F5F5"
-                                iconoDerecha="chevron-forward"
-                                colorIconoDerecha="#8BC34A"
-                                colorIconoIzquierda="#8BC34A"
-                                iconoIzquierda="calendar"
-                                onPress={() => handlePressCalendar()}
-                            />
+                            textoBoton="GOOGLE CALENDAR"
+                            colorTexto="#5F6368"  // Google's dark gray text color
+                            textoBotonSub="Lleva tu agenda de trabajo organizada con Google Calendar"
+                            colorTextoSub="#5F6368"  // Same as text color for consistency
+                            bgColor="#FFFFFF"  // White background
+                            iconoDerecha="open"  // More appropriate icon for opening in a new tab
+                            colorIconoDerecha="#4285F4"  // Matching text color
+                            colorIconoIzquierda="#4285F4"  // Google Blue
+                            iconoIzquierda="calendar"
+                            onPress={() => handlePressCalendar()}
+                            
+                        />
                         ) : null}
                     </View>
 

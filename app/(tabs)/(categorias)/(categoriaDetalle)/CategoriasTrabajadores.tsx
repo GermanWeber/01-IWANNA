@@ -82,6 +82,7 @@ export default function DetalleCategoriaTrabajadores() {
                 colorTextoProfesion='#424242'      
                 avatar={usuario.foto}
                 colorTexto='#8BC34A'
+                id_estado={Number(usuario.id_estado)}
                 bgColor='#F5F5F5'
                 iconoDerecha={"chevron-forward"}
                 colorIconoDerecha='#00BCD4'
@@ -100,6 +101,7 @@ export default function DetalleCategoriaTrabajadores() {
 
 const styles = StyleSheet.create({
   container: {
+    gap: 8,
     flex: 1,
     padding: 20,
   },
