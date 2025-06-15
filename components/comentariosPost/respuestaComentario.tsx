@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, ActivityIndicator, StyleSheet } from 'react-native';
-import { RespuestaComentario, RespuestaComentarioProps } from '../types/comentarios';
-import { getRespuestasComentario } from '../services/comentariosService';
+import { RespuestaComentario, RespuestaComentarioProps } from '../../types/comentarios';
+import { getRespuestasComentario } from '../../services/comentariosService';
 import { BUCKET_URL } from '@env';
 
-const foto_default = require('../assets/images/perfil.png');
+const foto_default = require('../../assets/images/perfil.png');
 
 const RespuestasComentario: React.FC<RespuestaComentarioProps> = ({
     respuestasVisibles,

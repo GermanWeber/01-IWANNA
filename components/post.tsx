@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import ComentariosModal from './Modalcomentarios';
+import ComentariosModal from './comentariosPost/Modalcomentarios';
 import { router, useFocusEffect, useRouter } from 'expo-router';
 import { PostType } from '../types/post';
 import { BUCKET_URL } from '@env';
@@ -51,7 +51,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
             
             setCantidadComentarios(cantidad);
         } catch (error) {
-            setCantidadComentarios(100);
+            setCantidadComentarios(0);
         }
 
     }
@@ -61,9 +61,9 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
             const usuario = await recuperarStorage('usuario');
             if (!usuario?.id) {
                 //console.error('No se pudo obtener la información del usuario');
+            }else{
+                setUsuario(usuario);
             }
-            setUsuario(usuario);
-          
 
             // 2. Verificar que tenemos datos del post
             if (!datos?.id) {
@@ -77,7 +77,9 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
             }
             
             // 4. Verificar si el usuario dio like al post
-            await mostrarLike(usuario.id, datos.id);
+            if(usuario){
+                await mostrarLike(usuario.id, datos.id);
+            }
 
             // 5. Obtiene cantidad de comentarios del post
             await mostarCantidadComentarios(datos.id);

@@ -2,13 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Modal, FlatList, View, Text, Image, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Comentario, ComentariosModalProps } from '../types/comentarios';
-import { crearComentarioPost, crearRespuestasComentario, getCantidadRespuestasComentarios, getComentariosPost } from '../services/comentariosService';
-import { recuperarStorage } from '../services/asyncStorage';
+import { Comentario, ComentariosModalProps } from '../../types/comentarios';
+import { crearComentarioPost, crearRespuestasComentario, getCantidadRespuestasComentarios, getComentariosPost } from '../../services/comentariosService';
+import { recuperarStorage } from '../../services/asyncStorage';
 import { BUCKET_URL } from '@env';
 import RespuestasComentario from './respuestaComentario';
 import ComentarioItem from './comentarioItem';
-const foto_default = require('../assets/images/perfil.png');
 
 const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggleModal, postId, actualizarCantidadComentarios}) => {
     const [comentario, setComentario] = useState('');
@@ -16,6 +15,7 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
     const [comentariosPost, setComentariosPost] = useState<Comentario[]>([]);
     const [loading, setLoading] = useState(false);
     const [recargarRespuestasPorComentario, setRecargarRespuestasPorComentario] = useState<{ [comentarioId: number]: boolean }>({});
+    const [usuario, setUsuario] = useState<any>(null);
 
 
     const enviarComentario = async () => {
@@ -67,7 +67,7 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
                 setComentarioSeleccionado({ id: comentario.id, usuario: comentario.nombre_usuario });
             }}
             recargarRespuestas={recargarRespuestasPorComentario[item.id] ?? false}
-            recargarRespuestasPorComentario={recargarRespuestasPorComentario} // ✅ agregar esta línea
+            recargarRespuestasPorComentario={recargarRespuestasPorComentario}
             setRecargarRespuestasPorComentario={setRecargarRespuestasPorComentario}
         />
     );
@@ -84,8 +84,18 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
                 } finally {
                     setLoading(false);
                 }
+                
             };
 
+            const cargarUsuario = async () => {
+                const datos = await recuperarStorage('usuario');
+                                
+                if (datos) {
+                    setUsuario(datos);
+                }
+            }
+            
+            cargarUsuario();
             fetchDatos();
         }
     }, [modalVisible]);
@@ -130,7 +140,8 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
                             />
                         )}
                     </View>
-                    <View style={styles.inputContainer}>
+                    {usuario ? (
+                        <View style={styles.inputContainer}>
                         {comentarioSeleccionado && (
                             <View style={styles.modoRespuestaContainer}>
                                 <Text style={[{color:"#757575"}]}>responder a {comentarioSeleccionado?.usuario}</Text>
@@ -150,7 +161,15 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
                                 <Ionicons name="send" size={20} color="#8BC34A" />
                             </TouchableOpacity>
                         </View>
-                    </View>
+                    </View>): 
+                    (
+                        <View style={styles.inputContainer}>
+                            <Text style={{ color: '#666', fontSize: 14, textAlign: 'center' }}>
+                                Debe registrarse para comentar
+                            </Text>
+                        </View>
+                    )}
+                    
                 </View>
             </View>
         </Modal>
@@ -260,6 +279,7 @@ const styles = StyleSheet.create({
         padding: 10,
         borderTopWidth: 1,
         borderColor: '#ddd',
+        minHeight: 40,
     },
     input: {
         flex: 1,
@@ -319,10 +339,3 @@ const stylesComentarios = StyleSheet.create({
 });
 
 export default ComentariosModal;
-
-function setLoading(arg0: boolean) {
-    throw new Error('Function not implemented.');
-}
-function getPostConComentarios(postId: number) {
-    throw new Error('Function not implemented.');
-}

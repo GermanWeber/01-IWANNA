@@ -1,11 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { Modal, FlatList, View, Text, Image, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
-import { Comentario, ComentarioItemProps, RespuestaComentario } from '../types/comentarios';
-import { getCantidadRespuestasComentarios, getRespuestasComentario } from '../services/comentariosService';
+import { Comentario, ComentarioItemProps, RespuestaComentario } from '../../types/comentarios';
+import { getCantidadRespuestasComentarios, getRespuestasComentario } from '../../services/comentariosService';
 import { BUCKET_URL } from '@env';
 import RespuestasComentario from './respuestaComentario';
-const foto_default = require('../assets/images/perfil.png');
+const foto_default = require('../../assets/images/perfil.png');
 
 const ComentarioItem: React.FC<ComentarioItemProps> = ({ comentario, onResponder, recargarRespuestas, setRecargarRespuestasPorComentario,recargarRespuestasPorComentario}) => {
     const [cantidadRespuestas, setCantidadRespuestas] = useState<number>(0);
