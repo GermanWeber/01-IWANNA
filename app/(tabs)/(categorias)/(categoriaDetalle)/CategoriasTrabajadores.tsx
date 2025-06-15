@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { ScrollView, StyleSheet, Text, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native';
@@ -17,7 +17,7 @@ export default function DetalleCategoriaTrabajadores() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const onRefresh = () => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchTrabajadoresByCategory(id.toString()).then((data) => {
       setUsuarios(data);
@@ -27,7 +27,7 @@ export default function DetalleCategoriaTrabajadores() {
       setLoading(false);
     });
     setRefreshing(false);
-  };
+  }, [id]);
 
   
 
@@ -64,15 +64,20 @@ export default function DetalleCategoriaTrabajadores() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContainer} 
+      refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
+        <View style={styles.container}>
+          
+        
           {usuarios.length > 0 ? (
             usuarios.map((usuario) => (
+              
               <BotonAvatar
                 key={usuario.id}
                 textoBoton={`${usuario.nombre} ${usuario.apellido}`}
-                id_auth={usuario.id_auth}
+                id_auth={Number(usuario.id_auth)}
                 textoProfesion={usuario.descripcion}
                 colorTextoProfesion='#424242'      
                 avatar={usuario.foto}

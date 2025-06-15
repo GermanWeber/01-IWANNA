@@ -246,7 +246,10 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                         <TouchableWithoutFeedback onPress={() => setModalDenunciar(false)}>
                             <View style={styles.modalBackground}>
                                 <View style={styles.modalContainer}>
-                                    <ModalDenunciaPost datos={datos} usuario={usuario} />
+                                    <ModalDenunciaPost 
+                                    datos={datos} 
+                                    usuario={usuario}
+                                    onClose={() => setModalDenunciar(false)} />
                                 </View>
                             </View>
                         </TouchableWithoutFeedback>

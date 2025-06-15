@@ -6,11 +6,11 @@ import { PostType } from '../types/post';
 
 
 
-export const ModalDenunciaPost = ({ datos, usuario }: { datos: PostType, usuario: any }) => {
+export const ModalDenunciaPost = ({ datos, usuario, onClose }: { datos: PostType, usuario: any, onClose: () => void }) => {
     const [tipoDenuncia, setTipoDenuncia] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [error, setError] = useState('');
-    const [modalDenunciar, setModalDenunciar] = useState(false);  
+    
 
     const tiposDenuncia = [
         'Contenido inapropiado',
@@ -44,22 +44,28 @@ export const ModalDenunciaPost = ({ datos, usuario }: { datos: PostType, usuario
                 Alert.alert(
                     'Denuncia Enviada',
                     'Gracias por tu reporte. Nuestro equipo revisará la situación y te contactará si necesitamos más información.',
-                    [{ text: 'OK' }]
+                    [
+                        { 
+                            text: 'OK',
+                            onPress: () => {
+                                setTipoDenuncia('');
+                                setDescripcion('');
+                                onClose();
+                            }
+                        }
+                    ]
                 );
-                setTipoDenuncia('');
-                setDescripcion('');
-                setModalDenunciar(false);
-            } else {
-                Alert.alert(
-                    'Error',
-                    'Hubo un error al enviar la denuncia. Por favor, intenta de nuevo.',
-                    [{ text: 'OK' }]
-                );
+                } else {
+                    Alert.alert(
+                        'Error',
+                        'Hubo un error al enviar la denuncia. Por favor, intenta de nuevo.',
+                        [{ text: 'OK' }]
+                    );
+                }
+                // Limpiar formulario
+                
             }
-            // Limpiar formulario
-            
-        }
-    };
+            };
 
     return (   
     <Card style={styles.card}>

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Text, View, SafeAreaView, ScrollView, StyleSheet, TextInput, Alert } from 'react-native';
 import { Button, Card, RadioButton, HelperText } from 'react-native-paper';
+import { denunciaTrabajador } from '../services/denunciaService';
 
-export default function ModalDenuncia() {
+export default function ModalDenuncia({ datos, usuario, onClose }: { datos: any, usuario: any, onClose: () => void }) {
     const [tipoDenuncia, setTipoDenuncia] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [error, setError] = useState('');
+    // El estado del modal ahora se maneja desde el componente padre
 
     const tiposDenuncia = [
         'Comportamiento inapropiado',
@@ -28,17 +30,36 @@ export default function ModalDenuncia() {
         return true;
     };
 
-    const enviarDenuncia = () => {
+    const enviarDenuncia = async (id_post:number, id_usuario:number, tipo_denuncia:string, detalle_denuncia:string) => {
         if (validarFormulario()) {
             // Aquí iría la lógica para enviar la denuncia
-            Alert.alert(
-                'Denuncia Enviada',
-                'Gracias por tu reporte. Nuestro equipo revisará la situación y te contactará si necesitamos más información.',
-                [{ text: 'OK' }]
-            );
+            console.log('Datos recibidos en enviarDenuncia:', id_post, id_usuario, tipo_denuncia, detalle_denuncia);
+            const response = await denunciaTrabajador(id_post, id_usuario, tipo_denuncia, detalle_denuncia);
+            console.log('Respuesta de la denuncia:', response);
+            if (response?.exito) {
+                Alert.alert(
+                    'Denuncia Enviada',
+                    'Gracias por tu reporte. Nuestro equipo revisará la situación y te contactará si necesitamos más información.',
+                    [
+                        { 
+                            text: 'OK',
+                            onPress: () => {
+                                setTipoDenuncia('');
+                                setDescripcion('');
+                                onClose();
+                            }
+                        }
+                    ]
+                );
+            } else {
+                Alert.alert(
+                    'Error',
+                    'Hubo un error al enviar la denuncia. Por favor, intenta de nuevo.',
+                    [{ text: 'OK' }]
+                );
+            }
             // Limpiar formulario
-            setTipoDenuncia('');
-            setDescripcion('');
+            
         }
     };
 
@@ -76,7 +97,7 @@ export default function ModalDenuncia() {
 
                             <Button
                                 mode="contained"
-                                onPress={enviarDenuncia}
+                                onPress={() => enviarDenuncia(datos.id, usuario.id, tipoDenuncia, descripcion)}
                                 style={styles.button}
                                 labelStyle={styles.buttonLabel}
                             >
@@ -90,16 +111,19 @@ export default function ModalDenuncia() {
 
 const styles = StyleSheet.create({
     
+     
     scrollContainer: {
         padding: 16,
     },
     container: {
         flex: 1,
     },
+    
     card: {
         marginBottom: 16,
         borderRadius: 10,
         elevation: 3,
+        padding: 16,
     },
     titulo: {
         fontSize: 24,

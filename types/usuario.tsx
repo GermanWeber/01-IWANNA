@@ -15,4 +15,5 @@ export interface Usuario {
     foto?: string;
     direccion?: string;
     id_direccion?: string;
+    id_auth?: string;
 }
