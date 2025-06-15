@@ -10,10 +10,23 @@ const RespuestasComentario: React.FC<RespuestaComentarioProps> = ({
     respuestasVisibles,
     toggleRespuestasVisibles,
     comentarioId,
+    recargar = false,
 }) => {
     const [respuestas, setRespuestas] = useState<RespuestaComentario[]>([]);
     const [loading, setLoading] = useState(false);
 
+    const obtenerRespuestas = async () => {
+        try {
+            setLoading(true);
+            const data = await getRespuestasComentario(comentarioId);
+            setRespuestas(data);
+        } catch (error) {
+            console.error('Error al obtener respuestas:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    
     const formatearFecha = (fechaISO: string) => {
         const fecha = new Date(fechaISO);
         return fecha.toLocaleString('es-CL', {
@@ -43,6 +56,12 @@ const RespuestasComentario: React.FC<RespuestaComentarioProps> = ({
         fetchDatos();
     }, [respuestasVisibles]);
 
+    useEffect(() => {
+        if (recargar) {
+            obtenerRespuestas();
+        }
+    }, [recargar]);
+    
     if (!respuestasVisibles) return null;
 
     return (

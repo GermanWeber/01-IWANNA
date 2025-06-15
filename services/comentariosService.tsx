@@ -4,7 +4,6 @@ import { Comentario, RespuestaComentario } from '../types/comentarios';
 export const getComentariosPost = async (idPost: number): Promise<Comentario[]> => {
     try {
         const url = `${API_URL}comentario/post/${idPost}`;
-        console.log('Llamando a:', url);
 
         const response = await fetch(url);
 
@@ -18,7 +17,6 @@ export const getComentariosPost = async (idPost: number): Promise<Comentario[]> 
         }
 
         const data: Comentario[] = await response.json();
-        console.log('Datos recibidos:', data);
         return data;
     } catch (error) {
         console.error('Error al obtener comentarios:', error);
@@ -29,7 +27,6 @@ export const getComentariosPost = async (idPost: number): Promise<Comentario[]> 
 export const crearComentarioPost = async (postId: number,usuario_id: number,contenido: string): Promise<Comentario> => {
     try {
         const url = `${API_URL}comentario/post/${postId}`;
-        console.log('Enviando comentario a:', url);
 
         const response = await fetch(url, {
             method: 'POST',
@@ -49,7 +46,6 @@ export const crearComentarioPost = async (postId: number,usuario_id: number,cont
         }
 
         const data: Comentario = await response.json();
-        console.log('Comentario creado:', data);
         return data;
     } catch (error) {
         console.error('Error al crear comentario:', error);
@@ -60,7 +56,6 @@ export const crearComentarioPost = async (postId: number,usuario_id: number,cont
 export const getRespuestasComentario = async (idComentario: number): Promise<RespuestaComentario[]> => {
     try {
         const url = `${API_URL}comentario/respuesta/${idComentario}`;
-        console.log('Llamando a:', url);
 
         const response = await fetch(url);
 
@@ -74,7 +69,6 @@ export const getRespuestasComentario = async (idComentario: number): Promise<Res
         }
 
         const data: RespuestaComentario[] = await response.json();
-        console.log('Datos recibidos:', data);
         return data;
     } catch (error) {
         console.error('Error al obtener comentarios:', error);
@@ -85,7 +79,6 @@ export const getRespuestasComentario = async (idComentario: number): Promise<Res
 export const crearRespuestasComentario = async (idComentario: number,usuario_id: number,contenido: string): Promise<RespuestaComentario> => {
     try {
         const url = `${API_URL}comentario/respuesta/${idComentario}`;
-        console.log('Enviando comentario a:', url);
 
         const response = await fetch(url, {
             method: 'POST',
@@ -105,10 +98,54 @@ export const crearRespuestasComentario = async (idComentario: number,usuario_id:
         }
 
         const data: RespuestaComentario = await response.json();
-        console.log('Comentario creado:', data);
         return data;
     } catch (error) {
         console.error('Error al crear comentario:', error);
+        throw error;
+    }
+};
+
+export const getCantidadComentarios = async (idPost: number): Promise<number> => {
+    try {
+        const url = `${API_URL}comentario/post/conteo/${idPost}`;
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+
+            if (response.status === 404) {
+                return 0;
+            }
+        }
+
+        const data = await response.json();
+
+        const cantidad = data[0]["cantidad_comentarios"];
+        return cantidad;
+    } catch (error) {
+        console.error('Error al obtener comentarios:', error);
+        throw error;
+    }
+};
+
+export const getCantidadRespuestasComentarios = async (idComentario: number): Promise<number> => {
+    try {
+        const url = `${API_URL}comentario/respuesta/conteo/${idComentario}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+
+            if (response.status === 404) {
+                return 0;
+            }
+        }
+
+        const data = await response.json();
+
+        const cantidad = data[0]["cantidad_respuestas"];
+        return cantidad;
+    } catch (error) {
+        console.error('Error al obtener comentarios:', error);
         throw error;
     }
 };

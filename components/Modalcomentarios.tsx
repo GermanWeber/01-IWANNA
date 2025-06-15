@@ -3,30 +3,20 @@ import { Modal, FlatList, View, Text, Image, TouchableOpacity, StyleSheet, TextI
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Comentario, ComentariosModalProps } from '../types/comentarios';
-import { crearComentarioPost, crearRespuestasComentario, getComentariosPost } from '../services/comentariosService';
+import { crearComentarioPost, crearRespuestasComentario, getCantidadRespuestasComentarios, getComentariosPost } from '../services/comentariosService';
 import { recuperarStorage } from '../services/asyncStorage';
 import { BUCKET_URL } from '@env';
 import RespuestasComentario from './respuestaComentario';
+import ComentarioItem from './comentarioItem';
 const foto_default = require('../assets/images/perfil.png');
 
-const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggleModal, postId }) => {
+const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggleModal, postId, actualizarCantidadComentarios}) => {
     const [comentario, setComentario] = useState('');
     const [comentarioSeleccionado, setComentarioSeleccionado] = useState<{ id: number, usuario: string } | null>(null);
-    const [respuestasVisibles, setRespuestasVisibles] = useState<Set<number>>(new Set());
-    const [likedComments, setLikedComments] = useState<number[]>([]);
     const [comentariosPost, setComentariosPost] = useState<Comentario[]>([]);
     const [loading, setLoading] = useState(false);
-    
-    const formatearFecha = (fechaISO: string) => {
-        const fecha = new Date(fechaISO);
-        return fecha.toLocaleString('es-CL', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    };
+    const [recargarRespuestasPorComentario, setRecargarRespuestasPorComentario] = useState<{ [comentarioId: number]: boolean }>({});
+
 
     const enviarComentario = async () => {
         if (!comentario.trim()) return;
@@ -39,17 +29,25 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
             }
 
             const usuario_id = usuario.id;
+            
+            //pregunta si el comentario es una respuesta a otro comentario
             if(comentarioSeleccionado){
                 await crearRespuestasComentario(comentarioSeleccionado["id"], usuario_id, comentario);
                 setComentario('');
                 const nuevosComentarios = await getComentariosPost(postId);
                 setComentariosPost(nuevosComentarios);
+                actualizarCantidadComentarios();
+                setRecargarRespuestasPorComentario(prev => ({
+                    ...prev,
+                    [comentarioSeleccionado.id]: !prev[comentarioSeleccionado.id], // Toggle
+                }));
             } else {
                 await crearComentarioPost(postId, usuario_id, comentario);
                 setComentario('');
                 
                 const nuevosComentarios = await getComentariosPost(postId);
                 setComentariosPost(nuevosComentarios);
+                actualizarCantidadComentarios();
             }
             
 
@@ -62,94 +60,36 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
         setComentarioSeleccionado(null);
     }
 
-    const toggleRespuestasVisibles = (idComentario: number) => {
-        const newSet = new Set(respuestasVisibles);
-        if (newSet.has(idComentario)) {
-            newSet.delete(idComentario);
-        } else {
-            newSet.add(idComentario);
-        }
-        setRespuestasVisibles(newSet);
-    };
-
-    const toggleLike = (idComentario: number) => {
-        setLikedComments(prev => 
-            prev.includes(idComentario) 
-                ? prev.filter(id => id !== idComentario)
-                : [...prev, idComentario]
-        );
-    };
-
     const renderComentario = ({ item }: { item: Comentario }) => (
-        <View style={styles.comentario}>
-            <Image source={item.foto ? { uri: `${BUCKET_URL}foto-perfil/${item.foto}` } : foto_default} style={styles.foto_perfil}
-                        />
-            <View style={styles.contenido_comentario}>
-                <View>
-                    <Text style={styles.nombre_usuario}>{item.nombre_usuario}</Text>
-                    <Text style={styles.fecha}> {formatearFecha(item.fecha_creacion)}</Text>
-                </View>
-                <Text style={styles.texto_comentario}>{item.contenido}</Text>
-                <View style={styles.acciones_comentario}>
-                    <TouchableOpacity 
-                        style={styles.accion} 
-                        onPress={() => toggleLike(item.id)}
-                    >
-                        <Ionicons 
-                            name={likedComments.includes(item.id) ? "heart" : "heart-outline"} 
-                            size={16} 
-                            color={likedComments.includes(item.id) ? "#8BC34A" : "#424242"} 
-                        />
-                        {/* <Text style={styles.contador}>{item.likes}</Text> */}
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.accion}>
-                        <Ionicons name="chatbubble-outline" size={16} color="#424242" />
-                        {/* <Text style={styles.contador}>{item.respuestas.length}</Text> */}
-                    </TouchableOpacity>
-                </View>
-                <View style={styles.botones_respuesta}>
-                    <TouchableOpacity onPress={() => setComentarioSeleccionado({ id: item.id, usuario: item.nombre_usuario })}>
-                        <Text style={styles.boton_respuesta}>Responder</Text>
-                    </TouchableOpacity>
-                    {item.total_respuestas > 0 && (
-                        <TouchableOpacity onPress={() => toggleRespuestasVisibles(item.id)}>
-                            <Text style={styles.boton_respuesta}>
-                                {respuestasVisibles.has(item.id) ? 'Ocultar respuestas' : 'Ver respuestas'}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-                <View>
-                    {respuestasVisibles.has(item.id) && (
-                        <RespuestasComentario
-                            respuestasVisibles={true}
-                            toggleRespuestasVisibles={() => toggleRespuestasVisibles(item.id)}
-                            comentarioId={item.id}
-                        />
-                    )}
-                </View>
-            </View>
-        </View>
+        <ComentarioItem
+            comentario={item}
+            onResponder={(comentario) => {
+                setComentarioSeleccionado({ id: comentario.id, usuario: comentario.nombre_usuario });
+            }}
+            recargarRespuestas={recargarRespuestasPorComentario[item.id] ?? false}
+            recargarRespuestasPorComentario={recargarRespuestasPorComentario} // ✅ agregar esta línea
+            setRecargarRespuestasPorComentario={setRecargarRespuestasPorComentario}
+        />
     );
 
     useEffect(() => {
         if (modalVisible) {
             const fetchDatos = async () => {
-            try {
-                setLoading(true);
-                const data = await getComentariosPost(postId);
-                setComentariosPost(data);
-            } catch (error) {
-                console.error('Error al obtener comentarios:', error);
-            } finally {
-                setLoading(false);
-            }
+                try {
+                    setLoading(true);
+                    const data = await getComentariosPost(postId);
+                    setComentariosPost(data);
+                } catch (error) {
+                    console.error('Error al obtener comentarios:', error);
+                } finally {
+                    setLoading(false);
+                }
             };
 
             fetchDatos();
         }
     }, [modalVisible]);
-
+    
     return (
         <Modal
             animationType="slide"
@@ -244,7 +184,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     comentariosList: {
-        paddingBottom: 20,
+        paddingBottom: 100,
     },
     comentario: {
         flexDirection: 'row',

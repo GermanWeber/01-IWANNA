@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import ComentariosModal from './comentarios';
+import ComentariosModal from './Modalcomentarios';
 import { router, useFocusEffect, useRouter } from 'expo-router';
 import { PostType } from '../types/post';
 import { BUCKET_URL } from '@env';
@@ -11,6 +11,7 @@ import { btnFavPost, fetchLikesPosts, fetchEstadoLikePost } from '../services/fa
 import { recuperarStorage } from '../services/asyncStorage';
 import {ModalDenunciaPost} from './modalDenunciaPost';
 import { List } from 'react-native-paper';
+import { getCantidadComentarios } from '../services/comentariosService';
 const foto_default = require('../assets/images/perfil.png');
 
 type Props = {
@@ -26,23 +27,34 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
   const router = useRouter();
   const [modalDots, setModalDots] = useState(false);
   const [modalDenunciar, setModalDenunciar] = useState(false);
+  const [cantidadComentarios, setCantidadComentarios] = useState<Number>(0);
+
 
   const manejarCargaImagen = useCallback(() => setCargando(false), []);
   const toggleModal = useCallback(() => setModalVisible(prev => !prev), []);
 
 
-      const mostrarLike = async (id_usuario:any, id_trabajador:any) => {
-          console.log('entrar mostrarLike: usuario', id_usuario, typeof id_usuario, 'trabajador', id_trabajador, typeof id_trabajador);
-          try {
-              const estado = await fetchEstadoLikePost(id_usuario, id_trabajador);
-              
-              console.log('Estado del like del trabajador:', estado);
-              setLiked(estado?.exito || false);
-          } catch (error) {
-              console.error('Error al cargar el estado del like del trabajador', error);
-          }
-  
-      };
+    const mostrarLike = async (id_usuario:any, id_trabajador:any) => {
+        try {
+            const estado = await fetchEstadoLikePost(id_usuario, id_trabajador);
+            
+            setLiked(estado?.exito || false);
+        } catch (error) {
+            console.error('Error al cargar el estado del like del trabajador', error);
+        }
+
+    };
+
+    const mostarCantidadComentarios = async (id_post:number) => {
+        try {
+            const cantidad = await getCantidadComentarios(id_post)
+            
+            setCantidadComentarios(cantidad);
+        } catch (error) {
+            setCantidadComentarios(100);
+        }
+
+    }
 
     const cargarDatos = async () => {
         try {
@@ -66,6 +78,9 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
             
             // 4. Verificar si el usuario dio like al post
             await mostrarLike(usuario.id, datos.id);
+
+            // 5. Obtiene cantidad de comentarios del post
+            await mostarCantidadComentarios(datos.id);
         } catch (error) {
             //console.error('Error al cargar datos:', error);
         } finally {
@@ -211,7 +226,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
 
                     <TouchableOpacity style={styles.dato_post} onPress={toggleModal}>
                         <Ionicons name="chatbubble-outline" size={24} color="#424242" />
-                        {<Text style={styles.icono}>{datos.total_comentarios}</Text> }
+                        <Text style={styles.icono}>{cantidadComentarios.toString()}</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -243,6 +258,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                 modalVisible={modalVisible}
                 toggleModal={toggleModal}
                 postId={datos.id}
+                actualizarCantidadComentarios={() => mostarCantidadComentarios(datos.id)}
             />}
         </View>
     );
