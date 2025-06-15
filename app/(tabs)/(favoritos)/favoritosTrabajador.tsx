@@ -21,12 +21,14 @@ interface Trabajador {
   apellido: string;
   foto: string;
   descripcion: string;
+  id_auth: number;
+  id_estado_suscripcion: number;
 }
 
 interface Usuario {
   id: number;
-  id_estado: number;
-  // Agrega otras propiedades del usuario según sea necesario
+  
+
 }
 
 export default function FavoritosTrabajador() {
@@ -46,6 +48,7 @@ export default function FavoritosTrabajador() {
       if (usuarioAlmacenado?.id) {
         const data = await fetchFavTrabajadores(usuarioAlmacenado.id);
         if (data) {
+          console.log('Datos del post en favoritos:', data);
           setTrabajadores(data);
         }
       } else {
@@ -123,6 +126,8 @@ export default function FavoritosTrabajador() {
                 bgColor='#F5F5F5'
                 iconoDerecha={"heart"}
                 colorIconoDerecha='#00BCD4'
+                id_auth={trabajador.id_auth}
+                id_estado={trabajador.id_estado_suscripcion}
                 onPress={() => router.push(`/screens/${trabajador.id}`)}
               />
             ))
@@ -151,6 +156,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    gap: 8,
   },
   scrollContainer: {
     flexGrow: 1,

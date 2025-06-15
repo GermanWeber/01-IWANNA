@@ -37,7 +37,7 @@ const BotonAvatar: React.FC<Props> = ({
     colorIconoDerecha = '#00BCD4',
     avatar = require('../assets/images/perfil.png'),
     id_auth,
-    id_estado
+    id_estado = 1
 }) => {
     const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -69,20 +69,7 @@ const BotonAvatar: React.FC<Props> = ({
         return (
             <Animated.View style={{ 
                 transform: [{ scale: pulseAnim }],
-                marginVertical: 8,
-                marginHorizontal: 16,
-                borderRadius: 16,
-                ...Platform.select({
-                    ios: {
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 8,
-                    },
-                    android: {
-                        elevation: 4,
-                    },
-                }),
+                ...styles.container,
                 backgroundColor: bgColor,
                 borderWidth: 2,
                 borderColor: '#00BCD4',
@@ -130,11 +117,12 @@ const BotonAvatar: React.FC<Props> = ({
 
     // Versión sin animación para otros estados
     return (
-        <TouchableOpacity
-            activeOpacity={0.8}
-            style={[styles.boton, { backgroundColor: bgColor, borderWidth: 2, borderColor: '#E2E8F0' }]}
-            onPress={onPress}
-        >
+        <View style={[styles.container, { borderColor: '#E2E8F0' }]}>
+            <TouchableOpacity
+                activeOpacity={0.8}
+                style={[styles.boton, { backgroundColor: bgColor }]}
+                onPress={onPress}
+            >
             <View style={styles.contenidoBoton}>
                 <View style={styles.avatarContainer}>
                     <Image
@@ -165,15 +153,33 @@ const BotonAvatar: React.FC<Props> = ({
                     color={colorIconoDerecha} 
                     style={styles.icono} 
                 />
-            </View>
-        </TouchableOpacity>
+                </View>
+            </TouchableOpacity>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
+    container: {
+        marginVertical: 8,
+        marginHorizontal: 16,
+        borderRadius: 16,
+        borderWidth: 2,
+        overflow: 'hidden',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+            },
+            android: {
+                elevation: 4,
+            },
+        }),
+    },
     boton: {
         padding: 16,
-        borderRadius: 14, // Un poco más pequeño que el contenedor para el borde
         width: '100%',
     },
     contenidoBoton: {
