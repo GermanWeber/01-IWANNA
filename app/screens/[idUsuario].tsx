@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { RatingStars } from "../../components/rating-stars";
 import { recuperarStorage } from "../../services/asyncStorage";
 import { obtenerPerfil } from "../../services/perfilService";
-import { obtenerPostsById } from "../../services/postService";
 import { PostType } from '../../types/post';
 import { btnFavTrabajador, fetchEstadoLikeTrabajador, fetchFavTrabajadores } from '../../services/favService';
 import { BUCKET_URL } from '@env';

@@ -32,7 +32,6 @@ const Home = () => {
         }
     };
 
-
     useFocusEffect(
         useCallback(() => {
             const cargarUsuarioYPosts = async () => {
@@ -61,31 +60,31 @@ const Home = () => {
             </View>
         );
     }
- return (
-           <SafeAreaView style={{ flex: 1 }}>
-             <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
-             <FlatList
-               data={posts}
-               keyExtractor={(item) => `post-${item.id}`}
-               renderItem={({ item }) => {
-                 return <Post datos={item} />;
-             }}
-               initialNumToRender={5}
-               maxToRenderPerBatch={5}
-               updateCellsBatchingPeriod={50}
-               windowSize={7}
-               removeClippedSubviews={true}
-               refreshControl={
-                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-               }
-               ListEmptyComponent={
-                 <View style={styles.emptyContainer}>
-                   <Text>No hay publicaciones disponibles</Text>
-                 </View>
-               }
-             />
-           </SafeAreaView>
-         );
+    return (
+        <SafeAreaView style={{ flex: 1 }}>
+            <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
+            <FlatList
+                data={posts}
+                keyExtractor={(item) => `post-${item.id}`}
+                renderItem={({ item }) => {
+                    return <Post datos={item} />;
+                }}
+                initialNumToRender={5}
+                maxToRenderPerBatch={5}
+                updateCellsBatchingPeriod={50}
+                windowSize={7}
+                removeClippedSubviews={true}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                }
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                    <Text>No hay publicaciones disponibles</Text>
+                    </View>
+                }
+            />
+        </SafeAreaView>
+    );
 };
 
 

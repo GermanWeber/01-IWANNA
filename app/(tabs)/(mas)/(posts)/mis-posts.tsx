@@ -6,12 +6,14 @@ import { API_URL,BUCKET_URL } from '@env';
 import { PostType } from '../../../../types/post';
 import { recuperarStorage } from '../../../../services/asyncStorage';
 import { Video, ResizeMode } from 'expo-av';
+import { obtenerPostsByUser } from '../../../../services/postService';
 
 export default function Post() {
     const router = useRouter();
     const [usuario, setUsuario] = useState<any>(null);
     const [posts, setPosts] = useState<PostType[]>([]);
     const [videoCargando, setVideoCargando] = useState<{ [id: number]: boolean }>({});
+
     const esVideo = (archivo: string | null | undefined): boolean => {
         if (!archivo) return false;
         try {
@@ -23,19 +25,9 @@ export default function Post() {
         }
     };
     
-    const obtenerPosts = async (usuarioId: number) => {
-        try {
-            const url = `${API_URL}post/usuario/${usuarioId}`;
-            const response = await fetch(url);
-            const data = await response.json();
-            if (!response.ok) {
-            throw new Error(data.message || 'Error al obtener posts');
-            }
-            setPosts(data);
-        } catch (error) {
-            console.error('Error al obtener posts:', error);
-        }
-    };
+    const verPost = (post:PostType) =>{
+        router.push(`/ver-post/${post.id}`)
+    }
 
     useFocusEffect(
         useCallback(() => {
@@ -43,10 +35,8 @@ export default function Post() {
             const datosUsuario = await recuperarStorage('usuario');
             if (datosUsuario) {
                 setUsuario(datosUsuario);
-
-                setTimeout(() => {
-                    obtenerPosts(datosUsuario.id);
-                }, 0);
+                const posts = await obtenerPostsByUser(datosUsuario.id);
+                setPosts(posts);
             }
             };
             cargarUsuarioYPosts();
@@ -76,11 +66,12 @@ export default function Post() {
                         <TouchableOpacity
                             key={post.id}
                             style={styles.post}
+                            onPress = {() => verPost(post)}
                         >
                             {isVideo ? (
                                 <>
                                     {videoCargando[post.id] && (
-                                        <View style={[styles.postArchivo]}>
+                                        <View style={[styles.postArchivo, { justifyContent: 'center', alignItems: 'center' }]}>
                                             <ActivityIndicator size="large" color="#8BC34A" />
                                         </View>
                                     )}

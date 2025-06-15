@@ -22,6 +22,22 @@ export default function RootLayout() {
                             <HeaderPrincipal/>
                         ),
                 }}/>
+
+                <Stack.Screen 
+                    name="ver-post/[idPost]" 
+                    options={{
+                        header: (props) => (
+                            <HeaderPrincipal/>
+                        ),
+                }}/>
+
+                <Stack.Screen 
+                    name="modificar-post/[idPost]" 
+                    options={{
+                        header: (props) => (
+                            <HeaderPrincipal/>
+                        ),
+                }}/>
             </Stack>
         </SafeAreaView>
     );

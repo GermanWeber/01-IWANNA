@@ -1,22 +1,22 @@
-import { router} from 'expo-router';
+import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { View, Image, StyleSheet, ScrollView, Alert, TouchableOpacity, Text, TextInput, ActivityIndicator} from 'react-native';
+import { View, Image, StyleSheet, ScrollView, Alert, TouchableOpacity, Text, TextInput, ActivityIndicator, Modal } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Video as ExpoVideo, ResizeMode } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
-import { API_URL} from '@env';
+import { API_URL } from '@env';
 import { recuperarStorage } from '../../../../services/asyncStorage';
 import { Usuario } from '../../../../types/usuario';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
-
 
 export default function Post() {
     const [usuario, setUsuario] = useState<Usuario | null>(null);
     const [archivo, setArchivo] = useState<{ uri: string; type: 'image' | 'video' } | null>(null);
     const [descripcion, setDescripcion] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [errorVideo, setErrorVideo] = useState(false);
+
+    // Función para obtener el mime-type según la extensión del archivo
     const getMimeType = (uri: string) => {
         if (uri.endsWith('.jpg') || uri.endsWith('.jpeg')) return 'image/jpeg';
         if (uri.endsWith('.png')) return 'image/png';
@@ -24,61 +24,66 @@ export default function Post() {
         return 'application/octet-stream';
     };
 
+    // Función para abrir selector de archivos (imágenes o videos)
     const SeleccionaArchivo = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.All,
-            allowsEditing: false,
-            quality: 1,
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: false,
+        quality: 1,
         });
 
         if (!result.canceled) {
-            const asset = result.assets[0];
-            if (asset.type === 'video') {
-                const videoUri = await prepararVideoParaVisualizacion(asset.uri);
-                setArchivo({ uri: videoUri, type: 'video' });
-            }else{
-                setArchivo({
-                    uri: asset.uri,
-                    type: asset.type as 'image' | 'video',
-                });
-            }
-
+        const asset = result.assets[0];
+        if (asset.type === 'video') {
+            const videoUri = await prepararVideoParaVisualizacion(asset.uri);
+            setArchivo({ uri: videoUri, type: 'video' });
+        } else {
+            setArchivo({
+            uri: asset.uri,
+            type: asset.type as 'image' | 'video',
+            });
+        }
         }
     };
 
+    // Función para subir el post a la API
     const guardarPost = async () => {
         setIsLoading(true);
-        const formData = new FormData();
-        const urlApi = `${API_URL}s3/publicacion`;
 
-        if(!archivo){
-            Alert.alert("Error","Falta colocar el archivo");
+        if (!archivo) {
+            Alert.alert("Error", "Falta colocar el archivo");
             setIsLoading(false);
             return;
         }
-        if(!descripcion){
-            Alert.alert("Error","Falta colocar la descripcion");
+        if (!descripcion.trim()) {
+            Alert.alert("Error", "Falta colocar la descripción");
             setIsLoading(false);
             return;
         }
         if (!usuario?.id) {
-            Alert.alert("Error","Falta el ID del usuario");
+            Alert.alert("Error", "Falta el ID del usuario");
             setIsLoading(false);
             return;
         }
 
+        const formData = new FormData();
+        const urlApi = `${API_URL}s3/publicacion`;
+
         const uri = archivo.uri;
         const nombre = uri.split('/').pop() ?? 'archivo';
-        const tipo = getMimeType(uri); // tu función para obtener mime-type
+        const tipo = getMimeType(uri);
 
-        
-
-        console.log("URI del video:", archivo.uri);
-        console.log("mime:", tipo);
-
-        const fileInfo = await FileSystem.getInfoAsync(uri, { size: true });
-        if (!fileInfo.exists) {
-            console.error('Archivo no encontrado en la ruta:', uri);
+        try {
+            const fileInfo = await FileSystem.getInfoAsync(uri, { size: true });
+            if (!fileInfo.exists) {
+                Alert.alert('Error', 'Archivo no encontrado en la ruta.');
+                setIsLoading(false);
+                return;
+            }
+        } catch (error) {
+            console.error('Error al verificar archivo:', error);
+            Alert.alert('Error', 'No se pudo verificar el archivo.');
+            setIsLoading(false);
             return;
         }
 
@@ -87,6 +92,7 @@ export default function Post() {
             name: nombre,
             type: tipo,
         };
+
         formData.append("publicacion", fileBlob as any);
         formData.append("id_user", usuario.id.toString());
         formData.append("descripcion", descripcion);
@@ -95,9 +101,9 @@ export default function Post() {
             const response = await fetch(urlApi, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "multipart/form-data",
+                "Content-Type": "multipart/form-data",
                 },
-                body: formData
+                body: formData,
             });
 
             const data = await response.json();
@@ -107,118 +113,181 @@ export default function Post() {
                 Alert.alert("Éxito", "Archivo subido con éxito.");
                 router.back();
             }
-
         } catch (error) {
             console.error("Error al subir el archivo:", error);
+            Alert.alert("Error", "Ocurrió un problema al subir el archivo.");
         }
         setIsLoading(false);
     };
 
+    // Función para preparar el video: copiar a documentDirectory para poder reproducirlo bien
     const prepararVideoParaVisualizacion = async (uri: string): Promise<string> => {
         try {
             const fileName = uri.split('/').pop();
             const newPath = `${FileSystem.documentDirectory}${fileName}`;
-            
+
             await FileSystem.copyAsync({
-            from: uri,
-            to: newPath,
+                from: uri,
+                to: newPath,
             });
 
-            console.log("✅ URI lista para video:", newPath);
             return newPath;
         } catch (error) {
-            console.error("❌ Error al copiar el archivo:", error);
+            console.error("Error al copiar el archivo de video:", error);
             throw error;
         }
     };
-    //Solicita acceso a la camara y galeria
+    const [modalVisible, setModalVisible] = useState(false);
+
+    const abrirCamara = async () => {
+        setModalVisible(false);
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 0.5,
+            allowsEditing: true,
+        });
+
+        if (!result.canceled) {
+            const asset = result.assets[0];
+            if (asset.type === 'video') {
+            const videoUri = await prepararVideoParaVisualizacion(asset.uri);
+            setArchivo({ uri: videoUri, type: 'video' });
+            } else {
+            setArchivo({ uri: asset.uri, type: 'image' });
+            }
+        }
+    };
+
+    const abrirGaleria = async () => {
+        setModalVisible(false);
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.All,
+            allowsEditing: false,
+            quality: 1,
+        });
+        if (!result.canceled) {
+            const asset = result.assets[0];
+            if (asset.type === 'video') {
+            const videoUri = await prepararVideoParaVisualizacion(asset.uri);
+            setArchivo({ uri: videoUri, type: 'video' });
+            } else {
+            setArchivo({ uri: asset.uri, type: 'image' });
+            }
+        }
+    };
+
+    // Solicitar permisos para cámara y galería al montar el componente
     useEffect(() => {
         (async () => {
-            const { status } = await MediaLibrary.requestPermissionsAsync();
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== 'granted') {
                 Alert.alert('Permisos necesarios', 'Necesitamos permiso para usar la cámara y galería');
             }
         })();
     }, []);
 
-    //Carga usuario desde Storage
+    // Cargar usuario desde AsyncStorage al montar componente
     useEffect(() => {
         const cargarUsuario = async () => {
-            try {
-                const datos = await recuperarStorage('usuario');
-                console.log("datos: ", datos);
-                if (datos) {
-                    setUsuario(datos);
-                }
-            } catch (error) {
-                console.error('Error al cargar usuario:', error);
+        try {
+            const datos = await recuperarStorage('usuario');
+            if (datos) {
+            setUsuario(datos);
             }
+        } catch (error) {
+            console.error('Error al cargar usuario:', error);
+        }
         };
         cargarUsuario();
     }, []);
+
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-            <View style={styles.container}>
-                <TouchableOpacity style={styles.addButton} onPress={SeleccionaArchivo}>
-                    <Ionicons name="add" size={20} color="#fff" />
-                    <Text style={styles.addButtonText}>Seleccionar imagen o video</Text>
-                </TouchableOpacity>
-                <View style={styles.mediaContainer}>
-                    {archivo?.type === 'image' && (
-                        <Image source={{ uri: archivo.uri }} style={styles.media} />
-                    )}
-
-                    {archivo?.type === 'video' && (
-                        <ExpoVideo
-                            style={styles.media}
-                            source={{ uri: archivo.uri }}
-                            useNativeControls
-                            isLooping
-                            resizeMode={ResizeMode.CONTAIN}
-                            onError={(e) => {
-                                Alert.alert("Error", "No se pudo reproducir el video. Por favor, intenta con otro archivo.");
-                            }}
-                        />
-                    )}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                    <Text style={styles.modalTitle}>Selecciona opción</Text>
+                    <TouchableOpacity style={styles.modalButton} onPress={abrirCamara}>
+                        <Text style={styles.modalButtonText}>Tomar foto o video</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.modalButton} onPress={abrirGaleria}>
+                        <Text style={styles.modalButtonText}>Seleccionar de la galería</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.modalButton, styles.modalCancelButton]}
+                        onPress={() => setModalVisible(false)}
+                    >
+                        <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+                    </TouchableOpacity>
+                    </View>
                 </View>
-                {archivo && (
-                    <View style={styles.inputContainer}>
-                        <View style={styles.sectionHeader}>
-                            <Ionicons name="document-text-outline" size={24} color="#8BC34A" />
-                            <Text style={styles.sectionTitle}>Descripción</Text>
-                        </View>
-                        <TextInput
-                        style={[styles.input]}
-                        placeholder="Escribe una breve descripción..."
-                        value={descripcion}
-                        onChangeText={setDescripcion}
-                        multiline
-                        numberOfLines={4}
-                        />
-                    </View> 
-                )}
-                
-                {/* Botones de Guardar y Cancelar */}
-                {archivo && isLoading && (
-                    <View>
-                        <ActivityIndicator size="large" color="#4CAF50" />
-                    </View>
-                )}
-                {archivo && !isLoading && (
-                    <View style={styles.buttonsContainer}>
-                        <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
-                            <Ionicons name="close-circle-outline" size={20} color="#fff" />
-                            <Text style={styles.buttonText}>Cancelar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.saveButton} onPress={guardarPost}>
-                            <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-                            <Text style={styles.buttonText}>Guardar</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}     
-            </View> 
+                </Modal>
+        <View style={styles.container}>
+            <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+                <Ionicons name="add" size={20} color="#fff" />
+                <Text style={styles.addButtonText}>Seleccionar imagen o video</Text>
+            </TouchableOpacity>
+
+            <View style={styles.mediaContainer}>
+            {archivo?.type === 'image' && (
+                <Image source={{ uri: archivo.uri }} style={styles.media} />
+            )}
+
+            {archivo?.type === 'video' && (
+                <ExpoVideo
+                style={styles.media}
+                source={{ uri: archivo.uri }}
+                useNativeControls
+                isLooping
+                resizeMode={ResizeMode.CONTAIN}
+                onError={() => {
+                    Alert.alert("Error", "No se pudo reproducir el video. Por favor, intenta con otro archivo.");
+                }}
+                />
+            )}
+            </View>
+
+            {archivo && (
+            <View style={styles.inputContainer}>
+                <View style={styles.sectionHeader}>
+                <Ionicons name="document-text-outline" size={24} color="#8BC34A" />
+                <Text style={styles.sectionTitle}>Descripción</Text>
+                </View>
+                <TextInput
+                style={[styles.input]}
+                placeholder="Escribe una breve descripción..."
+                value={descripcion}
+                onChangeText={setDescripcion}
+                multiline
+                numberOfLines={4}
+                />
+            </View>
+            )}
+
+            {archivo && isLoading && (
+            <ActivityIndicator size="large" color="#4CAF50" />
+            )}
+
+            {archivo && !isLoading && (
+            <View style={styles.buttonsContainer}>
+                <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+                <Ionicons name="close-circle-outline" size={20} color="#fff" />
+                <Text style={styles.buttonText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.saveButton} onPress={guardarPost}>
+                <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+                <Text style={styles.buttonText}>Guardar</Text>
+                </TouchableOpacity>
+            </View>
+            )}
+        </View>
         </ScrollView>
-    )
+    );
 }
 
 const styles = StyleSheet.create({
@@ -238,7 +307,6 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 10,
         marginBottom: 20,
-
     },
     addButtonText: {
         color: '#fff',
@@ -267,7 +335,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 15,
     },
-    
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',
@@ -309,4 +376,44 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginLeft: 10,
     },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        width: '80%',
+        padding: 20,
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 20,
+    },
+    modalButton: {
+        width: '100%',
+        paddingVertical: 15,
+        marginBottom: 10,
+        backgroundColor: '#8BC34A',
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    modalButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    modalCancelButton: {
+        backgroundColor: '#E53935',
+    },
+    modalCancelButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+
 });

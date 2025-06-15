@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, StatusBar, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ComentariosModal from './comentariosPost/Modalcomentarios';
 import { router, useFocusEffect, useRouter } from 'expo-router';
@@ -19,19 +19,19 @@ type Props = {
 };
 
 const PostComponent: React.FC<Props> = ({ datos }) => {
-  const [cargando, setCargando] = useState(true);
-  const [liked, setLiked] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [likes, setLikes] = useState(0);
-  const [usuario, setUsuario] = useState<any>(null);
-  const router = useRouter();
-  const [modalDots, setModalDots] = useState(false);
-  const [modalDenunciar, setModalDenunciar] = useState(false);
-  const [cantidadComentarios, setCantidadComentarios] = useState<Number>(0);
+    const [cargando, setCargando] = useState(true);
+    const [liked, setLiked] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [likes, setLikes] = useState(0);
+    const [usuario, setUsuario] = useState<any>(null);
+    const router = useRouter();
+    const [modalDots, setModalDots] = useState(false);
+    const [modalDenunciar, setModalDenunciar] = useState(false);
+    const [cantidadComentarios, setCantidadComentarios] = useState<Number>(0);
+    const [videoCargando, setVideoCargando] = useState(true);
 
-
-  const manejarCargaImagen = useCallback(() => setCargando(false), []);
-  const toggleModal = useCallback(() => setModalVisible(prev => !prev), []);
+    const manejarCargaImagen = useCallback(() => setCargando(false), []);
+    const toggleModal = useCallback(() => setModalVisible(prev => !prev), []);
 
 
     const mostrarLike = async (id_usuario:any, id_trabajador:any) => {
@@ -139,9 +139,6 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
 
     const isVideo = datos.archivo?.endsWith('.mp4') ?? false;
 
-
-    
-
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -200,6 +197,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
 
             <View style={styles.content}>
                 {isVideo ? (
+                <>
                     <Video
                         source={{ uri: `${BUCKET_URL}publicaciones/${datos.archivo}` }}
                         rate={1.0}
@@ -209,8 +207,29 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                         shouldPlay={false}
                         useNativeControls
                         style={styles.imagen_post}
+                        onLoadStart={() => setVideoCargando(true)}
+                        onLoad={() => setVideoCargando(false)}
+                        onError={(error) => {
+                            console.error("Error al cargar el video:", error);
+                            setVideoCargando(false);
+                        }}
                     />
-                ) : (
+                    {videoCargando && (
+                        <ActivityIndicator
+                            style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                marginTop: -25,
+                                marginLeft: -25,
+                                zIndex: 2,
+                            }}
+                            size="large"
+                            color="#1d9bf0"
+                        />
+                    )}
+                </>
+            ) : (
                     <Image
                         source={{ uri: `${BUCKET_URL}publicaciones/${datos.archivo}` }}
                         style={[styles.imagen_post, cargando && { opacity: 0, height: 0 }]}
