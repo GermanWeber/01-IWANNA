@@ -78,10 +78,10 @@ export default function Cotizacion() {
                 cot.id_estado === 5 ? 'Terminada' : 'No Respondida'
         })));
       } else {
-        console.error('No se pudo obtener el ID del usuario');
+        console.log('No se pudo obtener el ID del usuario');
       }
     } catch (error) {
-      console.error('Error al cargar cotizaciones:', error);
+      console.log('Error al cargar cotizaciones:', error);
     }
   };
 

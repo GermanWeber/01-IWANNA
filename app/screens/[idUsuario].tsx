@@ -127,10 +127,6 @@ export default function PerfilUsuario() {
         }
     };
 
-   
-
-      
-
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
             {perfil && (
@@ -183,9 +179,9 @@ export default function PerfilUsuario() {
                             )}
 
                             <TouchableOpacity 
-                            style={styles.dato_post} 
-                            onPress={() => handleLike(usuario?.id, perfil?.id)}
-                        >
+                                style={styles.dato_post} 
+                                onPress={() => handleLike(usuario?.id, perfil?.id)}
+                            >
                             <Ionicons 
                                 name={liked ? 'heart' : 'heart-outline'} 
                                 size={24} 
@@ -197,7 +193,7 @@ export default function PerfilUsuario() {
 
 
                     {/* Boton de Cotizar */}
-                    {perfil.id_tipo === 2 && (
+                    {(perfil.id_tipo === 2 && usuario.id_tipo === 3)&& (
                         <TouchableOpacity
                             style={styles.cotizacionButton}
                             onPress={handleCotizar}
