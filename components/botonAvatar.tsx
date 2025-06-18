@@ -35,16 +35,18 @@ const BotonAvatar: React.FC<Props> = ({
     onPress,
     iconoDerecha = 'chevron-forward',
     colorIconoDerecha = '#00BCD4',
-    avatar = require('../assets/images/perfil.png'),
+    avatar,
     id_auth,
     id_estado = 1
 }) => {
     const pulseAnim = useRef(new Animated.Value(1)).current;
 
+    const avatarDefault = require('../assets/images/perfil.png');
+
     const pulse = () => {
         Animated.sequence([
             Animated.timing(pulseAnim, {
-                toValue: 1.02,
+                toValue: 1.10,
                 duration: 1000,
                 useNativeDriver: true,
                 easing: Easing.inOut(Easing.ease)
@@ -67,8 +69,7 @@ const BotonAvatar: React.FC<Props> = ({
 
     if (id_estado === 2) {
         return (
-            <Animated.View style={{ 
-                transform: [{ scale: pulseAnim }],
+            <View style={{ 
                 ...styles.container,
                 backgroundColor: bgColor,
                 borderWidth: 2,
@@ -81,11 +82,15 @@ const BotonAvatar: React.FC<Props> = ({
                 >
                     <View style={styles.contenidoBoton}>
                         <View style={styles.avatarContainer}>
-                            <Image
-                                source={{ uri: `${BUCKET_URL}foto-perfil/${avatar}` }}
-                                style={styles.avatar}
-                                resizeMode="cover"
-                            />
+                            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                                <Image
+                                    source={avatar ? { uri: `${BUCKET_URL}foto-perfil/${avatar}` } : avatarDefault}
+                                    style={{...styles.avatar, backgroundColor: bgColor,
+                                        borderWidth: 2,
+                                        borderColor: '#00BCD4', }}
+                                    resizeMode="cover"
+                                />
+                            </Animated.View>
                             <View style={styles.textContainer}>
                                 <Text style={[styles.nombre, { color: colorTexto }]} numberOfLines={1}>
                                     {textoBoton}
@@ -111,7 +116,7 @@ const BotonAvatar: React.FC<Props> = ({
                         />
                     </View>
                 </TouchableOpacity>
-            </Animated.View>
+            </View>
         );
     }
 
@@ -126,7 +131,7 @@ const BotonAvatar: React.FC<Props> = ({
             <View style={styles.contenidoBoton}>
                 <View style={styles.avatarContainer}>
                     <Image
-                        source={{ uri: `${BUCKET_URL}foto-perfil/${avatar}` }}
+                        source={avatar ? { uri: `${BUCKET_URL}foto-perfil/${avatar}` } : avatarDefault}
                         style={styles.avatar}
                         resizeMode="cover"
                     />

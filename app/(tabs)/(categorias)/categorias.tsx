@@ -62,7 +62,7 @@ export default function Categorias() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      
         <View style={styles.container}>
           <Text style={styles.titulo}>Categorías</Text>
           
@@ -76,7 +76,7 @@ export default function Categorias() {
               style={styles.input}
             />
           </View>
-
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#8BC34A" />
@@ -111,8 +111,8 @@ export default function Categorias() {
               />
             ))
           )}
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }

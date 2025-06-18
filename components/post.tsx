@@ -147,7 +147,11 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                     onPress={() => {handleProfilePress(); console.log('Datos recibidos en handleProfilePress:', datos)}}
 
                 >
-                    <Image source={datos.foto ? { uri: `${BUCKET_URL}foto-perfil/${datos.foto}` } : foto_default} style={styles.foto_usuario} />
+                    {datos.id_estado == 2? (
+                        <Image source={datos.foto ? { uri: `${BUCKET_URL}foto-perfil/${datos.foto}` } : foto_default} style={{...styles.foto_usuario, borderWidth: 3, borderColor: '#00BCD4'}} />
+                    ) : (
+                        <Image source={datos.foto ? { uri: `${BUCKET_URL}foto-perfil/${datos.foto}` } : foto_default} style={styles.foto_usuario} />
+                    )}
                     <View >
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Text style={styles.nombre}>

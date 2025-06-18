@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ScrollView, Text, Image, SafeAreaView, TouchableOpacity, Platform, Button, Linking, Alert } from 'react-native';
+import { StyleSheet, View, ScrollView, Text, Image, SafeAreaView, TouchableOpacity, Platform, Button, Linking, Alert, AppState } from 'react-native';
 import BotonCategorias from '../../../components/BotonCategorias';
 import { usePathname, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -62,8 +62,19 @@ export default function Mas() {
     };
 
     useEffect(() => {
+        const subscription = AppState.addEventListener('change', (nextAppState) => {
+          if (nextAppState === 'active') {
+            loadUsuario();
+          }
+        });
+      
+        // Cargar datos iniciales
         loadUsuario();
-    }, []);
+      
+        return () => {
+          subscription.remove();
+        };
+      }, []);
     const pathname = usePathname();
     useEffect(() => {
         
@@ -91,7 +102,7 @@ export default function Mas() {
                                 {usuario?.id_estado == 2 ? (
                                     <Text style={styles.perfilPlan}>Suscrito</Text>
                                 ) : (
-                                    <Text style={styles.perfilPlan}>No suscrito</Text>
+                                    <Text style={styles.perfilPlan}>Cuenta gratuita</Text>
 
                                 )}
                                 <TouchableOpacity
@@ -171,7 +182,7 @@ export default function Mas() {
                             />
                         )}
 
-                        {usuario?.id && (
+                        {usuario?.id_tipo === 2 && (
                             usuario?.id_estado == 2 ? (
                                 <BotonCategorias
                                     textoBoton="MI PLAN"
@@ -229,21 +240,21 @@ export default function Mas() {
                             />
                         )}
 
-                        {usuario?.id_estado == 2 ? (
+                        {usuario?.id_tipo === 2 && (
                             <BotonCategorias
                             textoBoton="GOOGLE CALENDAR"
-                            colorTexto="#5F6368"  // Google's dark gray text color
+                            colorTexto="#5F6368"  
                             textoBotonSub="Lleva tu agenda de trabajo organizada con Google Calendar"
-                            colorTextoSub="#5F6368"  // Same as text color for consistency
-                            bgColor="#FFFFFF"  // White background
-                            iconoDerecha="open"  // More appropriate icon for opening in a new tab
-                            colorIconoDerecha="#4285F4"  // Matching text color
-                            colorIconoIzquierda="#4285F4"  // Google Blue
+                            colorTextoSub="#5F6368"  
+                            bgColor="#FFFFFF"  
+                            iconoDerecha="open"  
+                            colorIconoDerecha="#4285F4"  
+                            colorIconoIzquierda="#4285F4" 
                             iconoIzquierda="calendar"
                             onPress={() => handlePressCalendar()}
                             
                         />
-                        ) : null}
+                        )}
                     </View>
 
                     {/* Sección de Información */}

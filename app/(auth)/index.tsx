@@ -84,18 +84,23 @@ const Login = () => {
             const stripeData = await getSubscriptionInfo(userData.id);
             console.log('Datos de Stripe:', stripeData);
 
-            // Guardar los datos de Stripe
-            if (stripeData) {
+            //recargar los datos de usuario si no esta suscrito
+            if(!stripeData.subscribed){
+                console.log('El usuario no esta suscrito');
                 try {
-                    await guardarStorage('stripeData', stripeData);
-                    console.log('Datos de Stripe guardados correctamente');
+                    await AsyncStorage.removeItem('usuario');
+                    console.log('Datos de usuario eliminados de AsyncStorage');
+                    const userData = await obtenerUsuario(email);
+                    console.log('Datos de usuario obtenidos:', userData);
+                    await guardarStorage('usuario', userData);    
                 } catch (error) {
-                    console.error('Error al guardar datos de Stripe:', error);
+                    console.error('Error al guardar datos de usuario:', error);
                 }
             }
-            
+            await guardarStorage('stripeData', stripeData);
             console.log('Datos de Stripe:', stripeData);
             router.push('(tabs)');
+
         } catch (error: any) {
             console.log('Error de Firebase:', error.code); // Para debugging
             let errorMessage = 'Email o contraseña incorrectos';

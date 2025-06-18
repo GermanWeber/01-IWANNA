@@ -67,7 +67,7 @@ export default function FavoritosTrabajador() {
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     cargarDatos();
-  }, [cargarDatos]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -111,9 +111,12 @@ export default function FavoritosTrabajador() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}
+      refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
+        <View style={styles.container}>
+        
           {trabajadores.length > 0 ? (
             trabajadores.map((trabajador) => (
               <BotonAvatar

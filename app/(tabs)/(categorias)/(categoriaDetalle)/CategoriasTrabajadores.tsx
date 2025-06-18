@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { ScrollView, StyleSheet, Text, View, ActivityIndicator, RefreshControl } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, ActivityIndicator, RefreshControl, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import BotonAvatar from '../../../../components/botonAvatar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { fetchTrabajadoresByCategory } from '../../../../services/categoryService';
 import { Usuario } from '../../../../types/usuario';
+import { Ionicons } from '@expo/vector-icons';
 
 
 export default function DetalleCategoriaTrabajadores() {
@@ -16,11 +17,31 @@ export default function DetalleCategoriaTrabajadores() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
+  const [allUsuarios, setAllUsuarios] = useState<Usuario[]>([]);
+
+  const handleBuscar = (text: string) => {
+    setBusqueda(text);
+    
+    if (text.trim() === '') {
+      // Si el texto está vacío, mostramos todas las categorías
+      setUsuarios(allUsuarios);
+    } else {
+      // Filtramos las categorías localmente
+      const filtered = allUsuarios.filter(usuario => 
+        usuario.nombre.toLowerCase().includes(text.toLowerCase()) ||
+        usuario.apellido.toLowerCase().includes(text.toLowerCase()) ||
+        usuario.descripcion?.toLowerCase().includes(text.toLowerCase())
+      );
+      setUsuarios(filtered);
+    }
+  };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchTrabajadoresByCategory(id.toString()).then((data) => {
       setUsuarios(data);
+      setAllUsuarios(data);
       setLoading(false);
     }).catch((error) => {
       setError(error.message);
@@ -64,6 +85,17 @@ export default function DetalleCategoriaTrabajadores() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
+
+<View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color="#888" style={styles.icono} />
+            <TextInput
+              placeholder="Buscar..."
+              placeholderTextColor="#888"
+              value={busqueda}
+              onChangeText={handleBuscar}
+              style={styles.input}
+            />
+          </View>
       <ScrollView contentContainerStyle={styles.scrollContainer} 
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -100,6 +132,22 @@ export default function DetalleCategoriaTrabajadores() {
 }
 
 const styles = StyleSheet.create({
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 25,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+  icono: {
+    marginRight: 10,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
   container: {
     gap: 8,
     flex: 1,

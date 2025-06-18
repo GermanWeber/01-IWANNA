@@ -5,9 +5,11 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../../../navigation/types';
-import { fetchProducts, iniciarCheckout, Product } from '../../../../services/paymentService';
-import { recuperarStorage } from '../../../../services/asyncStorage';
+import { fetchProducts, getSubscriptionInfo, iniciarCheckout, Product } from '../../../../services/paymentService';
+import { guardarStorage, recuperarStorage } from '../../../../services/asyncStorage';
 import { router } from 'expo-router';
+import { obtenerUsuario, updateSuscripcion } from '../../../../services/userService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
@@ -27,7 +29,7 @@ const mapStripeProductToPlan = (product: any) => {
       'Mejor visibilidad en búsquedas',
       isAnual ? 'Ahorro del 20%' : 'Flexibilidad mensual',
       'Soporte prioritario',
-      'Estadísticas detalladas'
+      'apoyas el proyecto IWANNA 😊'
     ],
     popular: !isAnual, // El plan mensual es el popular
     color: isAnual ? '#4a90e2' : '#2ecc71', // Azul para anual, verde para mensual
@@ -72,17 +74,39 @@ export default function Planes() {
     }
   };
 
-  const handleWebViewNavigation = (navState: any) => {
+  const handleWebViewNavigation = async (navState: any) => {
     const { url } = navState;
     console.log('Navegando a URL:', url);
-
+  
+    if (!usuario?.id) {
+      console.error('No se encontró el ID de usuario');
+      alert('Error: No se pudo identificar al usuario');
+      setCheckoutUrl(null);
+      return;
+    }
+  
     if (url.includes('success')) {
       console.log('Redirigiendo a la app desde:', url);
-      setCheckoutUrl(null);
-      router.push(`../(mi-plan)/(respuesta-suscripcion)/success-layout`);
-    }
-
-    if (url.includes('cancel')) {
+      
+      try {
+        // Cambiar estado de la suscripción
+        console.log('Actualizando suscripción para el usuario:', usuario.id, usuario.email);
+        const respuesta = await updateSuscripcion(usuario.id, usuario.email);
+  
+        if (respuesta) {
+          console.log('Suscripción actualizada:', respuesta);
+          // Redirigir a la pantalla de éxito
+          router.push(`../(mi-plan)/(respuesta-suscripcion)/success-layout`);
+        } else {
+          throw new Error('No se recibió respuesta del servidor');
+        }
+      } catch (error) {
+        console.error('Error al actualizar la suscripción:', error);
+        alert('Ocurrió un error al procesar tu suscripción. Por favor, verifica tu conexión e intenta nuevamente.');
+      } finally {
+        setCheckoutUrl(null);
+      }
+    } else if (url.includes('cancel')) {
       console.log('Redirigiendo a la app desde:', url);
       setCheckoutUrl(null);
       router.push(`../(mi-plan)/(respuesta-suscripcion)/cancel-layout`);
@@ -196,7 +220,7 @@ export default function Planes() {
           disabled={loading}
         >
           <Text style={styles.buttonText}>
-            {loading ? 'Procesando...' : isMensual ? 'Seleccionar Plan Mensual' : 'Seleccionar Plan Anual'}
+            {loading ? 'Procesando...' : isMensual ? 'Seleccionar Plan Mensual' : isAnual ? 'Seleccionar Plan Anual' : 'Seleccionar Plan'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -271,7 +295,7 @@ export default function Planes() {
         <View style={styles.infoBox}>
           <Ionicons name="information-circle-outline" size={24} color="#3498db" />
           <Text style={styles.infoText}>
-            ¿Necesitas ayuda para elegir? Contáctanos para asesorarte sobre el plan ideal para ti.
+            Puedes cancelar el plan en cualquier momento una vez adquirido un plan.
           </Text>
         </View>
       </ScrollView>

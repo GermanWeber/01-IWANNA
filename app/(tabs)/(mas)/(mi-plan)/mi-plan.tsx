@@ -44,7 +44,9 @@ export default function MiPlan() {
                         <Text style={styles.planBadgeText}>ACTIVO</Text>
                     </View>
                     <Text style={styles.planName}>{datosStripe?.planName || 'Plan Premium'}</Text>
-                    <Text style={styles.planPrice}>{datosStripe?.price || '$9.99'}<Text style={styles.planPeriod}>/mes</Text></Text>
+                    <Text style={styles.planPrice}>{datosStripe?.price || '$9.99'}
+                        
+                        <Text style={styles.planPeriod}>{datosStripe?.planName.includes('Anual') ? '$7.990/m' : 'al mes'}</Text></Text>
                 </View>
 
                 <View style={styles.divider} />

@@ -22,6 +22,11 @@ export default function PlanesLayout() {
           ),
         }}
       />
+
+      <Stack.Screen
+        name="(respuesta-suscripcion)"
+        options={{ headerShown: false,  }}
+      />
     </Stack>
   );
 }
