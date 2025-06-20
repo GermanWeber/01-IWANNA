@@ -94,7 +94,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
 
     const toggleLike = async (id_post:number, id_usuario:number) => {
         console.log('Datos recibidos en toggleLike:', id_post, id_usuario);
-        if (usuario && [1,2].includes(usuario.id_estado)) {
+        if (usuario && [1,2].includes(usuario?.id_estado)) {
             try {
                 console.log('Entro a like: post', id_post, 'usuario:', id_usuario);
                 await btnFavPost(id_post, id_usuario);
@@ -147,10 +147,10 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                     onPress={() => {handleProfilePress(); console.log('Datos recibidos en handleProfilePress:', datos)}}
 
                 >
-                    {datos.id_estado == 2? (
-                        <Image source={datos.foto ? { uri: `${BUCKET_URL}foto-perfil/${datos.foto}` } : foto_default} style={{...styles.foto_usuario, borderWidth: 3, borderColor: '#00BCD4'}} />
+                    {datos?.id_estado == 2? (
+                        <Image source={datos?.foto ? { uri: `${BUCKET_URL}foto-perfil/${datos.foto}` } : foto_default} style={{...styles.foto_usuario, borderWidth: 3, borderColor: '#00BCD4'}} />
                     ) : (
-                        <Image source={datos.foto ? { uri: `${BUCKET_URL}foto-perfil/${datos.foto}` } : foto_default} style={styles.foto_usuario} />
+                        <Image source={datos?.foto ? { uri: `${BUCKET_URL}foto-perfil/${datos.foto}` } : foto_default} style={styles.foto_usuario} />
                     )}
                     <View >
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -164,7 +164,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                             )}
                         </View>
                         <Text style={{ fontSize: 14, color: '#555' }}>
-                            {datos.profesion}
+                            {datos?.profesion}
                         </Text>
                     </View>
                 </TouchableOpacity>

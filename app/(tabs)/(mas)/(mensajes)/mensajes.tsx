@@ -1,4 +1,4 @@
-import { Text, View, ActivityIndicator } from 'react-native';
+import { Text, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { ScrollView } from 'react-native';
 import BotonMensaje from '../../../../components/botonMensaje';
@@ -18,9 +18,11 @@ interface Chat {
   sin_leer?: number;
 }
 
+
 export default function Mensajes() {
     const router = useRouter();
-    const [chats, setChats] = useState<Chat[]>([]);
+    const [chatsTrabajador, setChatsTrabajador] = useState<Chat[]>([]);
+    const [chatsCliente, setChatsCliente] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [usuario, setUsuario] = useState<any>(null);
@@ -34,39 +36,81 @@ export default function Mensajes() {
                 if (usuarioData) {
                     console.log('Usuario recuperado:', usuarioData);
                     setUsuario(usuarioData);
+                    fetchChatstrabajador(usuarioData.id);
+                    fetchChatsCliente(usuarioData.id);
                 }
             } catch (error) {
-                console.error('Error al recuperar el usuario:', error);
+                console.log('Error al recuperar el usuario:', error);
             }
         };
 
-    const fetchChats = async () => {
+    const fetchChatstrabajador = async (id: number) => {
       try {
-        
-        const userId = usuario?.id; 
+        const userId = id; 
+        console.log('ID del usuario:', userId);
         const response = await fetch(`${API_URL}chat/trabajador/${userId}`);
         
+        if (response === null) {
+          throw new Error('no hay chats');
+        }
+
         if (!response.ok) {
           throw new Error('Error al obtener los chats');
         }
         
         const data = await response.json();
-        setChats(data);
+        setChatsTrabajador(data);
         console.log('Chats recibidos:', data);
 
       } catch (err) {
-        console.error('Error:', err);
-        setError('Error al cargar los mensajes');
+        console.log('Error:', err);
+        setError('Error al cargar los mensajes del trabajador');
       } finally {
         setLoading(false);
       }
     };
 
+    const fetchChatsCliente = async (id: number) => {
+      try {
+        const userId = id; 
+        console.log('ID del usuario:', userId);
+        const response = await fetch(`${API_URL}chat/cliente/${userId}`);
+        
+        if (response === null) {
+          throw new Error('no hay chats');
+        }
+
+        if (!response.ok) {
+          throw new Error('Error al obtener los chats');
+        }
+        
+        const data = await response.json();
+        setChatsCliente(data);
+        console.log('Chats recibidos:', data);
+
+      } catch (err) {
+        console.log('Error:', err);
+        setError('Error al cargar los mensajes del cliente');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const handleChatPress = (chatId: number) => {
+      console.log('ID del chat:', chatId);
+      router.push(`/(tabs)/(mas)/(mensajes)/chat?id=${chatId}`);
+    };
+
     useEffect(() => {
       loadUsuario();
-      fetchChats();
     }, []);
 
+
+    const handleRefresh = () => {
+      setLoading(true);
+      loadUsuario();
+    };
+    
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
@@ -75,39 +119,66 @@ export default function Mensajes() {
       );
     }
 
-    if (error) {
+    if (usuario.id_tipo == 3) {
       return (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
+        <SafeAreaView style={{ flex: 1 }}>
+          <ScrollView contentContainerStyle={styles.scrollContainer}
+          refreshControl={<RefreshControl refreshing={loading} onRefresh={handleRefresh} />}
+          >
+            <View style={styles.container}>
+            {chatsCliente.length > 0 ? (
+    chatsCliente.map((chat) => (
+          <BotonMensaje
+            key={`chat-${chat.id}`} 
+            textoBoton={chat.nombre}
+            textoProfesion={chat.descripcion}
+            fecha={chat.f_creacion}
+            colorTextoProfesion='#424242'      
+            avatar={chat.foto}
+            colorTexto='#8BC34A'
+            bgColor='#F5F5F5'
+            onPress={() => handleChatPress(chat.id)}
+          />
+    ))
+  ) : (
+    <Text style={styles.noMessagesText}>No tienes chats activos</Text>
+  )}
+            </View>
+          </ScrollView>
+        </SafeAreaView>
       );
     }
 
-    return (
-      <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <View style={styles.container}>
-          {chats.length > 0 ? (
-  chats.map((chat) => (
-        <BotonMensaje
-          key={`chat-${chat.id}`} 
-          textoBoton={chat.nombre}
-          textoProfesion={chat.descripcion}
-          fecha={chat.f_creacion}
-          colorTextoProfesion='#424242'      
-          avatar={{ uri: chat.foto }}
-          colorTexto='#8BC34A'
-          bgColor='#F5F5F5'
-          onPress={() => router.push(`/(mas)/(mensajes)/chat?id=${chat.id}`)}
-        />
-  ))
-) : (
-  <Text style={styles.noMessagesText}>No tienes mensajes</Text>
-)}
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
+    if (usuario.id_tipo === 2) {
+      return (
+        <SafeAreaView style={{ flex: 1 }}>
+          <ScrollView contentContainerStyle={styles.scrollContainer}
+          refreshControl={<RefreshControl refreshing={loading} onRefresh={handleRefresh} />}
+          >
+            <View style={styles.container}>
+            {chatsTrabajador.length > 0 ? (
+    chatsTrabajador.map((chat) => (
+          <BotonMensaje
+            key={`chat-${chat.id}`} 
+            textoBoton={chat.nombre}
+            textoProfesion={chat.descripcion}
+            fecha={chat.f_creacion}
+            colorTextoProfesion='#424242'      
+            avatar={chat.foto}
+            colorTexto='#8BC34A'
+            bgColor='#F5F5F5'
+            onPress={() => handleChatPress(chat.id)}
+          />
+    ))
+  ) : (
+    <Text style={styles.noMessagesText}>No tienes chats activos</Text>
+  )}
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      );
+    }
+   
 }
 
 const styles = StyleSheet.create({

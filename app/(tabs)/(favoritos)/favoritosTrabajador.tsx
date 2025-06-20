@@ -7,7 +7,8 @@ import {
   ActivityIndicator, 
   TouchableOpacity, 
   SafeAreaView,
-  RefreshControl
+  RefreshControl,
+  TextInput
 } from 'react-native';
 import BotonAvatar from '../../../components/botonAvatar';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -38,6 +39,7 @@ export default function FavoritosTrabajador() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [allTrabajadores, setAllTrabajadores] = useState<Trabajador[]>([]);
 
   const cargarDatos = useCallback(async () => {
     try {
@@ -50,7 +52,7 @@ export default function FavoritosTrabajador() {
         if (data) {
           console.log('Datos del post en favoritos:', data);
           setTrabajadores(data);
-        }
+          }
       } else {
         throw new Error('No se pudo obtener la información del usuario');
       }
@@ -63,6 +65,25 @@ export default function FavoritosTrabajador() {
       setRefreshing(false);
     }
   }, []);
+
+  const [busqueda, setBusqueda] = useState('');
+
+  const handleBuscar = (text: string) => {
+    setBusqueda(text);
+    
+    if (text.trim() === '') {
+      // Si el texto está vacío, mostramos todas las categorías
+      setTrabajadores(allTrabajadores);
+    } else {
+      // Filtramos las categorías localmente
+      const filtered = allTrabajadores.filter(trabajador => 
+        trabajador.nombre.toLowerCase().includes(text.toLowerCase()) ||
+        trabajador.apellido.toLowerCase().includes(text.toLowerCase()) ||
+        trabajador.descripcion?.toLowerCase().includes(text.toLowerCase())
+      );
+      setTrabajadores(filtered);
+    }
+  };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -78,6 +99,7 @@ export default function FavoritosTrabajador() {
   // Cargar datos iniciales
   useEffect(() => {
     cargarDatos();
+    setAllTrabajadores(trabajadores);
   }, [cargarDatos]);
 
   if (loading) {
@@ -111,6 +133,17 @@ export default function FavoritosTrabajador() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
+
+      <View style={styles.searchContainer}>
+                  <Ionicons name="search" size={20} color="#888" style={styles.icono} />
+                  <TextInput
+                    placeholder="Buscar..."
+                    placeholderTextColor="#888"
+                    value={busqueda}
+                    onChangeText={handleBuscar}
+                    style={styles.input}
+                  />
+                </View> 
       <ScrollView contentContainerStyle={styles.scrollContainer}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -145,6 +178,27 @@ export default function FavoritosTrabajador() {
 }
 
 const styles = StyleSheet.create({
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 16,
+    marginTop: 16,
+  },
+  icono: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    color: '#212121',
+  },
 
   noResults: {
     textAlign: 'center',

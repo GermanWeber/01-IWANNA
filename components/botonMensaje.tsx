@@ -1,5 +1,8 @@
+import { BUCKET_URL } from '@env';
 import React from 'react';
 import { StyleSheet, Text, TouchableHighlight, View, Image } from 'react-native';
+
+const avatarDefault = require('../assets/images/perfil.png');
 
 type Props = {
     textoBoton?: string;
@@ -31,9 +34,9 @@ const BotonAvatar: React.FC<Props> = ({
             <View style={styles.contenidoBoton}>
                 <View style={styles.avatarContainer}>
                     <Image
-                        source={avatar}
+                        source={avatar ? { uri: `${BUCKET_URL}foto-perfil/${avatar}` } : avatarDefault}
                         style={styles.avatar}
-                        defaultSource={require('./../assets/images/perfil.png')}
+                        resizeMode="cover"
                     />
                 </View>
                 

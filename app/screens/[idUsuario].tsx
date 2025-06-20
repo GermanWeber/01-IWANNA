@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert, Modal, TouchableWithoutFeedback } from "react-native";
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert, Modal, TouchableWithoutFeedback, ActivityIndicator } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { RatingStars } from "../../components/rating-stars";
 import { recuperarStorage } from "../../services/asyncStorage";
@@ -9,6 +9,8 @@ import { PostType } from '../../types/post';
 import { btnFavTrabajador, fetchEstadoLikeTrabajador, fetchFavTrabajadores } from '../../services/favService';
 import { BUCKET_URL } from '@env';
 import ModalDenunciaTrabajador from "../../components/modalDenunciaTrabajador";
+import { ResizeMode, Video } from "expo-av";
+import { obtenerPostsByUser } from '../../services/postService';
 
 export default function PerfilUsuario() {
     const { idUsuario } = useLocalSearchParams();
@@ -18,7 +20,7 @@ export default function PerfilUsuario() {
     const [liked, setLiked] = useState(false);
     const [modalDots, setModalDots] = useState(false);
     const [modalDenunciar, setModalDenunciar] = useState(false);
-  
+  const [videoCargando, setVideoCargando] = useState<{ [id: number]: boolean }>({});
     const [usuario, setUsuario] = useState<any>(null);
 
 
@@ -29,6 +31,16 @@ export default function PerfilUsuario() {
             setUsuario(usuario);
         } catch (error) {
             console.error('Error al cargar usuario:', error);
+            return null;
+        }
+    };
+
+    const cargarPosts = async (id_trabajador:any) => {
+        try {
+            const posts = await obtenerPostsByUser(id_trabajador);
+            setPosts(posts);
+        } catch (error) {
+            console.error('Error al cargar posts:', error);
             return null;
         }
     };
@@ -45,6 +57,18 @@ export default function PerfilUsuario() {
             console.error('Error al cargar el estado del like del trabajador', error);
         }
 
+    };
+
+
+    const esVideo = (archivo: string | null | undefined): boolean => {
+        if (!archivo) return false;
+        try {
+            const extension = archivo.split('.').pop()?.toLowerCase() || '';
+            return ['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(extension);
+        } catch (error) {
+            console.error('Error checking if file is video:', error);
+            return false;
+        }
     };
   
 
@@ -63,6 +87,7 @@ export default function PerfilUsuario() {
     
         cargarDatos();
         cargarUsuario();
+        cargarPosts(idUsuario);
     }, [idUsuario]);
     
     //Este useEffect se ejecuta cuando ambos están definidos
@@ -96,6 +121,11 @@ export default function PerfilUsuario() {
         console.log('Datos recibidos en handleDotPress');
         setModalDots(!modalDots);
         
+    };
+
+    const handleVerPost = async (id_trabajador:any) => {
+        console.log('Datos recibidos en handleVerPost', id_trabajador);
+        router.push(`screens/ver-posts/${id_trabajador}`);
     };
  
 
@@ -141,11 +171,11 @@ export default function PerfilUsuario() {
                         <View style={styles.profileInfo}>
                             <Text style={styles.profileName}>{perfil.nombre} {perfil.apellido}
                                 {/*logo de verificado */}
-                                {perfil.id_auth === 2 && (
+                                {perfil?.id_auth === 2 && (
                                     <Ionicons name="checkmark-circle" size={20} color="#1d9bf0" />
                                 )}
                             </Text>
-                            {perfil.id_tipo === 2 ? (
+                            {perfil?.id_tipo === 2 ? (
                                 <Text style={styles.profileProfession}>{perfil.profesion}</Text>
                             ) : (<Text style={styles.profileProfession}>Cliente</Text>)}
                             <View style={styles.ratingContainer}>
@@ -192,7 +222,7 @@ export default function PerfilUsuario() {
 
 
                     {/* Boton de Cotizar */}
-                    {(perfil.id_tipo === 2 && usuario.id_tipo === 3)&& (
+                    {(perfil?.id_tipo === 2 && usuario?.id_tipo === 3)&& (
                         <TouchableOpacity
                             style={styles.cotizacionButton}
                             onPress={handleCotizar}
@@ -251,7 +281,7 @@ export default function PerfilUsuario() {
 
 
                     {/* Sección de Estadísticas -------------------------------------*/}
-                    {perfil.id_tipo === 2 && (
+                    {perfil?.id_tipo === 2 && (
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="stats-chart-outline" size={24} color="#8BC34A" />
@@ -275,26 +305,61 @@ export default function PerfilUsuario() {
                     )}
 
                     {/* POSTS ---------------------------- */}
-                    {perfil.id_tipo === 2 && (
+                    {perfil?.id_tipo === 2 && (
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="document-text-outline" size={24} color="#8BC34A" />
                                 <Text style={styles.sectionTitle}>Publicaciones</Text>
                             </View>
-                            <View style={styles.postsContainer}>
-                                {posts
-                                    .filter(post => post.archivo) // Solo posts con archivo
-                                    .slice(0, 6) // Máximo 6 posts
-                                    .map(post => (
-                                        <TouchableOpacity key={post.id} onPress={() => console.log('Post presionado:', post.id)} style={styles.post}>
-                                            {/* <Image
-                                                source={{ uri: `${BUCKET_URL}publicaciones/${post.archivo}` }}
-                                                style={styles.postImage}
+                            
+                            <View style={styles.postsContainer}
+                            
+                            >
+                            {posts.slice(0, 6).map(post => {
+                                const uri = `${BUCKET_URL}publicaciones/${post.archivo}`;
+                                const isVideo = esVideo(post.archivo);
+
+                                return (
+                                    <View
+                                        key={post.id}
+                                        style={styles.post}
+                                    >
+                                        {isVideo ? (
+                                            <>
+                                                {videoCargando[post.id] && (
+                                                    <View style={[styles.postArchivo, { justifyContent: 'center', alignItems: 'center' }]}>
+                                                        <ActivityIndicator size="large" color="#8BC34A" />
+                                                    </View>
+                                                )}
+                                                <Video
+                                                    source={{ uri }}
+                                                    style={styles.postArchivo}
+                                                    resizeMode={ResizeMode.COVER}
+                                                    isMuted
+                                                    shouldPlay={false}
+                                                    useNativeControls={false}
+                                                    onLoadStart={() => setVideoCargando(prev => ({ ...prev, [post.id]: true }))}
+                                                    onLoad={() => setVideoCargando(prev => ({ ...prev, [post.id]: false }))}
+                                                />
+                                            </>
+                                        ) : (
+                                            <Image
+                                                source={{ uri }}
+                                                style={styles.postArchivo}
                                                 resizeMode="cover"
-                                            /> */}
-                                        </TouchableOpacity>
-                                    ))}
+                                            />
+                                        )}
+                                    </View>
+                                );
+                            })}
                             </View>
+                            <TouchableOpacity
+                                style={styles.viewAllButton}
+                                onPress={() => handleVerPost(perfil?.id)}
+                            >
+                                <Ionicons name="add" size={20} color="#fff" />
+                                <Text style={styles.viewAllText}>Ver todas las publicaciones <Ionicons name="arrow-forward" size={20} color="#8BC34A" /></Text>
+                            </TouchableOpacity>
                         </View>
                     )}
                 </View>
@@ -330,6 +395,19 @@ export default function PerfilUsuario() {
 };
 
 const styles = StyleSheet.create({
+    post: {
+        width: '32%',
+        height: 150,
+        marginBottom: 10,
+        borderRadius: 10,
+        overflow: 'hidden',
+        elevation: 5
+    },
+    postArchivo: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
     botonesPerfil: {
         gap: 40,
         flexDirection: 'column',
@@ -515,18 +593,12 @@ const styles = StyleSheet.create({
     statValue: {},
     statLabel: {},
     postsContainer: {
+        display: 'flex',
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-start',
         marginBottom: 20,
-        alignSelf: 'stretch',
-    },
-    post: {
-        width: '32%',
-        height: 150,
-        marginBottom: 10,
-        borderRadius: 10,
-        overflow: 'hidden',
+        gap: 6,
     },
     postImage: {
         width: '100%',
@@ -585,15 +657,19 @@ const styles = StyleSheet.create({
     viewAllButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 15,
-        padding: 10,
+        justifyContent: 'flex-end',
+        paddingBottom: 10,
     },
     viewAllText: {
         color: '#8BC34A',
         fontSize: 16,
         fontWeight: '600',
         marginRight: 5,
+        textDecorationLine: 'underline',
+        textAlign: 'right',
+        textAlignVertical: 'top',
+        
+        
     },
 
 });

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, RefreshControl } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { API_URL } from '@env';
+import { recuperarStorage } from '../../../../services/asyncStorage';
 
 interface Message {
   id: number;
@@ -19,21 +20,39 @@ export default function Chat() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [usuario, setUsuario] = useState<any>(null);
+
+
+  const loadUsuario = async () => {
+    try {
+      console.log('Iniciando carga de usuario...');
+      const usuarioData = await recuperarStorage('usuario');
+      
+      if (usuarioData) {
+          console.log('Usuario recuperado:', usuarioData);
+          setUsuario(usuarioData);
+      }
+    } catch (error) {
+      console.log('Error al recuperar el usuario:', error);
+    }
+  };
 
   const fetchMessages = async () => {
+    console.log('Iniciando carga de mensajes...');
+    console.log('ID del chat:', id);
     try {
       setLoading(true);
       const response = await fetch(`${API_URL}chat/mensajes/${id}`);
       
       if (!response.ok) {
-        throw new Error(`Error al cargar los mensajes ${id}`);
+        throw new Error(`Error al cargar los mensajes del chat: ${id}`);
       }
       
       const data = await response.json();
       setMessages(data);
     } catch (err) {
       console.error('Error:', err);
-      setError('Error al cargar los mensajes');
+      setError('Error al cargar los mensajes del chat' + id);
     } finally {
       setLoading(false);
     }
@@ -42,10 +61,13 @@ export default function Chat() {
   useEffect(() => {
     if (id) {
       fetchMessages();
+      loadUsuario();
     }
   }, [id]);
 
   const sendMessage = async () => {
+
+    console.log('enviando mensaje en chat: ', id, 'usuario: ', usuario?.id);
     if (newMessage.trim() === '') return;
   
     try {
@@ -56,7 +78,7 @@ export default function Chat() {
         },
         body: JSON.stringify({
           id_chat: id,
-          id_autor: 1, // aqui hay que remplazar con el id del local storage
+          id_autor: usuario?.id, // aqui hay que remplazar con el id del local storage
           contenido: newMessage,
         }),
       });
@@ -76,18 +98,15 @@ export default function Chat() {
     }
   };
 
+  const handleRefresh = () => {
+    setLoading(true);
+    fetchMessages();
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#8BC34A" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
       </View>
     );
   }
@@ -98,23 +117,27 @@ export default function Chat() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={90}
     >
+      
       <FlatList
-  data={messages}
-  keyExtractor={(item, index) => item?.id?.toString() || `message-${index}`}
-  renderItem={({ item }) => (
-    <View style={[
-      styles.messageBubble, 
-      item.id_autor === 1 ? styles.userBubble : styles.otherBubble // ID del usuario autenticado
-    ]}>
-      {item.nombre && item.id_autor !== 1 && (
-        <Text style={styles.senderName}>{item.nombre}</Text>
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={handleRefresh} />}
+      data={messages}
+      keyExtractor={(item, index) => item?.id?.toString() || `message-${index}`}
+      renderItem={({ item }) => (
+        <View style={[
+          styles.messageBubble, 
+          item.id_autor === usuario?.id ? styles.userBubble : styles.otherBubble // ID del usuario autenticado
+        ]}>
+          {item.nombre && item.id_autor !== usuario?.id && (
+            <Text style={styles.senderName}>{item.nombre}</Text>
+          )}
+          <Text style={styles.messageText}>{item.contenido}</Text>
+          <Text style={styles.messageTime}>{item.f_creacion}</Text>
+        </View>
       )}
-      <Text style={styles.messageText}>{item.contenido}</Text>
-      <Text style={styles.messageTime}>{item.f_creacion}</Text>
-    </View>
-  )}
-  contentContainerStyle={styles.messageList}
-/>
+      contentContainerStyle={styles.messageList}
+
+      />
+     
       
 
       <View style={styles.inputContainer}>

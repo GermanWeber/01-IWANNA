@@ -15,6 +15,7 @@ export default function RootLayout() {
           <Stack.Screen name="direccion" options={{ headerShown: false }} />
           <Stack.Screen name="[idUsuario]" options={{ headerShown: false }} />
           <Stack.Screen name="cotizacion-form" options={{ headerShown: false }} />
+          <Stack.Screen name="ver-posts" options={{ headerShown: false }} />
         </Stack>
     </SafeAreaView>
   );
