@@ -22,6 +22,7 @@ export interface UsuarioDatos {
   profesion: string;
   estado_usuario: string;
   tipo_usuario: string;
+  fecha_creacion: Date;
 }
 
 export interface BackendResponse {

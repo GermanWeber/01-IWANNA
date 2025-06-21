@@ -11,6 +11,28 @@ import { obtenerDatos } from '../../../../services/userService'
 
 const imgPerfil = require('../../../../assets/images/perfil.png');
 
+const obtenerFechaCreacion = (fechaCreacion: string): string => {
+    try {
+        const fecha = new Date(fechaCreacion);
+        if (isNaN(fecha.getTime())) {
+            return 'N/A';
+        }
+
+        // Restar 1 día
+        const fechaAjustada = new Date(fecha.getTime() - (24 * 60 * 60 * 1000));
+
+        // Formatear la fecha
+        const dia = fechaAjustada.getDate().toString().padStart(2, '0');
+        const mes = (fechaAjustada.getMonth() + 1).toString().padStart(2, '0');
+        const año = fechaAjustada.getFullYear();
+
+        return `${dia}/${mes}/${año}`;
+    } catch (error) {
+        console.error('Error al formatear fecha:', error);
+        return 'N/A';
+    }
+};
+
 export default function MiPerfil() {
 
 
@@ -38,6 +60,7 @@ export default function MiPerfil() {
                     setUsuario(datos);
                     const datosCompletos = await obtenerDatos(datos.id);
                     console.log("Datos completos:", datosCompletos);
+                    console.log("Fecha creación:", datosCompletos?.fecha_creacion);
                     setDatosCompletos(datosCompletos);
                 }
             } catch (error) {
@@ -232,32 +255,13 @@ export default function MiPerfil() {
                                 <Text style={styles.infoLabel}>Profesión:</Text>
                                 <Text style={styles.infoValue}>{datosCompletos?.profesion || usuario?.profesion || 'Sin información'}</Text>
                             </View>
+                            <View style={styles.infoRow}>
+                                <Ionicons name="calendar-outline" size={20} color="#8BC34A" />
+                                <Text style={styles.infoLabel}>Fecha de Registro:</Text>
+                                <Text style={styles.infoValue}>{datosCompletos?.fecha_creacion ? obtenerFechaCreacion(datosCompletos.fecha_creacion) : 'Sin información'}</Text>
+                            </View>
                         </View>
                     </View>
-
-                    {/* Sección de Estadísticas */}
-                    {usuario.id_tipo === 1 && (
-                        <View style={styles.section}>
-                            <View style={styles.sectionHeader}>
-                                <Ionicons name="stats-chart-outline" size={24} color="#8BC34A" />
-                                <Text style={styles.sectionTitle}>Estadísticas</Text>
-                            </View>
-                            <View style={styles.statsContainer}>
-                                <View style={styles.statItem}>
-                                    <Text style={styles.statValue}>00</Text>
-                                    <Text style={styles.statLabel}>Servicios</Text>
-                                </View>
-                                <View style={styles.statItem}>
-                                    <Text style={styles.statValue}>00</Text>
-                                    <Text style={styles.statLabel}>Satisfacción</Text>
-                                </View>
-                                <View style={styles.statItem}>
-                                    <Text style={styles.statValue}>00</Text>
-                                    <Text style={styles.statLabel}>Años Exp.</Text>
-                                </View>
-                            </View>
-                        </View>
-                    )}
 
                     {/* POSTS */}
                     {usuario.id_tipo === 1 && (
