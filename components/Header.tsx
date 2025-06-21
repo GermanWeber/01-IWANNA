@@ -36,10 +36,10 @@ export default function Header({
     useFocusEffect(
         React.useCallback(() => {
             const cargarUsuario = async () => {
-            const datos = await recuperarStorage('usuario');
-            if (datos) {
-                setUsuario(datos);
-            }
+                const datos = await recuperarStorage('usuario');
+                if (datos) {
+                    setUsuario(datos);
+                }
             };
             cargarUsuario();
         }, [])
@@ -105,8 +105,8 @@ export default function Header({
                                         key={usuario?.foto || 'defaultFoto'}
                                         source={
                                             usuario?.foto
-                                            ? { uri: `${BUCKET_URL}foto-perfil/${usuario.foto}`, cache: 'force-cache' }
-                                            : imgPerfil
+                                                ? { uri: `${BUCKET_URL}foto-perfil/${usuario.foto}`, cache: 'force-cache' }
+                                                : imgPerfil
                                         }
                                         style={styles.userImage}
                                     />
@@ -123,35 +123,36 @@ export default function Header({
 
 const styles = StyleSheet.create({
     container: {
-        height: Platform.OS === 'ios' ? 90 : 70,
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
+        height: Platform.OS === 'ios' ? 64 : 54,
+        borderBottomLeftRadius: 16,
+        borderBottomRightRadius: 16,
         overflow: 'hidden',
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
+                shadowOpacity: 0.15,
+                shadowRadius: 2,
             },
             android: {
-                elevation: 8,
+                elevation: 4,
             },
         }),
     },
     gradient: {
         flex: 1,
-        paddingTop: Platform.OS === 'ios' ? 30 : 10,
+        paddingTop: Platform.OS === 'ios' ? 16 : 4,
+        paddingBottom: 0,
     },
     contentContainer: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
+        paddingHorizontal: 8,
     },
     leftContainer: {
-        width: 100,
+        width: 80,
         alignItems: 'flex-start',
     },
     centerContainer: {
@@ -160,45 +161,45 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     rightContainer: {
-        width: 100,
+        width: 60,
         alignItems: 'flex-end',
     },
     backButton: {
-        width: 36,
-        height: 36,
+        width: 28,
+        height: 28,
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 18,
+        borderRadius: 14,
     },
     backButtonInner: {
-        width: 36,
-        height: 36,
+        width: 28,
+        height: 28,
         backgroundColor: '#f5f5f5',
-        borderRadius: 18,
+        borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 3,
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.12,
+                shadowRadius: 1,
             },
             android: {
-                elevation: 4,
+                elevation: 2,
             },
         }),
     },
     profileContainer: {
-        width: 40,
-        height: 40,
+        width: 32,
+        height: 32,
         justifyContent: 'center',
         alignItems: 'center',
     },
     profileImageContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         backgroundColor: '#f5f5f5',
         justifyContent: 'center',
         alignItems: 'center',
@@ -207,34 +208,35 @@ const styles = StyleSheet.create({
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 3,
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.12,
+                shadowRadius: 1,
             },
             android: {
-                elevation: 4,
+                elevation: 2,
             },
         }),
     },
     userImage: {
-        width: 34,
-        height: 34,
-        borderRadius: 17,
+        width: 26,
+        height: 26,
+        borderRadius: 13,
     },
     logoContainer: {
         width: 60,
-        height: 60,
+        height: 40,
         justifyContent: 'center',
         alignItems: 'center',
     },
     logo: {
-        width: 77,
-        height: 77,
+        width: 72,
+        height: 48,
     },
     imgContainer: {
         width: "100%"
     },
     decorativeImage: {
         width: "100%",
+        height: 40,
     }
 }); 
