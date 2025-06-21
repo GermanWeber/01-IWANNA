@@ -105,7 +105,7 @@ export default function Header({
                                         key={usuario?.foto || 'defaultFoto'}
                                         source={
                                             usuario?.foto
-                                                ? { uri: `${BUCKET_URL}foto-perfil/${usuario.foto}`, cache: 'force-cache' }
+                                                ? { uri: `${BUCKET_URL}foto-perfil/${usuario.foto}?t=${Date.now()}`, cache: 'force-cache' }
                                                 : imgPerfil
                                         }
                                         style={styles.userImage}

@@ -48,7 +48,7 @@ export default function Post() {
                 <View>
                     <TouchableOpacity style={styles.editButton} onPress={() => router.push('/(posts)/crear-post')}>
                         <Ionicons name="add" size={20} color="#fff" />
-                        <Text style={styles.editButtonText}>Agregar Publicacionsffefsd</Text>
+                        <Text style={styles.editButtonText}>Agregar Publicación</Text>
                     </TouchableOpacity>
                 </View>
             </View>
