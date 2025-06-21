@@ -16,6 +16,12 @@ export default function Mas() {
     const [usuario, setUsuario] = useState<any>(null);
     const [averageRating, setAverageRating] = useState<number>(0);
 
+    // Función para capitalizar nombres
+    const capitalizeName = (name: string) => {
+        if (!name) return '';
+        return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+    };
+
     const loadUsuario = async () => {
         try {
             const usuarioData = await recuperarStorage('usuario');
@@ -98,7 +104,7 @@ export default function Mas() {
                             <View style={styles.perfilInfo}>
                                 <View style={styles.nameContainer}>
                                     <Text style={styles.perfilNombre}>
-                                        {usuario?.nombre} {usuario?.apellido}
+                                        {capitalizeName(usuario?.nombre)} {capitalizeName(usuario?.apellido)}
                                     </Text>
                                     {usuario?.id_auth === 2 && (
                                         <Ionicons name="checkmark-circle" size={20} color="#1d9bf0" style={styles.verifiedIcon} />
@@ -106,15 +112,10 @@ export default function Mas() {
                                 </View>
 
                                 <View style={styles.statusContainer}>
-                                    {usuario?.id_estado == 2 ? (
+                                    {usuario?.id_estado == 2 && (
                                         <View style={styles.premiumBadge}>
                                             <Ionicons name="diamond" size={14} color="#FFD700" />
                                             <Text style={styles.premiumText}>Plan Premium</Text>
-                                        </View>
-                                    ) : (
-                                        <View style={styles.freeBadge}>
-                                            <Ionicons name="person" size={14} color="#666" />
-                                            <Text style={styles.freeText}>Cuenta Gratuita</Text>
                                         </View>
                                     )}
                                 </View>
@@ -430,22 +431,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#B8860B',
         marginLeft: 6,
-    },
-    freeBadge: {
-        backgroundColor: '#f8f9fa',
-        borderRadius: 20,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#dee2e6',
-    },
-    freeText: {
-        fontSize: 13,
-        color: '#6c757d',
-        marginLeft: 6,
-        fontWeight: '500',
     },
     ratingContainer: {
         marginBottom: 15,

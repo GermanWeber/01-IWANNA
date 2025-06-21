@@ -127,6 +127,25 @@ export const getRechazo = async (id_rechazo: number) => {
     }
 };
 
+export const getDone = async (id: number) => {
+    try {
+        const url = `${API_URL}cotizacion/done/${id}`;
+        console.log('Consultando trabajos terminados:', url);
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Error al obtener trabajos terminados');
+        }
+
+        return data;
+    } catch (error) {
+        console.log('Error:', error);
+        throw error;
+    }
+};
+
 export const getCotizacionesCli = async (id_cliente: number) => {
     try {
         const url = `${API_URL}cotizacion/cliente/${id_cliente}`;

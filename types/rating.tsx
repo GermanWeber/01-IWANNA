@@ -22,5 +22,7 @@ export interface RatingCheckResponse {
 
 // Tipo para la respuesta del promedio de rating
 export interface AverageRatingResponse {
+    id_trabajador: number;
     promedio_estrellas: number;
+    total_valoraciones: number;
 }
