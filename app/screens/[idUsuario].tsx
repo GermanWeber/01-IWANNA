@@ -14,6 +14,7 @@ import { obtenerPostsByUser } from '../../services/postService';
 import { getAverageRating } from '../../services/ratingService';
 import { getDone } from '../../services/cotizacionService';
 
+const imgPerfil = require('../../assets/images/perfil.png');
 
 export default function PerfilUsuario() {
     const { idUsuario } = useLocalSearchParams();
@@ -92,6 +93,54 @@ export default function PerfilUsuario() {
         } catch (error) {
             console.error('Error checking if file is video:', error);
             return false;
+        }
+    };
+
+    const calcularTiempoEnApp = (fechaCreacion: string): string => {
+        try {
+            // Parsear la fecha UTC del backend
+            const fechaCreacionDate = new Date(fechaCreacion);
+            const fechaActual = new Date();
+
+            // Validar que la fecha de creación sea válida
+            if (isNaN(fechaCreacionDate.getTime())) {
+                return 'N/A';
+            }
+
+            // Sumar un día a la fecha actual del sistema para la comparación
+            const fechaActualAjustada = new Date(fechaActual.getTime() + (24 * 60 * 60 * 1000));
+
+            // Calcular la diferencia en milisegundos
+            const diferenciaMs = fechaActualAjustada.getTime() - fechaCreacionDate.getTime();
+
+            // Si la diferencia es negativa, usar el valor absoluto para mostrar tiempo aproximado
+            const diferenciaMsAbs = Math.abs(diferenciaMs);
+
+            const diferenciaMinutos = Math.floor(diferenciaMsAbs / (1000 * 60));
+            const diferenciaHoras = Math.floor(diferenciaMsAbs / (1000 * 60 * 60));
+            const diferenciaDias = Math.floor(diferenciaMsAbs / (1000 * 60 * 60 * 24));
+
+            if (diferenciaMinutos < 60) {
+                return `${diferenciaMinutos} ${diferenciaMinutos === 1 ? 'minuto' : 'minutos'}`;
+            } else if (diferenciaHoras < 24) {
+                const minutosRestantes = diferenciaMinutos % 60;
+                if (minutosRestantes > 0) {
+                    return `${diferenciaHoras} ${diferenciaHoras === 1 ? 'hora' : 'horas'} ${minutosRestantes} ${minutosRestantes === 1 ? 'minuto' : 'minutos'}`;
+                } else {
+                    return `${diferenciaHoras} ${diferenciaHoras === 1 ? 'hora' : 'horas'}`;
+                }
+            } else if (diferenciaDias < 30) {
+                return `${diferenciaDias} ${diferenciaDias === 1 ? 'día' : 'días'}`;
+            } else if (diferenciaDias < 365) {
+                const meses = Math.floor(diferenciaDias / 30);
+                return `${meses} ${meses === 1 ? 'mes' : 'meses'}`;
+            } else {
+                const años = Math.floor(diferenciaDias / 365);
+                return `${años} ${años === 1 ? 'año' : 'años'}`;
+            }
+        } catch (error) {
+            console.error('Error al calcular tiempo en app:', error);
+            return 'N/A';
         }
     };
 
@@ -180,7 +229,7 @@ export default function PerfilUsuario() {
                     <View style={styles.profileHeader}>
                         <View style={styles.profileImageContainer}>
                             <Image
-                                source={{ uri: `${BUCKET_URL}foto-perfil/${perfil.foto}` }}
+                                source={perfil.foto ? { uri: `${BUCKET_URL}foto-perfil/${perfil.foto}` } : imgPerfil}
                                 style={styles.profileImage}
                             />
                             {perfil?.id_auth === 2 && (
@@ -346,21 +395,21 @@ export default function PerfilUsuario() {
                                         <Ionicons name="briefcase-outline" size={20} color="#8BC34A" />
                                     </View>
                                     <Text style={styles.statValue}>{trabajosTerminados}</Text>
-                                    <Text style={styles.statLabel}>Servicios</Text>
+                                    <Text style={styles.statLabel}>Trabajos Terminados</Text>
                                 </View>
                                 <View style={styles.statItem}>
                                     <View style={styles.statIconContainer}>
                                         <Ionicons name="star-outline" size={20} color="#8BC34A" />
                                     </View>
                                     <Text style={styles.statValue}>{hasRatings ? `${averageRating.toFixed(1)}⭐` : 'N/A'}</Text>
-                                    <Text style={styles.statLabel}>Satisfacción</Text>
+                                    <Text style={styles.statLabel}>Rating de clientes</Text>
                                 </View>
                                 <View style={styles.statItem}>
                                     <View style={styles.statIconContainer}>
                                         <Ionicons name="time-outline" size={20} color="#8BC34A" />
                                     </View>
-                                    <Text style={styles.statValue}>0</Text>
-                                    <Text style={styles.statLabel}>Años Exp.</Text>
+                                    <Text style={styles.statValue} numberOfLines={2}>{perfil.fecha_creacion ? calcularTiempoEnApp(perfil.fecha_creacion) : 'N/A'}</Text>
+                                    <Text style={styles.statLabel}>Siendo Iwanna</Text>
                                 </View>
                             </View>
                         </View>
@@ -698,6 +747,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginTop: 8,
+        flexWrap: 'wrap',
     },
     statItem: {
         alignItems: 'center',
@@ -705,7 +755,8 @@ const styles = StyleSheet.create({
         padding: 12,
         backgroundColor: '#f8f9fa',
         borderRadius: 12,
-        marginHorizontal: 4,
+        marginHorizontal: 2,
+        minWidth: 80,
     },
     statIconContainer: {
         backgroundColor: '#f1f8e9',
@@ -714,16 +765,19 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     statValue: {
-        fontSize: 20,
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#8BC34A',
         marginBottom: 4,
+        textAlign: 'center',
+        flexWrap: 'wrap',
     },
     statLabel: {
-        fontSize: 12,
+        fontSize: 11,
         color: '#7f8c8d',
         fontWeight: '500',
         textAlign: 'center',
+        flexWrap: 'wrap',
     },
     postsContainer: {
         display: 'flex',
