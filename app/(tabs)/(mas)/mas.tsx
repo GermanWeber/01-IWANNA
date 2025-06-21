@@ -7,37 +7,35 @@ import { RatingStars } from '../../../components/rating-stars';
 import { recuperarStorage } from '../../../services/asyncStorage';
 import { BUCKET_URL } from '@env';
 
+import { getAverageRating } from '../../../services/ratingService';
 
 const imgPerfil = require('../../../assets/images/perfil.png');
 
 export default function Mas() {
     const router = useRouter();
-    const averageRating = 4;
-
     const [usuario, setUsuario] = useState<any>(null);
-    const [tipoUsuario, setTipoUsuario] = useState<string | null>(null);
+    const [averageRating, setAverageRating] = useState<number>(0);
 
     const loadUsuario = async () => {
         try {
-            console.log('Iniciando carga de usuario...');
             const usuarioData = await recuperarStorage('usuario');
             const tipoUsuarioData = await recuperarStorage('tipoUsuario');
-            console.log('Datos recuperados del storage:');
-            console.log('tipoUsuarioData:', tipoUsuarioData);
-            console.log('tipo de dato:', typeof tipoUsuarioData);
 
             if (usuarioData) {
-                console.log('Usuario recuperado:', usuarioData);
                 setUsuario(usuarioData);
-            }
-            if (tipoUsuarioData) {
-                console.log('Tipo de usuario recuperado:', tipoUsuarioData);
-                setTipoUsuario(tipoUsuarioData);
-            } else {
-                console.log('No se encontró tipoUsuario en el storage');
+
+                // Cargar el promedio de rating del trabajador
+                if (usuarioData.id_tipo === 2) { // Solo para trabajadores
+                    try {
+                        const ratingData = await getAverageRating(usuarioData.id);
+                        setAverageRating(ratingData.promedio_estrellas);
+                    } catch (error) {
+                        setAverageRating(0);
+                    }
+                }
             }
         } catch (error) {
-            console.error('Error al recuperar el usuario:', error);
+            // Error silencioso
         }
     };
 
@@ -56,29 +54,27 @@ export default function Mas() {
                 await Linking.openURL(webUrl);
             }
         } catch (error) {
-            console.error('Error al abrir el calendario:', error);
             Alert.alert('Error', 'No se pudo abrir Google Calendar. Asegúrate de tener la aplicación instalada.');
         }
     };
 
     useEffect(() => {
         const subscription = AppState.addEventListener('change', (nextAppState) => {
-          if (nextAppState === 'active') {
-            loadUsuario();
-          }
+            if (nextAppState === 'active') {
+                loadUsuario();
+            }
         });
-      
+
         // Cargar datos iniciales
         loadUsuario();
-      
+
         return () => {
-          subscription.remove();
+            subscription.remove();
         };
-      }, []);
+    }, []);
     const pathname = usePathname();
     useEffect(() => {
-        
-        console.log('Ruta actual:', pathname);
+        // Ruta actual disponible si es necesaria
     }, [pathname]);
 
     return (
@@ -87,68 +83,83 @@ export default function Mas() {
                 <View style={styles.container}>
                     {/* Sección de Perfil */}
                     <View style={styles.perfilContainer}>
-
                         <View style={styles.perfilContent}>
-                            <Image
-                                source={usuario?.foto ? { uri: `${BUCKET_URL}foto-perfil/${usuario?.foto}?t=${new Date().getTime()}` } : imgPerfil}
-                                style={styles.perfilImage}
-                            />
-                            <View style={styles.perfilInfo}>
-                                <Text style={styles.perfilNombre}>{usuario?.nombre} {usuario?.apellido}
-                                    {usuario?.id_auth === 2 && (
-                                        <Ionicons name="checkmark-circle" size={20} color="#1d9bf0" />
-                                    )}
-                                </Text>
-                                {usuario?.id_estado == 2 ? (
-                                    <Text style={styles.perfilPlan}>Suscrito</Text>
-                                ) : (
-                                    <Text style={styles.perfilPlan}>Cuenta gratuita</Text>
-
+                            <View style={styles.imageContainer}>
+                                <Image
+                                    source={usuario?.foto ? { uri: `${BUCKET_URL}foto-perfil/${usuario?.foto}?t=${new Date().getTime()}` } : imgPerfil}
+                                    style={styles.perfilImage}
+                                />
+                                {usuario?.id_auth === 2 && (
+                                    <View style={styles.verifiedBadge}>
+                                        <Ionicons name="checkmark-circle" size={16} color="#fff" />
+                                    </View>
                                 )}
-                                <TouchableOpacity
-                                    style={styles.verPerfilButton}
-                                    onPress={() => router.push('/(mas)/(perfil_usuario)')}
-                                >
-                                    <Text style={styles.verPerfilText}>Ver mi perfil</Text>
-                                    <Ionicons name="chevron-forward" size={20} color="#8BC34A" />
-                                </TouchableOpacity>
+                            </View>
+                            <View style={styles.perfilInfo}>
+                                <View style={styles.nameContainer}>
+                                    <Text style={styles.perfilNombre}>
+                                        {usuario?.nombre} {usuario?.apellido}
+                                    </Text>
+                                    {usuario?.id_auth === 2 && (
+                                        <Ionicons name="checkmark-circle" size={20} color="#1d9bf0" style={styles.verifiedIcon} />
+                                    )}
+                                </View>
 
-                                <TouchableOpacity
-                                    style={styles.verPerfilButton}
-                                    onPress={() => router.push('/(mas)/mi-perfil-cliente')}
-                                >
-                                    <Text style={styles.verPerfilText}>Ver mi perfil cliente (test)</Text>
-                                    <Ionicons name="chevron-forward" size={20} color="#8BC34A" />
-                                </TouchableOpacity>
+                                <View style={styles.statusContainer}>
+                                    {usuario?.id_estado == 2 ? (
+                                        <View style={styles.premiumBadge}>
+                                            <Ionicons name="diamond" size={14} color="#FFD700" />
+                                            <Text style={styles.premiumText}>Plan Premium</Text>
+                                        </View>
+                                    ) : (
+                                        <View style={styles.freeBadge}>
+                                            <Ionicons name="person" size={14} color="#666" />
+                                            <Text style={styles.freeText}>Cuenta Gratuita</Text>
+                                        </View>
+                                    )}
+                                </View>
 
-                                <View>
+                                <View style={styles.ratingContainer}>
                                     <RatingStars rating={Number(averageRating)} showValue />
+                                    <Text style={styles.ratingLabel}>Calificación promedio</Text>
+                                </View>
+
+                                <View style={styles.buttonContainer}>
+                                    <TouchableOpacity
+                                        style={styles.verPerfilButton}
+                                        onPress={() => router.push('/(mas)/(perfil_usuario)')}
+                                    >
+                                        <Ionicons name="person-circle" size={18} color="#8BC34A" />
+                                        <Text style={styles.verPerfilText}>Ver mi perfil</Text>
+                                        <Ionicons name="chevron-forward" size={16} color="#8BC34A" />
+                                    </TouchableOpacity>
                                 </View>
                             </View>
                         </View>
+
                         {/* Sección boton autenticación */}
                         {usuario?.id_auth == 1 ? (
                             <View style={styles.authSection}>
                                 <View style={styles.authContent}>
-                                    <View>
-                                        <Text style={styles.authTitle}>No estás autenticado</Text>
-                                        <Text style={styles.authSubtitle}>Inicia el proceso y accede a todos los beneficios</Text>
+                                    <View style={styles.authInfo}>
+                                        <View style={styles.authIconContainer}>
+                                            <Ionicons name="shield-checkmark" size={20} color="#FF5252" />
+                                        </View>
+                                        <View style={styles.authTextContainer}>
+                                            <Text style={styles.authTitle}>Verificación pendiente</Text>
+                                            <Text style={styles.authSubtitle}>Completa tu autenticación</Text>
+                                        </View>
                                     </View>
                                     <TouchableOpacity
                                         style={styles.authButton}
                                         onPress={() => router.push('/(mas)/(auth2)/auth2-info')}
                                     >
-                                        <Text style={styles.authButtonText}>IR</Text>
-
+                                        <Text style={styles.authButtonText}>Verificar</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
                         ) : null}
                     </View>
-
-
-
-
 
                     {/* Sección de Opciones */}
 
@@ -242,18 +253,18 @@ export default function Mas() {
 
                         {usuario?.id_tipo === 2 && (
                             <BotonCategorias
-                            textoBoton="GOOGLE CALENDAR"
-                            colorTexto="#5F6368"  
-                            textoBotonSub="Lleva tu agenda de trabajo organizada con Google Calendar"
-                            colorTextoSub="#5F6368"  
-                            bgColor="#FFFFFF"  
-                            iconoDerecha="open"  
-                            colorIconoDerecha="#4285F4"  
-                            colorIconoIzquierda="#4285F4" 
-                            iconoIzquierda="calendar"
-                            onPress={() => handlePressCalendar()}
-                            
-                        />
+                                textoBoton="GOOGLE CALENDAR"
+                                colorTexto="#5F6368"
+                                textoBotonSub="Lleva tu agenda de trabajo organizada con Google Calendar"
+                                colorTextoSub="#5F6368"
+                                bgColor="#FFFFFF"
+                                iconoDerecha="open"
+                                colorIconoDerecha="#4285F4"
+                                colorIconoIzquierda="#4285F4"
+                                iconoIzquierda="calendar"
+                                onPress={() => handlePressCalendar()}
+
+                            />
                         )}
                     </View>
 
@@ -314,6 +325,41 @@ const styles = StyleSheet.create({
     perfilContainer: {
         padding: 20,
         backgroundColor: '#fff',
+        marginBottom: 10,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+            },
+            android: {
+                elevation: 6,
+            },
+        }),
+    },
+    perfilContent: {
+        alignSelf: 'center',
+        width: '100%',
+        marginTop: 10,
+        borderRadius: 16,
+        padding: 20,
+        backgroundColor: '#f8f9fa',
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        borderWidth: 1,
+        borderColor: '#e9ecef',
+    },
+    imageContainer: {
+        position: 'relative',
+    },
+    perfilImage: {
+        width: 90,
+        height: 90,
+        borderRadius: 45,
+        borderWidth: 4,
+        borderColor: '#8BC34A',
+        backgroundColor: '#fff',
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
@@ -322,30 +368,43 @@ const styles = StyleSheet.create({
                 shadowRadius: 4,
             },
             android: {
+                elevation: 3,
+            },
+        }),
+    },
+    verifiedBadge: {
+        position: 'absolute',
+        top: -2,
+        right: -2,
+        backgroundColor: '#1d9bf0',
+        borderRadius: 12,
+        padding: 3,
+        borderWidth: 2,
+        borderColor: '#fff',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.2,
+                shadowRadius: 2,
+            },
+            android: {
                 elevation: 2,
             },
         }),
     },
-    perfilContent: {
-        alignSelf: 'center',
-        width: '90%',
-        marginTop: 10,
-        borderRadius: 10,
-        padding: 15,
-        backgroundColor: '#f1f1f1',
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    perfilImage: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        borderWidth: 3,
-        borderColor: '#8BC34A',
+    verifiedIcon: {
+        position: 'absolute',
+        top: 2,
+        right: 2,
     },
     perfilInfo: {
         marginLeft: 15,
         flex: 1,
+    },
+    nameContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     perfilNombre: {
         fontSize: 22,
@@ -353,24 +412,97 @@ const styles = StyleSheet.create({
         color: '#333',
         marginBottom: 5,
     },
-    perfilPlan: {
-        fontSize: 16,
-        color: '#666',
+    statusContainer: {
         marginBottom: 10,
+    },
+    premiumBadge: {
+        backgroundColor: 'rgba(255, 215, 0, 0.2)',
+        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#FFD700',
+    },
+    premiumText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#B8860B',
+        marginLeft: 6,
+    },
+    freeBadge: {
+        backgroundColor: '#f8f9fa',
+        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#dee2e6',
+    },
+    freeText: {
+        fontSize: 13,
+        color: '#6c757d',
+        marginLeft: 6,
+        fontWeight: '500',
+    },
+    ratingContainer: {
+        marginBottom: 15,
+        alignItems: 'flex-start',
+    },
+    ratingLabel: {
+        fontSize: 12,
+        color: '#6c757d',
+        marginTop: 4,
+        fontWeight: '500',
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 8,
     },
     verPerfilButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F5F5F5',
-        paddingVertical: 8,
-        paddingHorizontal: 15,
-        borderRadius: 20,
-        alignSelf: 'flex-start',
+        backgroundColor: '#8BC34A',
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 25,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 3,
+            },
+        }),
     },
     verPerfilText: {
-        color: '#8BC34A',
+        color: '#fff',
         fontWeight: '600',
-        marginRight: 5,
+        marginHorizontal: 6,
+        fontSize: 14,
+    },
+    testButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f8f9fa',
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 25,
+        borderWidth: 1,
+        borderColor: '#dee2e6',
+    },
+    testText: {
+        color: '#6c757d',
+        fontWeight: '500',
+        marginLeft: 6,
+        fontSize: 14,
     },
     opcionesContainer: {
         padding: 20,
@@ -384,40 +516,51 @@ const styles = StyleSheet.create({
         marginLeft: 5,
     },
     authSection: {
-        backgroundColor: '#FFF8F8',
-        borderRadius: 10,
-        margin: 20,
-        padding: 15,
-        borderLeftWidth: 4,
-        borderLeftColor: '#FF5252',
+        backgroundColor: '#f8f9fa',
+        borderRadius: 12,
+        marginTop: 15,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#e9ecef',
     },
     authContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    authTitle: {
-        color: '#D32F2F',
-        fontWeight: '600',
-        fontSize: 15,
-        marginBottom: 3,
-    },
-    authSubtitle: {
-        color: '#616161',
-        fontSize: 13,
-    },
-    authButton: {
+    authInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#8BC34A',
+        flex: 1,
+    },
+    authIconContainer: {
+        backgroundColor: 'rgba(255, 82, 82, 0.1)',
+        borderRadius: 8,
+        padding: 6,
+        marginRight: 12,
+    },
+    authTextContainer: {
+        flex: 1,
+    },
+    authTitle: {
+        color: '#495057',
+        fontWeight: '600',
+        fontSize: 14,
+        marginBottom: 2,
+    },
+    authSubtitle: {
+        color: '#6c757d',
+        fontSize: 12,
+    },
+    authButton: {
+        backgroundColor: '#FF5252',
         borderRadius: 20,
         paddingVertical: 8,
         paddingHorizontal: 16,
-        elevation: 2,
     },
     authButtonText: {
         color: 'white',
         fontWeight: '600',
-        marginRight: 5,
+        fontSize: 13,
     },
 });

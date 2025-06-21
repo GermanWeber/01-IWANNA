@@ -1,12 +1,19 @@
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
 import { getCotizacionesId, getRespuestaId, updateRespondido, getRechazo, createRechazoCot } from '../../../../services/cotizacionService';
 
+import { createRating, getRating } from '../../../../services/ratingService';
+import { RatingData } from '../../../../types/rating';
+
+
+
 type DetalleCotizacion = {
     id_cotizacion: number;
     id_cliente: number;
+    id_trabajador: number;
     nombre: string;
     apellido: string;
     asunto: string;
@@ -49,33 +56,49 @@ export default function CotizacionInteriorCliente() {
     const [motivoRechazo, setMotivoRechazo] = useState('');
     const [showRechazoForm, setShowRechazoForm] = useState(false);
 
+    // Estados para el sistema de rating
+    const [rating, setRating] = useState(0);
+    const [ratingComment, setRatingComment] = useState('');
+    const [showRatingForm, setShowRatingForm] = useState(false);
+    const [ratingSubmitted, setRatingSubmitted] = useState(false);
+    const [submittingRating, setSubmittingRating] = useState(false);
+    const [dateRating, setdateRating] = useState<string | null>(null);;
+
     useEffect(() => {
         const fetchDetalleCotizacion = async () => {
             try {
                 setLoading(true);
-                console.log('ID de la cotización a buscar:', id);
                 const resultado = await getCotizacionesId(Number(id));
-                console.log('Respuesta completa del servicio:', JSON.stringify(resultado, null, 2));
                 setCotizacion(resultado);
 
                 // Si la cotización está respondida o aceptada, obtener la respuesta
                 if (resultado.id_estado === 2 || resultado.id_estado === 4 || resultado.id_estado === 5) {
                     const respuestaData = await getRespuestaId(Number(id));
-                    console.log('Respuesta de la cotización:', respuestaData);
                     setRespuesta(respuestaData);
                 }
 
                 // Si la cotización está rechazada, obtener el motivo del rechazo
                 if (resultado.id_estado === 3) {
                     const rechazoData = await getRechazo(Number(id));
-                    console.log('Motivo del rechazo:', rechazoData);
                     setRechazo(rechazoData);
+                }
+
+                // Verificar si ya existe una puntuación para esta cotización
+                try {
+                    const ratingData = await getRating(Number(id));
+
+                    // Solo marcar como ya puntuada si realmente tiene una puntuación válida
+                    if (ratingData.puntuacion && ratingData.puntuacion > 0) {
+                        setRatingSubmitted(true);
+                    }
+                } catch (ratingError) {
+                    // No marcar como enviada si no hay datos
+                    setRatingSubmitted(false);
                 }
 
                 setLoading(false);
                 setError(null);
             } catch (error: any) {
-                console.error('Error detallado:', error);
                 setError('No se pudo cargar la cotización. Por favor, intenta más tarde.');
                 setLoading(false);
             }
@@ -130,7 +153,6 @@ export default function CotizacionInteriorCliente() {
                 ]
             );
         } catch (error) {
-            console.error('Error al aceptar la cotización:', error);
             Alert.alert(
                 "Error",
                 "No se pudo procesar la aceptación. Por favor, intenta nuevamente."
@@ -172,8 +194,62 @@ export default function CotizacionInteriorCliente() {
                 setMotivoRechazo('');
             }
         } catch (error) {
-            console.error('Error al rechazar la cotización:', error);
             Alert.alert('Error', 'No se pudo rechazar la cotización. Por favor, intenta nuevamente.');
+        }
+    };
+
+    const handleStarPress = (starValue: number) => {
+        setRating(starValue);
+        setShowRatingForm(true);
+    };
+
+    const getRatingText = (ratingValue: number) => {
+        switch (ratingValue) {
+            case 1: return 'Muy malo';
+            case 2: return 'Malo';
+            case 3: return 'Regular';
+            case 4: return 'Bueno';
+            case 5: return 'Excelente';
+            default: return 'Califica el servicio';
+        }
+    };
+
+    const handleSubmitRating = async () => {
+        if (!cotizacion || !respuesta || rating === 0) {
+            Alert.alert('Error', 'Por favor, selecciona una puntuación');
+            return;
+        }
+
+        try {
+            setSubmittingRating(true);
+
+            const ratingData: RatingData = {
+                id_cotizacion: Number(id),
+                id_trabajador: cotizacion.id_trabajador, // Usar el ID del trabajador de la cotización
+                puntuacion: rating,
+                comentario: ratingComment.trim() || 'Sin comentarios',
+
+            };
+
+            const response = await createRating(ratingData);
+
+            if (response.message === 'Puntuación de trabajador creada exitosamente') {
+                setRatingSubmitted(true);
+                setShowRatingForm(false);
+
+                Alert.alert(
+                    '¡Gracias!',
+                    'Tu calificación ha sido enviada exitosamente',
+                    [{ text: 'OK' }]
+                );
+            }
+        } catch (error) {
+            Alert.alert(
+                'Error',
+                'No se pudo enviar la calificación. Por favor, intenta nuevamente.'
+            );
+        } finally {
+            setSubmittingRating(false);
         }
     };
 
@@ -319,19 +395,92 @@ export default function CotizacionInteriorCliente() {
                             {/* Sistema de Rating para trabajos terminados */}
                             {cotizacion.id_estado === 5 && (
                                 <View style={styles.ratingContainer}>
-                                    <Text style={styles.ratingTitle}>Califica el servicio</Text>
-                                    <View style={styles.starsContainer}>
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <MaterialIcons
-                                                key={star}
-                                                name="star"
-                                                size={32}
-                                                color="#FFD700"
-                                                style={styles.star}
-                                            />
-                                        ))}
+                                    {!ratingSubmitted ? (
+                                        <>
+                                            <Text style={styles.ratingTitle}>Califica el servicio</Text>
+                                            <View style={styles.starsContainer}>
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <TouchableOpacity
+                                                        key={star}
+                                                        onPress={() => handleStarPress(star)}
+                                                        style={styles.starButton}
+                                                    >
+                                                        <MaterialIcons
+                                                            name={star <= rating ? "star" : "star-border"}
+                                                            size={32}
+                                                            color={star <= rating ? "#FFD700" : "#D3D3D3"}
+                                                            style={styles.star}
+                                                        />
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </View>
+                                            <Text style={styles.ratingText}>{getRatingText(rating)}</Text>
+                                        </>
+                                    ) : (
+                                        <View style={styles.ratingSubmittedContainer}>
+                                            <MaterialIcons name="check-circle" size={48} color="#28A745" />
+                                            <Text style={styles.ratingSubmittedText}>¡Cotización ya puntuada!</Text>
+                                            <Text style={styles.ratingSubmittedSubtext}>Gracias por tu calificación</Text>
+                                        </View>
+                                    )}
+                                </View>
+                            )}
+
+                            {/* Formulario de Rating */}
+                            {showRatingForm && !ratingSubmitted && (
+                                <View style={styles.ratingFormContainer}>
+                                    <View style={styles.ratingFormHeader}>
+                                        <Text style={styles.ratingFormTitle}>Tu opinión es importante</Text>
+                                        <Text style={styles.ratingFormSubtitle}>
+                                            Calificación: {rating} estrellas - {getRatingText(rating)}
+                                        </Text>
                                     </View>
-                                    <Text style={styles.ratingText}>Excelente servicio</Text>
+
+                                    <View style={styles.inputContainer}>
+                                        <Text style={styles.inputLabel}>Comentario (opcional)</Text>
+                                        <TextInput
+                                            style={[styles.input, styles.textArea]}
+                                            value={ratingComment}
+                                            onChangeText={setRatingComment}
+                                            multiline
+                                            numberOfLines={4}
+                                            placeholder="Cuéntanos cómo fue tu experiencia con el servicio (opcional)..."
+                                            placeholderTextColor="#999"
+                                            maxLength={500}
+                                        />
+                                        <Text style={styles.charCount}>
+                                            {ratingComment.length}/500 caracteres
+                                        </Text>
+                                    </View>
+
+                                    <View style={styles.ratingButtonsContainer}>
+                                        <TouchableOpacity
+                                            style={[styles.ratingButton, styles.submitRatingButton]}
+                                            onPress={handleSubmitRating}
+                                            disabled={submittingRating}
+                                        >
+                                            {submittingRating ? (
+                                                <ActivityIndicator size="small" color="#fff" />
+                                            ) : (
+                                                <MaterialIcons name="send" size={20} color="#fff" />
+                                            )}
+                                            <Text style={styles.ratingButtonText}>
+                                                {submittingRating ? 'Enviando...' : 'Enviar Calificación'}
+                                            </Text>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            style={[styles.ratingButton, styles.cancelRatingButton]}
+                                            onPress={() => {
+                                                setShowRatingForm(false);
+                                                setRatingComment('');
+                                                setRating(0);
+                                            }}
+                                            disabled={submittingRating}
+                                        >
+                                            <Text style={styles.ratingButtonText}>Cancelar</Text>
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
                             )}
                         </View>
@@ -761,5 +910,84 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
         marginTop: 8,
+    },
+    starButton: {
+        padding: 4,
+    },
+    ratingSubmittedContainer: {
+        alignItems: 'center',
+    },
+    ratingSubmittedText: {
+        marginTop: 16,
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#28A745',
+    },
+    ratingSubmittedSubtext: {
+        marginTop: 8,
+        fontSize: 12,
+        color: '#666',
+    },
+    ratingFormContainer: {
+        marginTop: 16,
+        padding: 16,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E9ECEF',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 2,
+            },
+        }),
+    },
+    ratingFormHeader: {
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    ratingFormTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#212529',
+        marginBottom: 8,
+    },
+    ratingFormSubtitle: {
+        fontSize: 14,
+        color: '#666',
+    },
+    ratingButtonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 16,
+        gap: 8,
+    },
+    ratingButton: {
+        flex: 1,
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    submitRatingButton: {
+        backgroundColor: '#28A745',
+    },
+    cancelRatingButton: {
+        backgroundColor: '#6C757D',
+    },
+    ratingButtonText: {
+        color: '#fff',
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    charCount: {
+        alignSelf: 'flex-end',
+        marginTop: 8,
+        fontSize: 12,
+        color: '#6C757D',
     },
 });
