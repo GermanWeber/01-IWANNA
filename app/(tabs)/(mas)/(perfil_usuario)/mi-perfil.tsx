@@ -1,9 +1,9 @@
 import { ScrollView, StyleSheet, Text, View, Image, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { RatingStars } from '../../../../components/rating-stars';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { recuperarStorage } from '../../../../services/asyncStorage';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { BUCKET_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { obtenerDatos } from '../../../../services/userService'
@@ -51,26 +51,27 @@ export default function MiPerfil() {
     const [datosCompletos, setDatosCompletos] = useState<any>(null);
 
 
-    useEffect(() => {
-        const cargarUsuario = async () => {
+    useFocusEffect(
+        useCallback(() => {
+            const cargarUsuario = async () => {
             try {
                 const datos = await recuperarStorage('usuario');
                 console.log("datos: ", datos);
                 if (datos) {
-                    setUsuario(datos);
-                    const datosCompletos = await obtenerDatos(datos.id);
-                    console.log("Datos completos:", datosCompletos);
-                    console.log("Fecha creación:", datosCompletos?.fecha_creacion);
-                    setDatosCompletos(datosCompletos);
+                setUsuario(datos);
+                const datosCompletos = await obtenerDatos(datos.id);
+                console.log("Datos completos:", datosCompletos);
+                console.log("Fecha creación:", datosCompletos?.fecha_creacion);
+                setDatosCompletos(datosCompletos);
                 }
             } catch (error) {
                 console.error('Error al cargar usuario:', error);
             }
+            };
 
-        };
-
-        cargarUsuario();
-    }, []);
+            cargarUsuario();
+        }, []) // sin dependencias para que se ejecute siempre que el módulo gana foco
+    );
 
     const cerrarSesion = async () => {
         Alert.alert(

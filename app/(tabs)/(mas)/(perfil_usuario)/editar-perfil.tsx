@@ -111,7 +111,7 @@ export default function EditarPerfil() {
                     if (usuarioDatos) {
                         guardarStorage("usuario", usuarioDatos);
                         Alert.alert("Éxito", "El usuario a sido actualizado");
-
+                        router.push('mi-perfil');
                     } else {
                         Alert.alert("Error", "No se pudo actualizar");
                     }
@@ -563,6 +563,7 @@ const styles = StyleSheet.create({
         marginTop: 20,
         marginBottom: 30,
         paddingHorizontal: 10,
+        gap:10,
     },
     saveButton: {
         flexDirection: 'row',
@@ -651,12 +652,12 @@ const styles = StyleSheet.create({
     modalCancelButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FF6B6B',
-        padding: 16,
-        borderRadius: 12,
         justifyContent: 'center',
-        flex: 1,
-        marginLeft: 10,
+        backgroundColor: '#FF6B6B',
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        alignSelf: 'center', // Centra el botón dentro del modal
         shadowColor: '#FF6B6B',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
