@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ViewToken } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useLocalSearchParams } from 'expo-router';
 import { fetchPostsByCategory } from '../../../../services/categoryService';
@@ -15,6 +15,25 @@ export default function DetalleCategoriaPosts() {
   const [refreshing, setRefreshing] = useState(false);
   const [posts, setPosts] = useState<PostType[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [visibleItem, setVisibleItem] = useState<number | null>(null);
+
+      const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+          if (viewableItems.length > 0) {
+              // Obtener el ID del primer ítem visible
+              const visibleId = viewableItems[0].item?.id;
+              setVisibleItem(visibleId);
+          }
+      }).current; 
+      
+      const viewabilityConfig = useRef({
+          itemVisiblePercentThreshold: 50, // El 50% del ítem debe ser visible
+          minimumViewTime: 300, // Tiempo mínimo que debe estar visible en ms
+          
+      }).current; 
+      
+      const viewabilityConfigCallbackPairs = useRef([
+          { viewabilityConfig, onViewableItemsChanged }
+      ]).current;
 
   const fetchPosts = async () => {
     try {
@@ -70,6 +89,11 @@ export default function DetalleCategoriaPosts() {
                  return <Post datos={item} />;
              }}
                initialNumToRender={5}
+               viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs}
+               viewabilityConfig={{
+                   itemVisiblePercentThreshold: 50,
+                   waitForInteraction: true,
+               }}
                maxToRenderPerBatch={5}
                updateCellsBatchingPeriod={50}
                windowSize={7}
