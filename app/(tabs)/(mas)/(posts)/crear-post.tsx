@@ -108,7 +108,7 @@ export default function Post() {
 
             const data = await response.json();
             if (!data.exito) {
-                Alert.alert("Error", "No se pudo subir el archivo.");
+                Alert.alert("Error", data.error);
             } else {
                 Alert.alert("Éxito", "Archivo subido con éxito.");
                 router.back();
