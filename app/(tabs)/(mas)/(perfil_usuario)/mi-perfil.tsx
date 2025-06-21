@@ -4,13 +4,16 @@ import { RatingStars } from '../../../../components/rating-stars';
 import { router } from 'expo-router';
 import { recuperarStorage } from '../../../../services/asyncStorage';
 import { useEffect, useState } from 'react';
-import { BUCKET_URL} from '@env';
+import { BUCKET_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { obtenerDatos } from '../../../../services/userService'
+
+
 const imgPerfil = require('../../../../assets/images/perfil.png');
 
 export default function MiPerfil() {
 
-   
+
 
 
     const posts = [
@@ -23,8 +26,9 @@ export default function MiPerfil() {
     ]
     const [usuario, setUsuario] = useState<any>(null);
     const [fotoPerfil, setFotoPerfil] = useState<any>(null);
+    const [datosCompletos, setDatosCompletos] = useState<any>(null);
 
-    
+
     useEffect(() => {
         const cargarUsuario = async () => {
             try {
@@ -32,10 +36,14 @@ export default function MiPerfil() {
                 console.log("datos: ", datos);
                 if (datos) {
                     setUsuario(datos);
+                    const datosCompletos = await obtenerDatos(datos.id);
+                    console.log("Datos completos:", datosCompletos);
+                    setDatosCompletos(datosCompletos);
                 }
             } catch (error) {
                 console.error('Error al cargar usuario:', error);
             }
+
         };
 
         cargarUsuario();
@@ -57,7 +65,7 @@ export default function MiPerfil() {
                         try {
                             await AsyncStorage.removeItem('usuario');
                             await AsyncStorage.removeItem('stripeData');
-                            
+
                             router.replace('/(auth)');
                         } catch (error) {
                             console.error('Error al cerrar sesión:', error);
@@ -75,20 +83,38 @@ export default function MiPerfil() {
                 <View style={styles.container}>
                     {/* Sección de Perfil */}
                     <View style={styles.profileHeader}>
-                        <Image
-                            source={usuario.foto ? { uri: `${BUCKET_URL}foto-perfil/${usuario.foto}?t=${new Date().getTime()}` } : imgPerfil}
-                            style={styles.profileImage}
-                        />
-                        <View style={styles.profileInfo}>
-                            <Text style={styles.profileName}>{usuario.nombre} {usuario.apellido}</Text>
-                            {usuario.id_tipo === 1 ? (
-                                <Text style={styles.profileProfession}>{usuario.profesion}</Text>
-                            ):
-                            (
-                                <Text style={styles.profileProfession}>Cliente</Text>
+                        <View style={styles.profileImageContainer}>
+                            <Image
+                                source={usuario.foto ? { uri: `${BUCKET_URL}foto-perfil/${usuario.foto}?t=${new Date().getTime()}` } : imgPerfil}
+                                style={styles.profileImage}
+                            />
+                            {usuario.id_auth === 2 && (
+                                <View style={styles.verifiedBadge}>
+                                    <Ionicons name="checkmark-circle" size={16} color="#fff" />
+                                </View>
                             )}
+                        </View>
+                        <View style={styles.profileInfo}>
+                            <View style={styles.nameContainer}>
+                                <Text style={styles.profileName}>
+                                    {usuario.nombre?.charAt(0).toUpperCase() + usuario.nombre?.slice(1).toLowerCase()} {usuario.apellido?.charAt(0).toUpperCase() + usuario.apellido?.slice(1).toLowerCase()}
+                                </Text>
+                                {usuario.id_auth === 2 && (
+                                    <Ionicons name="checkmark-circle" size={20} color="#1d9bf0" style={styles.verifiedIcon} />
+                                )}
+                            </View>
+                            <View style={styles.profileDetails}>
+                            </View>
+                            <View style={styles.profileStatus}>
+                                {usuario.id_estado === 2 && (
+                                    <View style={styles.premiumBadge}>
+                                        <Ionicons name="diamond" size={14} color="#FFD700" />
+                                        <Text style={styles.premiumText}>Plan Premium</Text>
+                                    </View>
+                                )}
+                            </View>
                             <View style={styles.ratingContainer}>
-                            {/* {<RatingStars rating={usuario.calificacion} showValue />} */}
+                                {/* {<RatingStars rating={usuario.calificacion} showValue />} */}
                             </View>
                         </View>
                     </View>
@@ -105,13 +131,38 @@ export default function MiPerfil() {
                             <Ionicons name="person-circle-outline" size={24} color="#8BC34A" />
                             <Text style={styles.sectionTitle}>Datos personales</Text>
                         </View>
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>Edad:</Text>
-                            <Text style={styles.infoValue}>{usuario.edad}</Text>
-                        </View>
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>Ubicación:</Text>
-                            <Text style={styles.infoValue}>{usuario.direccion}</Text>
+                        <View style={styles.infoList}>
+                            <View style={styles.infoRow}>
+                                <Ionicons name="calendar-outline" size={20} color="#8BC34A" />
+                                <Text style={styles.infoLabel}>Edad:</Text>
+                                <Text style={styles.infoValue}>{usuario.edad ? `${usuario.edad} años` : 'Sin información'}</Text>
+                            </View>
+                            <View style={styles.infoRow}>
+                                <Ionicons name="location-outline" size={20} color="#8BC34A" />
+                                <Text style={styles.infoLabel}>Ubicación:</Text>
+                                <Text style={styles.infoValue}>{datosCompletos?.direccion || usuario?.direccion || 'Sin información'}</Text>
+                            </View>
+                            <View style={styles.infoRow}>
+                                <Ionicons name="person-outline" size={20} color="#8BC34A" />
+                                <Text style={styles.infoLabel}>Sexo:</Text>
+                                <Text style={styles.infoValue}>
+                                    {usuario.id_sexo === 1 ? 'Masculino' : usuario.id_sexo === 2 ? 'Femenino' : 'Sin información'}
+                                </Text>
+                            </View>
+                            {usuario.rut && (
+                                <View style={styles.infoRow}>
+                                    <Ionicons name="card-outline" size={20} color="#8BC34A" />
+                                    <Text style={styles.infoLabel}>RUT:</Text>
+                                    <Text style={styles.infoValue}>{usuario.rut}</Text>
+                                </View>
+                            )}
+                            {usuario.telefono && (
+                                <View style={styles.infoRow}>
+                                    <Ionicons name="call-outline" size={20} color="#8BC34A" />
+                                    <Text style={styles.infoLabel}>Teléfono:</Text>
+                                    <Text style={styles.infoValue}>{usuario.telefono}</Text>
+                                </View>
+                            )}
                         </View>
                     </View>
 
@@ -122,7 +173,7 @@ export default function MiPerfil() {
                             <Text style={styles.sectionTitle}>Sobre Mí</Text>
                         </View>
                         <Text style={styles.description}>
-                            {usuario.descripcion}
+                            {datosCompletos?.descripcion_usuario || usuario?.descripcion || 'Sin información'}
                         </Text>
                     </View>
 
@@ -132,16 +183,56 @@ export default function MiPerfil() {
                             <Ionicons name="call-outline" size={24} color="#8BC34A" />
                             <Text style={styles.sectionTitle}>Contacto</Text>
                         </View>
-                        <View style={styles.infoItem}>
-                            <Ionicons name="mail-outline" size={20} color="#666" />
-                            <Text style={styles.infoValue}>{usuario.email}</Text>
+                        <View style={styles.infoList}>
+                            <View style={styles.infoRow}>
+                                <Ionicons name="mail-outline" size={20} color="#8BC34A" />
+                                <Text style={styles.infoLabel}>Email:</Text>
+                                <Text style={styles.infoValue}>{datosCompletos?.email || usuario?.email || 'Sin información'}</Text>
+                            </View>
                         </View>
-                        {usuario.telefono && (
-                        <View style={styles.infoItem}>
-                            <Ionicons name="call-outline" size={20} color="#666" />
-                            <Text style={styles.infoValue}>{usuario.telefono}</Text>
+                    </View>
+
+                    {/* Sección de Información de Cuenta */}
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <Ionicons name="settings-outline" size={24} color="#8BC34A" />
+                            <Text style={styles.sectionTitle}>Información de Cuenta</Text>
                         </View>
-                        )}
+                        <View style={styles.infoList}>
+                            <View style={styles.infoRow}>
+                                <Ionicons name="person-circle-outline" size={20} color="#8BC34A" />
+                                <Text style={styles.infoLabel}>Tipo de Usuario:</Text>
+                                <Text style={styles.infoValue}>
+                                    {datosCompletos?.tipo_usuario ||
+                                        (usuario.id_tipo === 1 ? 'Administrador' :
+                                            usuario.id_tipo === 2 ? 'Trabajador' :
+                                                usuario.id_tipo === 3 ? 'Cliente' : 'Sin información')}
+                                </Text>
+                            </View>
+                            <View style={styles.infoRow}>
+                                <Ionicons name="shield-checkmark-outline" size={20} color="#8BC34A" />
+                                <Text style={styles.infoLabel}>Estado de Cuenta:</Text>
+                                <Text style={styles.infoValue}>
+                                    {datosCompletos?.estado_usuario ||
+                                        (usuario.id_estado === 1 ? 'Activo' :
+                                            usuario.id_estado === 2 ? 'Premium' :
+                                                usuario.id_estado === 3 ? 'Inactivo' : 'Sin información')}
+                                </Text>
+                            </View>
+                            <View style={styles.infoRow}>
+                                <Ionicons name="checkmark-circle-outline" size={20} color="#8BC34A" />
+                                <Text style={styles.infoLabel}>Verificación:</Text>
+                                <Text style={styles.infoValue}>
+                                    {usuario.id_auth === 1 ? 'Pendiente' :
+                                        usuario.id_auth === 2 ? 'Verificado' : 'Sin información'}
+                                </Text>
+                            </View>
+                            <View style={styles.infoRow}>
+                                <Ionicons name="briefcase-outline" size={20} color="#8BC34A" />
+                                <Text style={styles.infoLabel}>Profesión:</Text>
+                                <Text style={styles.infoValue}>{datosCompletos?.profesion || usuario?.profesion || 'Sin información'}</Text>
+                            </View>
+                        </View>
                     </View>
 
                     {/* Sección de Estadísticas */}
@@ -153,21 +244,21 @@ export default function MiPerfil() {
                             </View>
                             <View style={styles.statsContainer}>
                                 <View style={styles.statItem}>
-                                <Text style={styles.statValue}>00</Text>
-                                <Text style={styles.statLabel}>Servicios</Text>
+                                    <Text style={styles.statValue}>00</Text>
+                                    <Text style={styles.statLabel}>Servicios</Text>
                                 </View>
                                 <View style={styles.statItem}>
-                                <Text style={styles.statValue}>00</Text>
-                                <Text style={styles.statLabel}>Satisfacción</Text>
+                                    <Text style={styles.statValue}>00</Text>
+                                    <Text style={styles.statLabel}>Satisfacción</Text>
                                 </View>
                                 <View style={styles.statItem}>
-                                <Text style={styles.statValue}>00</Text>
-                                <Text style={styles.statLabel}>Años Exp.</Text>
+                                    <Text style={styles.statValue}>00</Text>
+                                    <Text style={styles.statLabel}>Años Exp.</Text>
                                 </View>
                             </View>
                         </View>
                     )}
-                    
+
                     {/* POSTS */}
                     {usuario.id_tipo === 1 && (
                         <View style={styles.section}>
@@ -176,15 +267,15 @@ export default function MiPerfil() {
                                 <Text style={styles.sectionTitle}>Publicaciones</Text>
                             </View>
                             <View style={styles.postsContainer}>
-                            {posts.map(post => (
-                                <TouchableOpacity key={post.id} onPress={() => console.log('Post presionado:', post.id)} style={styles.post}>
-                                <Image
-                                    source={{ uri: post.url }}
-                                    style={styles.postImage}
-                                    resizeMode="cover"
-                                />
-                                </TouchableOpacity>
-                            ))}
+                                {posts.map(post => (
+                                    <TouchableOpacity key={post.id} onPress={() => console.log('Post presionado:', post.id)} style={styles.post}>
+                                        <Image
+                                            source={{ uri: post.url }}
+                                            style={styles.postImage}
+                                            resizeMode="cover"
+                                        />
+                                    </TouchableOpacity>
+                                ))}
                             </View>
                         </View>
                     )}
@@ -226,16 +317,16 @@ export default function MiPerfil() {
                                     </View>
                                 </TouchableOpacity>
                             </View>
-                            <TouchableOpacity 
-                            style={styles.viewAllButton}
-                            onPress={() => router.push('/(mas)/historial-servicios')}
+                            <TouchableOpacity
+                                style={styles.viewAllButton}
+                                onPress={() => router.push('/(mas)/historial-servicios')}
                             >
                                 <Text style={styles.viewAllText}>Ver todo</Text>
                                 <Ionicons name="chevron-forward" size={20} color="#8BC34A" />
                             </TouchableOpacity>
                         </View>
                     )}
-                    
+
                     {/* Sección de Historial de Servicios */}
                     {usuario.tipo_usuario === 2 && (
                         <View style={styles.section}>
@@ -265,17 +356,17 @@ export default function MiPerfil() {
                                         <Text style={[styles.serviceStatus, styles.completedStatus]}>Completado</Text>
                                     </View>
                                     <View style={styles.serviceWorker}>
-                                    <Image
-                                    source={imgPerfil}
-                                    style={styles.workerImage}
-                                    />
+                                        <Image
+                                            source={imgPerfil}
+                                            style={styles.workerImage}
+                                        />
                                         <Text style={styles.workerName}>Roberto Silva</Text>
                                     </View>
                                 </TouchableOpacity>
                             </View>
-                            <TouchableOpacity 
-                            style={styles.viewAllButton}
-                            onPress={() => router.push('/(mas)/historial-servicios')}
+                            <TouchableOpacity
+                                style={styles.viewAllButton}
+                                onPress={() => router.push('/(mas)/historial-servicios')}
                             >
                                 <Text style={styles.viewAllText}>Ver todo</Text>
                                 <Ionicons name="chevron-forward" size={20} color="#8BC34A" />
@@ -284,8 +375,8 @@ export default function MiPerfil() {
                     )}
 
                     {/* Botón de Cerrar Sesión */}
-                    <TouchableOpacity 
-                        style={styles.logoutButton} 
+                    <TouchableOpacity
+                        style={styles.logoutButton}
                         onPress={cerrarSesion}
                     >
                         <Ionicons name="log-out-outline" size={20} color="#fff" />
@@ -293,7 +384,7 @@ export default function MiPerfil() {
                     </TouchableOpacity>
                 </View>
             )}
-            
+
         </ScrollView>
     );
 }
@@ -320,6 +411,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
     },
+    profileImageContainer: {
+        position: 'relative',
+    },
     profileImage: {
         width: 100,
         height: 100,
@@ -327,20 +421,58 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderColor: '#8BC34A',
     },
+    verifiedBadge: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        backgroundColor: '#4CAF50',
+        borderRadius: 15,
+        padding: 2,
+    },
     profileInfo: {
         marginLeft: 20,
         flex: 1,
+    },
+    nameContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 5,
     },
     profileName: {
         fontSize: 24,
         fontWeight: 'bold',
         color: '#333',
-        marginBottom: 5,
+        marginRight: 5,
+    },
+    verifiedIcon: {
+        marginLeft: 5,
+    },
+    profileDetails: {
+        marginBottom: 10,
     },
     profileProfession: {
         fontSize: 16,
         color: '#666',
+    },
+    profileId: {
+        fontSize: 14,
+        color: '#666',
+    },
+    profileStatus: {
         marginBottom: 10,
+    },
+    premiumBadge: {
+        backgroundColor: '#FFD700',
+        borderRadius: 15,
+        padding: 2,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    premiumText: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#333',
+        marginLeft: 5,
     },
     ratingContainer: {
         marginTop: 5,
@@ -367,22 +499,27 @@ const styles = StyleSheet.create({
         color: '#333',
         marginLeft: 10,
     },
-    infoItem: {
+    infoList: {
+        gap: 12,
+    },
+    infoRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 10,
+        paddingVertical: 4,
     },
     infoLabel: {
-        fontSize: 16,
-        color: '#666',
-        width: 100,
+        fontWeight: '600',
+        color: '#7f8c8d',
+        fontSize: 14,
+        marginLeft: 8,
+        marginRight: 8,
+        minWidth: 120,
     },
     infoValue: {
-        fontSize: 16,
-        color: '#333',
-        marginLeft: 10,
-        flexShrink: 1,
-        flexWrap: 'wrap',
+        color: '#34495e',
+        fontSize: 14,
+        fontWeight: '500',
+        flex: 1,
     },
     description: {
         fontSize: 16,
@@ -407,7 +544,7 @@ const styles = StyleSheet.create({
         color: '#666',
         marginTop: 5,
     },
-    postsContainer:{
+    postsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',

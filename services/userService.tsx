@@ -2,6 +2,9 @@ import { API_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { guardarStorage } from './asyncStorage';
 import { getSubscriptionInfo } from './paymentService';
+import { UsuarioDatos, BackendResponse } from '../types/user'
+
+
 
 export const createUser = async (userData: any) => {
   try {
@@ -27,28 +30,49 @@ export const createUser = async (userData: any) => {
 
 export const obtenerUsuario = async (email: string) => {
   try {
-      const url = `${API_URL}usuarios/${email}`;
-      console.log('Consultando usuario en:', url);
+    const url = `${API_URL}usuarios/${email}`;
+    console.log('Consultando usuario en:', url);
 
-      const response = await fetch(url);
-      const data = await response.json();
-      
-      if (!response.ok) {
-          throw new Error(data.message || 'Error al obtener usuario');
-      }
+    const response = await fetch(url);
+    const data = await response.json();
 
-      // Guardar datos simples en AsyncStorage
-      await AsyncStorage.setItem('usuario', JSON.stringify(data));
-      console.log('Datos guardados en AsyncStorage:', data); // Log para verificar datos guardados
+    if (!response.ok) {
+      throw new Error(data.message || 'Error al obtener usuario');
+    }
 
-      // Verificar que los datos se guardaron correctamente
-      const storedData = await AsyncStorage.getItem('usuario');
-      console.log('Datos recuperados de AsyncStorage:', storedData); // Log para verificar datos recuperados
+    // Guardar datos simples en AsyncStorage
+    await AsyncStorage.setItem('usuario', JSON.stringify(data));
+    console.log('Datos guardados en AsyncStorage:', data); // Log para verificar datos guardados
 
-      return data;
+    // Verificar que los datos se guardaron correctamente
+    const storedData = await AsyncStorage.getItem('usuario');
+    console.log('Datos recuperados de AsyncStorage:', storedData); // Log para verificar datos recuperados
+
+    return data;
   } catch (error) {
-      console.error('Error:', error);
-      throw error;
+    console.error('Error:', error);
+    throw error;
+  }
+};
+
+export const obtenerDatos = async (id: string): Promise<UsuarioDatos> => {
+  try {
+    const url = `${API_URL}usuarios/datos/${id}`;
+    console.log('Consultando usuario en:', url);
+
+    const response = await fetch(url);
+    const data: BackendResponse = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.mensaje || 'Error al obtener usuario');
+    }
+
+    // El backend devuelve { usuario: {...}, mensaje: "..." }
+    // Retornamos solo los datos del usuario
+    return data.usuario;
+  } catch (error) {
+    console.error('Error:', error);
+    throw error;
   }
 };
 
@@ -59,7 +83,7 @@ export const updateSuscripcion = async (userId: string, email: string) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({userId}),
+      body: JSON.stringify({ userId }),
     });
 
     const data = await response.json();
@@ -76,9 +100,9 @@ export const updateSuscripcion = async (userId: string, email: string) => {
         const stripeData = await getSubscriptionInfo(usuario.id);
         console.log('Datos de Stripe:', stripeData);
         // Guardar datos en AsyncStorage
-      await guardarStorage('usuario', usuario);
-      await guardarStorage('stripeData', stripeData);
-      console.log('Datos guardados en AsyncStorage luego de la suscripcion:', usuario); // Log para verificar datos guardados
+        await guardarStorage('usuario', usuario);
+        await guardarStorage('stripeData', stripeData);
+        console.log('Datos guardados en AsyncStorage luego de la suscripcion:', usuario); // Log para verificar datos guardados
       } catch (error) {
         console.error('Error al obtener usuario luego de la suscripcion:', error);
       }
