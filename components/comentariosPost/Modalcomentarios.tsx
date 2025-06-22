@@ -32,7 +32,10 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
             
             //pregunta si el comentario es una respuesta a otro comentario
             if(comentarioSeleccionado){
-                await crearRespuestasComentario(comentarioSeleccionado["id"], usuario_id, comentario);
+                const result = await crearRespuestasComentario(comentarioSeleccionado["id"], usuario_id, comentario);
+                if(!result){
+                    return
+                }
                 setComentario('');
                 const nuevosComentarios = await getComentariosPost(postId);
                 setComentariosPost(nuevosComentarios);
@@ -42,7 +45,11 @@ const ComentariosModal: React.FC<ComentariosModalProps> = ({ modalVisible, toggl
                     [comentarioSeleccionado.id]: !prev[comentarioSeleccionado.id], // Toggle
                 }));
             } else {
-                await crearComentarioPost(postId, usuario_id, comentario);
+                const result = await crearComentarioPost(postId, usuario_id, comentario);
+                
+                if(!result){
+                    return
+                }
                 setComentario('');
                 
                 const nuevosComentarios = await getComentariosPost(postId);
