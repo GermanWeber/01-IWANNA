@@ -1,5 +1,6 @@
 import { API_URL } from '@env';
 import { Comentario, RespuestaComentario } from '../types/comentarios';
+import { Alert } from 'react-native';
 
 export const getComentariosPost = async (idPost: number): Promise<Comentario[]> => {
     try {
@@ -39,14 +40,12 @@ export const crearComentarioPost = async (postId: number,usuario_id: number,cont
             }),
         });
 
-        if (!response.ok) {
-            const errorData = await response.text();
-            console.error('Error response:', errorData);
-            throw new Error(`Error ${response.status}: ${response.statusText}`);
-        }
+        const data = await response.json();
 
-        const data: Comentario = await response.json();
-        return data;
+        if (!response.ok || data.exito === false) {
+            Alert.alert("Error", data.error);
+        }
+        return data.exito;
     } catch (error) {
         console.error('Error al crear comentario:', error);
         throw error;
@@ -91,14 +90,13 @@ export const crearRespuestasComentario = async (idComentario: number,usuario_id:
             }),
         });
 
-        if (!response.ok) {
-            const errorData = await response.text();
-            console.error('Error response:', errorData);
-            throw new Error(`Error ${response.status}: ${response.statusText}`);
+        const data = await response.json();
+
+        if (!response.ok || data.exito === false) {
+            Alert.alert("Error", data.error);
         }
 
-        const data: RespuestaComentario = await response.json();
-        return data;
+        return data.exito;
     } catch (error) {
         console.error('Error al crear comentario:', error);
         throw error;
