@@ -1,25 +1,24 @@
-import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, StatusBar, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ComentariosModal from './comentariosPost/Modalcomentarios';
 import { router, useFocusEffect, useRouter } from 'expo-router';
 import { PostType } from '../types/post';
 import { BUCKET_URL } from '@env';
-import { Video, ResizeMode, VideoFullscreenUpdate } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
 import { guardarStorage } from '../services/asyncStorage';
 import { btnFavPost, fetchLikesPosts, fetchEstadoLikePost } from '../services/favService';
 import { recuperarStorage } from '../services/asyncStorage';
-import { ModalDenunciaPost } from './modalDenunciaPost';
+import {ModalDenunciaPost} from './modalDenunciaPost';
+import { List } from 'react-native-paper';
 import { getCantidadComentarios } from '../services/comentariosService';
-
 const foto_default = require('../assets/images/perfil.png');
 
 type Props = {
     datos: PostType;
-    isVisible?: boolean;
 };
 
-const PostComponent: React.FC<Props> = ({ datos, isVisible = true }) => {
+const PostComponent: React.FC<Props> = ({ datos }) => {
     const [cargando, setCargando] = useState(true);
     const [liked, setLiked] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -30,7 +29,6 @@ const PostComponent: React.FC<Props> = ({ datos, isVisible = true }) => {
     const [modalDenunciar, setModalDenunciar] = useState(false);
     const [cantidadComentarios, setCantidadComentarios] = useState<Number>(0);
     const [videoCargando, setVideoCargando] = useState(true);
-    const videoRef = useRef<Video>(null);
 
     const manejarCargaImagen = useCallback(() => setCargando(false), []);
     const toggleModal = useCallback(() => setModalVisible(prev => !prev), []);
@@ -126,27 +124,11 @@ const PostComponent: React.FC<Props> = ({ datos, isVisible = true }) => {
     }, [datos?.id_usuario, router]); // Añade todas las dependencias necesarias
     
 
-    // Efecto para manejar la visibilidad del video
-    useEffect(() => {
-        if (!isVisible && videoRef.current) {
-            videoRef.current.pauseAsync();
-            videoRef.current.setPositionAsync(0);
-        }
-    }, [isVisible]);
-
     useFocusEffect(
         useCallback(() => {
             setModalVisible(false);
             setCargando(true);
             cargarDatos();
-            
-            // Limpiar al desmontar
-            return () => {
-                if (videoRef.current) {
-                    videoRef.current.pauseAsync();
-                    videoRef.current.setPositionAsync(0);
-                }
-            };
         }, [datos?.id]) // Solo volver a ejecutar si el ID del post cambia
     );
 
@@ -217,31 +199,19 @@ const PostComponent: React.FC<Props> = ({ datos, isVisible = true }) => {
                 {isVideo ? (
                 <>
                     <Video
-                        ref={videoRef}
-                        source={{ 
-                            uri: `${BUCKET_URL}publicaciones/${datos.archivo}`,
-                            overrideFileExtensionAndroid: 'mp4'
-                        }}
+                        source={{ uri: `${BUCKET_URL}publicaciones/${datos.archivo}` }}
                         rate={1.0}
                         volume={1.0}
                         isMuted={false}
-                        resizeMode={ResizeMode.CONTAIN}
-                        shouldPlay={isVisible}
-                        isLooping={false}
+                        resizeMode={ResizeMode.COVER}
+                        shouldPlay={false}
                         useNativeControls
                         style={styles.imagen_post}
                         onLoadStart={() => setVideoCargando(true)}
-                        onReadyForDisplay={() => setVideoCargando(false)}
+                        onLoad={() => setVideoCargando(false)}
                         onError={(error) => {
                             console.error("Error al cargar el video:", error);
                             setVideoCargando(false);
-                        }}
-                        progressUpdateIntervalMillis={1000}
-                        onPlaybackStatusUpdate={(status) => {
-                            if (!status.isLoaded) return;
-                            if (status.didJustFinish) {
-                                videoRef.current?.setPositionAsync(0);
-                            }
                         }}
                     />
                     {videoCargando && (

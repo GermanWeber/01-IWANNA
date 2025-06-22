@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef } from 'react'; 
+import React, { useCallback, useState, useRef } from 'react';
 import { ViewToken } from 'react-native';
 import { FlatList, View, Text, Image, StyleSheet, SafeAreaView, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
 import Post from '../../../components/post';
@@ -18,16 +18,17 @@ const Home = () => {
     
     const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
         if (viewableItems.length > 0) {
-            // Obtener el ID del primer ítem visible
-            const visibleId = viewableItems[0].item?.id;
+            const visibleId = viewableItems[0]?.item?.id;
             setVisibleItem(visibleId);
+        } else {
+            setVisibleItem(null);
         }
     }).current; 
     
     const viewabilityConfig = useRef({
-        itemVisiblePercentThreshold: 50, // El 50% del ítem debe ser visible
-        minimumViewTime: 300, // Tiempo mínimo que debe estar visible en ms
-        
+        itemVisiblePercentThreshold: 50,
+        minimumViewTime: 300,
+        waitForInteraction: true,
     }).current; 
     
     const viewabilityConfigCallbackPairs = useRef([
@@ -86,14 +87,12 @@ const Home = () => {
             <FlatList
                 data={posts}
                 keyExtractor={(item) => `post-${item.id}`}
-                renderItem={({ item }) => {
-                    return (
-                        <Post 
-                            datos={item} 
-                            isVisible={visibleItem === item.id}
-                        />
-                    );
-                }}
+                renderItem={({ item }) => (
+                    <Post 
+                        datos={item} 
+                        isVisible={visibleItem === item.id}
+                    />
+                )}
                 viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs}
                 viewabilityConfig={{
                     itemVisiblePercentThreshold: 50,
