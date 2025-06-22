@@ -91,7 +91,7 @@ export const createRechazoCot = async (data: RechazoCotizacionRequest): Promise<
 
 export const getCotizaciones = async (id_trabajador: number) => {
     try {
-        const url = `${API_URL}cotizacion/${id_trabajador}`;
+        const url = `${API_URL}cotizacion/trabajador/${id_trabajador}`;
         console.log('Consultando cotizaciones en:', url);
 
         const response = await fetch(url);

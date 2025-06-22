@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef } from 'react'; 
+import { ViewToken } from 'react-native';
 import { FlatList, View, Text, Image, StyleSheet, SafeAreaView, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
 import Post from '../../../components/post';
 import { useEffect } from 'react';
@@ -13,6 +14,25 @@ const Home = () => {
     const [usuario, setUsuario] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [visibleItem, setVisibleItem] = useState<number | null>(null);
+    
+    const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+        if (viewableItems.length > 0) {
+            // Obtener el ID del primer ítem visible
+            const visibleId = viewableItems[0].item?.id;
+            setVisibleItem(visibleId);
+        }
+    }).current; 
+    
+    const viewabilityConfig = useRef({
+        itemVisiblePercentThreshold: 50, // El 50% del ítem debe ser visible
+        minimumViewTime: 300, // Tiempo mínimo que debe estar visible en ms
+        
+    }).current; 
+    
+    const viewabilityConfigCallbackPairs = useRef([
+        { viewabilityConfig, onViewableItemsChanged }
+    ]).current;
 
     const obtenerPosts = async () => {
         try {
@@ -67,7 +87,17 @@ const Home = () => {
                 data={posts}
                 keyExtractor={(item) => `post-${item.id}`}
                 renderItem={({ item }) => {
-                    return <Post datos={item} />;
+                    return (
+                        <Post 
+                            datos={item} 
+                            isVisible={visibleItem === item.id}
+                        />
+                    );
+                }}
+                viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs}
+                viewabilityConfig={{
+                    itemVisiblePercentThreshold: 50,
+                    waitForInteraction: true,
                 }}
                 initialNumToRender={5}
                 maxToRenderPerBatch={5}

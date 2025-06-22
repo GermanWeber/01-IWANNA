@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, StatusBar, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ComentariosModal from './comentariosPost/Modalcomentarios';
@@ -16,9 +16,11 @@ const foto_default = require('../assets/images/perfil.png');
 
 type Props = {
     datos: PostType;
+    onViewableItemsChanged?: (info: { viewableItems: any[]; changed: any[] }) => void;
+    isVisible?: boolean;
 };
 
-const PostComponent: React.FC<Props> = ({ datos }) => {
+const PostComponent: React.FC<Props> = ({ datos, onViewableItemsChanged, isVisible = true }) => {
     const [cargando, setCargando] = useState(true);
     const [liked, setLiked] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -29,6 +31,20 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
     const [modalDenunciar, setModalDenunciar] = useState(false);
     const [cantidadComentarios, setCantidadComentarios] = useState<Number>(0);
     const [videoCargando, setVideoCargando] = useState(true);
+    const videoRef = useRef<Video>(null);
+    const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+    
+    // Efecto para manejar la visibilidad del video
+    useEffect(() => {
+        if (!isVisible && videoRef.current) {
+            if (isVideoPlaying) {
+                videoRef.current.pauseAsync();
+                setIsVideoPlaying(false);
+            }
+            // Reiniciar el video al salir de la pantalla
+            videoRef.current.setPositionAsync(0);
+        }
+    }, [isVisible, isVideoPlaying]);
 
     const manejarCargaImagen = useCallback(() => setCargando(false), []);
     const toggleModal = useCallback(() => setModalVisible(prev => !prev), []);
@@ -203,19 +219,38 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                 {isVideo ? (
                 <>
                     <Video
-                        source={{ uri: `${BUCKET_URL}publicaciones/${datos.archivo}` }}
+                        ref={videoRef}
+                        source={{ 
+                            uri: `${BUCKET_URL}publicaciones/${datos.archivo}`,
+                            overrideFileExtensionAndroid: 'mp4'
+                        }}
                         rate={1.0}
                         volume={1.0}
+                        
                         isMuted={false}
-                        resizeMode={ResizeMode.COVER}
-                        shouldPlay={false}
+                        resizeMode={ResizeMode.CONTAIN}
+                        shouldPlay={isVisible}
+                        isLooping={false}
                         useNativeControls
                         style={styles.imagen_post}
                         onLoadStart={() => setVideoCargando(true)}
-                        onLoad={() => setVideoCargando(false)}
+                        onReadyForDisplay={() => {
+                            setVideoCargando(false);
+                            if (isVisible) {
+                                videoRef.current?.playAsync();
+                                setIsVideoPlaying(true);
+                            }
+                        }}
                         onError={(error) => {
                             console.error("Error al cargar el video:", error);
                             setVideoCargando(false);
+                            setIsVideoPlaying(false);
+                        }}
+                        progressUpdateIntervalMillis={1000}
+                        onPlaybackStatusUpdate={(status) => {
+                            if (status.isLoaded) {
+                                setIsVideoPlaying(!status.didJustFinish && status.isPlaying);
+                            }
                         }}
                     />
                     {videoCargando && (
