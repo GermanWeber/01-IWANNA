@@ -55,7 +55,7 @@ export const obtenerUsuario = async (email: string) => {
   }
 };
 
-export const obtenerDatos = async (id: string): Promise<UsuarioDatos> => {
+export const obtenerDatos = async (id: string): Promise<UsuarioDatos | null> => {
   try {
     const url = `${API_URL}usuarios/datos/${id}`;
     console.log('Consultando usuario en:', url);
@@ -64,15 +64,27 @@ export const obtenerDatos = async (id: string): Promise<UsuarioDatos> => {
     const data: BackendResponse = await response.json();
 
     if (!response.ok) {
+      // Si el usuario no tiene datos (404) o hay otro error, retornamos null
+      if (response.status === 404) {
+        console.log('Usuario no encontrado o sin datos');
+        return null;
+      }
       throw new Error(data.mensaje || 'Error al obtener usuario');
+    }
+
+    // Verificar si el backend devuelve datos válidos
+    if (!data.usuario) {
+      console.log('Usuario no tiene datos completos');
+      return null;
     }
 
     // El backend devuelve { usuario: {...}, mensaje: "..." }
     // Retornamos solo los datos del usuario
     return data.usuario;
   } catch (error) {
-    console.error('Error:', error);
-    throw error;
+    console.error('Error al obtener datos del usuario:', error);
+    // En caso de error de red u otros errores, también retornamos null
+    return null;
   }
 };
 
