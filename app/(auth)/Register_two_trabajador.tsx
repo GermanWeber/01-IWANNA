@@ -96,23 +96,6 @@ const Register_two_trabajador = () => {
         router.push('/screens/direccion');
     };
 
-    useFocusEffect(
-        React.useCallback(() => {
-            const cargarDireccion = async () => {
-                try {
-                    const datos = await recuperarStorage('direccion');
-                    if (datos) {
-                        setDireccion(datos);
-                        console.log("direccion recuperada: ", datos);
-                    }
-                } catch (error) {
-                    console.error('Error al cargar dirección:', error);
-                }
-            };
-            cargarDireccion();
-        }, [])
-    );
-
     const handleNext = async () => {
         // Validación de campos
         if (!nombre || !apellido || !telefono || sexo === null || !fechaNacimiento || !direccion || !idProfesionSeleccionada) {
@@ -355,7 +338,7 @@ const Register_two_trabajador = () => {
                         <Ionicons name="location-outline" size={20} color="#666" style={styles.inputIcon} />
                         <TouchableOpacity style={styles.input} onPress={toDireccion}>
                             <Text style={!direccion?.descripcion ? styles.inputTextPlaceHolder : styles.inputText}>
-                                {direccion?.descripcion ?? "Seleccionar dirección"}
+                                {"Seleccionar dirección"}
                             </Text>
                         </TouchableOpacity>
                     </View>

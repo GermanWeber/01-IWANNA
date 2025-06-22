@@ -49,23 +49,6 @@ const Register_two_cliente = () => {
         router.push('/screens/direccion');
     };
 
-    useFocusEffect(
-        React.useCallback(() => {
-            const cargarDireccion = async () => {
-                try {
-                    const datos = await recuperarStorage('direccion');
-                    if (datos) {
-                        setDireccion(datos);
-                        console.log("direccion recuperada: ", datos);
-                    }
-                } catch (error) {
-                    console.error('Error al cargar dirección:', error);
-                }
-            };
-            cargarDireccion();
-        }, [])
-    );
-
     const handleNext = async () => {
         // Validación de campos
         if (!nombre || !apellido || !telefono || sexo === null || !fechaNacimiento || !direccion) {
