@@ -8,7 +8,16 @@ import { getCotizacionesId, getRespuestaId, updateRespondido, getRechazo, create
 import { createRating, getRating } from '../../../../services/ratingService';
 import { RatingData } from '../../../../types/rating';
 
+// Función para formatear números con separadores de miles
+const formatNumber = (num: number | string | undefined): string => {
+    if (num === undefined || num === null) return '0';
 
+    const number = typeof num === 'string' ? parseFloat(num) : num;
+
+    if (isNaN(number)) return '0';
+
+    return number.toLocaleString('es-CL');
+};
 
 type DetalleCotizacion = {
     id_cotizacion: number;
@@ -292,22 +301,19 @@ export default function CotizacionInteriorCliente() {
                 <Text style={styles.headerTitle}>Detalles de la Cotización</Text>
             </View>
 
-            <View style={styles.content}>
-                {/* Estado de la Cotización */}
-                <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <MaterialIcons name="info" size={24} color={getEstadoColor(cotizacion.id_estado)} />
-                        <Text style={styles.sectionTitle}>Estado</Text>
-                    </View>
-                    <View style={styles.sectionContent}>
-                        <View style={[styles.estadoBadge, { backgroundColor: `${getEstadoColor(cotizacion.id_estado)}20` }]}>
-                            <Text style={[styles.estadoText, { color: getEstadoColor(cotizacion.id_estado) }]}>
-                                {getEstadoText(cotizacion.id_estado)}
-                            </Text>
-                        </View>
-                    </View>
-                </View>
+            {/* Mensaje de Chat Activo para estado 4 */}
+            {cotizacion?.id_estado === 4 && (
+                <TouchableOpacity
+                    style={styles.chatStatusContainer}
+                    onPress={() => router.push('/(mas)/(mensajes)/mensajes')}
+                >
+                    <MaterialIcons name="chat-bubble" size={16} color="#007AFF" />
+                    <Text style={styles.chatStatusText}>Chat activo</Text>
+                    <MaterialIcons name="arrow-forward" size={16} color="#007AFF" />
+                </TouchableOpacity>
+            )}
 
+            <View style={styles.content}>
                 {/* Detalles de la Cotización */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
@@ -364,7 +370,6 @@ export default function CotizacionInteriorCliente() {
                             ]}>
                                 <View style={styles.responseHeader}>
                                     <MaterialIcons
-                                        name="attach-money"
                                         size={24}
                                         color={cotizacion.id_estado === 4 ? "#1565C0" :
                                             cotizacion.id_estado === 5 ? "#28A745" : "#2E7D32"}
@@ -376,7 +381,7 @@ export default function CotizacionInteriorCliente() {
                                                 cotizacion.id_estado === 5 ? "#28A745" : "#2E7D32"
                                         }
                                     ]}>
-                                        {respuesta.valor_estimado.toLocaleString()}
+                                        ${formatNumber(respuesta.valor_estimado)}
                                     </Text>
                                 </View>
                                 <View style={styles.responseMessage}>
@@ -704,16 +709,6 @@ const styles = StyleSheet.create({
         flex: 1,
         lineHeight: 22,
     },
-    estadoBadge: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 15,
-        alignSelf: 'flex-start',
-    },
-    estadoText: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
     responseCard: {
         backgroundColor: '#F8F9FA',
         borderRadius: 10,
@@ -989,5 +984,25 @@ const styles = StyleSheet.create({
         marginTop: 8,
         fontSize: 12,
         color: '#6C757D',
+    },
+    chatStatusContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        backgroundColor: '#E3F2FD',
+        borderBottomWidth: 1,
+        borderBottomColor: '#BBDEFB',
+        marginHorizontal: 16,
+        marginTop: 8,
+        borderRadius: 8,
+    },
+    chatStatusText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#1565C0',
+        flex: 1,
+        textAlign: 'center',
     },
 });
