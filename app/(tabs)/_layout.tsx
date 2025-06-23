@@ -61,10 +61,21 @@ export default function TabLayout() {
             />
             <Tabs.Screen
                 name="(mas)"
+                listeners={{
+                    tabPress: (e) => {
+                        if (!usuario) {
+                            e.preventDefault();
+                            router.replace('/(auth)/index2');
+                        }
+                        else{
+                            router.replace('/(mas)/mas');
+                        }
+                    },
+                }}
                 options={{
                     title: 'Más',
                     tabBarIcon: ({ color, size }) => <Ionicons size={24} name="ellipsis-horizontal" color={color} />,
-                    tabBarButton: usuario ? undefined : () => null, // Oculta el botón si no hay usuario
+                    
                 }}
             />            
         </Tabs>

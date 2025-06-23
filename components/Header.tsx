@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { View, Image, TouchableOpacity, StyleSheet, Platform, StatusBar } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { View, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { useFocusEffect, useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { recuperarStorage } from '../services/asyncStorage';
@@ -18,18 +18,20 @@ export default function Header({
     showProfile = true
 }: HeaderProps) {
     const router = useRouter();
+    const navigation = useNavigation();
     const [usuario, setUsuario] = useState<any>(null);
-    const [profileUri, setProfileUri] = useState<string | null>(null);
+
+    
     const handleProfilePress = async () => {
         try {
             if (usuario) {
-                router.push('/(tabs)/(mas)/mi-perfil');
+                router.push('/(tabs)/(mas)/(perfil_usuario)/mi-perfil' as any);
             } else {
-                router.push('/(auth)');
+                router.push('/(auth)/index2' as any);
             }
         } catch (error) {
             console.error('Error al verificar la sesión:', error);
-            router.push('/(auth)');
+            router.push('/(auth)/index2' as any);
         }
     };
 

@@ -1,9 +1,7 @@
 import React, { useCallback, useState, useRef } from 'react';
-import { ViewToken } from 'react-native';
+import { KeyboardAvoidingView, Platform, ViewToken } from 'react-native';
 import { FlatList, View, Text, Image, StyleSheet, SafeAreaView, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
 import Post from '../../../components/post';
-import { useEffect } from 'react';
-import HeaderPrincipal from '../../../components/Header';
 import { guardarStorage, recuperarStorage } from '../../../services/asyncStorage';
 import { API_URL } from '@env';
 import { PostType } from '../../../types/post';
@@ -82,6 +80,11 @@ const Home = () => {
         );
     }
     return (
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+        >
         <SafeAreaView style={{ flex: 1 }}>
             <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
             <FlatList
@@ -113,6 +116,7 @@ const Home = () => {
                 }
             />
         </SafeAreaView>
+        </KeyboardAvoidingView>
     );
 };
 

@@ -2,9 +2,47 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useState, useEffect } from 'react';
+import { recuperarStorage } from '../../../../services/asyncStorage';
+import { API_URL } from '@env';
+import { updateVerificacion } from '../../../../services/userService';
+import { obtenerDatos } from '../../../../services/userService';
+import { guardarStorage } from '../../../../services/asyncStorage';
 
 export default function VerificacionInfoScreen() {
   const router = useRouter();
+
+  const [usuario, setUsuario] = useState<any>(null);
+
+  const loadUsuario = async () => {
+    try {
+      console.log('Iniciando carga de usuario...');
+      const usuarioData = await recuperarStorage('usuario');
+      
+      if (usuarioData) {
+        console.log('Usuario recuperado:', usuarioData);
+        setUsuario(usuarioData);
+      }
+    } catch (error) {
+      console.log('Error al recuperar el usuario:', error);
+    }
+  };
+
+  const handleAceptar = async () => {
+
+  const update = await updateVerificacion(usuario.id);
+
+    if (update) {
+    usuario.id_auth = 3;
+    await guardarStorage('usuario', usuario);
+    
+    router.back();
+    }
+  };
+
+  useEffect(() => {
+    loadUsuario();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -14,7 +52,7 @@ export default function VerificacionInfoScreen() {
           <View style={styles.headerIcon}>
             <Ionicons name="shield-checkmark" size={32} color="#8BC34A" />
           </View>
-          <Text style={styles.title}>Verificación de Identidad</Text>
+          <Text style={styles.title}>Solicitud de verificación</Text>
           <Text style={styles.subtitle}>Completa tu perfil para mayor confianza</Text>
         </View>
 
@@ -30,6 +68,26 @@ export default function VerificacionInfoScreen() {
             </Text>
           </View>
 
+          <View style={styles.securityCard}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="lock-closed" size={24} color="#4CAF50" />
+              <Text style={styles.cardTitle}>Seguridad y privacidad</Text>
+            </View>
+            <Text style={styles.description}>
+              Todos los datos que te pediremos son confidenciales y son utilizados únicamente para verificar tu identidad. Tu informacion no sera compartida con terceros.
+            </Text>
+          </View>
+
+          <View style={styles.benefitsCard}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="star" size={24} color="#FFD700" />
+              <Text style={styles.cardTitle}>Beneficios de la verificación</Text>
+            </View>
+            <Text style={styles.description}>
+              Una vez enviada la solicitud, nuestro equipo se pondra en contacto contigo para solicitar los documentos necesarios para verificar tu identidad. Tu cuenta quedará marcada como <Text style={styles.bold}>"Verificada"</Text>. Con tu cuenta verificada tendrás una visibilidad mayor en la plataforma.
+            </Text>
+          </View>
+
           <View style={styles.requirementsCard}>
             <View style={styles.cardHeader}>
               <Ionicons name="document-text" size={24} color="#FF6B35" />
@@ -37,13 +95,6 @@ export default function VerificacionInfoScreen() {
             </View>
 
             <View style={styles.requirementsList}>
-              <View style={styles.requirementItem}>
-                <View style={styles.requirementIcon}>
-                  <Ionicons name="card" size={16} color="#8BC34A" />
-                </View>
-                <Text style={styles.requirementText}>RUT</Text>
-              </View>
-
               <View style={styles.requirementItem}>
                 <View style={styles.requirementIcon}>
                   <Ionicons name="document" size={16} color="#8BC34A" />
@@ -55,29 +106,9 @@ export default function VerificacionInfoScreen() {
                 <View style={styles.requirementIcon}>
                   <Ionicons name="camera" size={16} color="#8BC34A" />
                 </View>
-                <Text style={styles.requirementText}>Foto clara de tu cédula de identidad</Text>
+                <Text style={styles.requirementText}>Foto clara de tu cédula de identidad (ambas caras)</Text>
               </View>
             </View>
-          </View>
-
-          <View style={styles.securityCard}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="lock-closed" size={24} color="#4CAF50" />
-              <Text style={styles.cardTitle}>Seguridad y privacidad</Text>
-            </View>
-            <Text style={styles.description}>
-              Todos los datos que ingreses son confidenciales y son utilizados únicamente para verificar tu identidad. Toda la información será encriptada y almacenada de manera segura.
-            </Text>
-          </View>
-
-          <View style={styles.benefitsCard}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="star" size={24} color="#FFD700" />
-              <Text style={styles.cardTitle}>Beneficios de la verificación</Text>
-            </View>
-            <Text style={styles.description}>
-              Una vez enviados, revisaremos tu información y tu cuenta quedará marcada como <Text style={styles.bold}>"Verificada"</Text>. Con tu cuenta verificada tendrás una visibilidad mayor en la plataforma.
-            </Text>
           </View>
 
           <View style={styles.termsCard}>
@@ -95,10 +126,10 @@ export default function VerificacionInfoScreen() {
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={() => router.push('/(mas)/(auth2)/auth2-form')}
+            onPress={() => handleAceptar()}
           >
             <Ionicons name="checkmark-circle" size={20} color="#fff" />
-            <Text style={styles.primaryButtonText}>Aceptar y continuar</Text>
+            <Text style={styles.primaryButtonText}>Aceptar y enviar solicitud</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

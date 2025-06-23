@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Pressable, View, Text, TextInput, StyleSheet, Image, KeyboardAvoidingView, Platform, TouchableOpacity, Animated, Alert } from 'react-native';
+import { Pressable, View, Text, TextInput, StyleSheet, Image, KeyboardAvoidingView, Platform, TouchableOpacity, Animated, Alert, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -99,7 +99,10 @@ const Login = () => {
             }
             await guardarStorage('stripeData', stripeData);
             console.log('Datos de Stripe:', stripeData);
-            router.push('(tabs)');
+            Keyboard.dismiss();
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            router.push('(tabs)/(inicio)');
 
         } catch (error: any) {
             console.log('Error de Firebase:', error.code); // Para debugging

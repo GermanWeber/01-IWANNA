@@ -21,14 +21,6 @@ export default function PerfilLayout() {
                 ),
                 }}
             />
-            <Stack.Screen
-                name="[idUsuario]"
-                options={{
-                header: (props) => (
-                    <HeaderPrincipal/>
-                ),
-                }}
-            />
         </Stack>
     );
 }

@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { RatingStars } from '../../../components/rating-stars';
 import { recuperarStorage } from '../../../services/asyncStorage';
 import { BUCKET_URL } from '@env';
+import { useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 
 import { getAverageRating } from '../../../services/ratingService';
 
@@ -64,13 +66,29 @@ export default function Mas() {
         }
     };
 
+    useFocusEffect(
+        useCallback(() => {
+            const cargarUsuario = async () => {
+            try {
+                const datos = await recuperarStorage('usuario');
+                console.log("datos: ", datos);
+                if (datos) {
+                setUsuario(datos);
+                }
+            } catch (error) {
+                console.error('Error al cargar usuario:', error);
+            }
+            };
+
+            cargarUsuario();
+        }, []) // sin dependencias para que se ejecute siempre que el módulo gana foco
+    );
     useEffect(() => {
         const subscription = AppState.addEventListener('change', (nextAppState) => {
             if (nextAppState === 'active') {
                 loadUsuario();
             }
         });
-
         // Cargar datos iniciales
         loadUsuario();
 
@@ -139,7 +157,7 @@ export default function Mas() {
                         </View>
 
                         {/* Sección boton autenticación */}
-                        {usuario?.id_auth == 1 ? (
+                        {usuario?.id_auth == 1 && (
                             <View style={styles.authSection}>
                                 <View style={styles.authContent}>
                                     <View style={styles.authInfo}>
@@ -159,7 +177,23 @@ export default function Mas() {
                                     </TouchableOpacity>
                                 </View>
                             </View>
-                        ) : null}
+                        )}
+
+                        {usuario?.id_auth == 3 && (
+                            <View style={styles.authSection}>
+                                <View style={styles.authContent}>
+                                    <View style={styles.authInfo}>
+                                        <View style={styles.authIconContainer}>
+                                            <Ionicons name="checkmark-circle" size={20} color="#1d9bf0" />
+                                        </View>
+                                        <View style={styles.authTextContainer}>
+                                            <Text style={styles.authTitle}>Formulario enviado</Text>
+                                            <Text style={styles.authSubtitle}>Nuestro equipo se pondra en contacto contigo proximamente.</Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            </View>
+                        )}
                     </View>
 
                     {/* Sección de Opciones */}

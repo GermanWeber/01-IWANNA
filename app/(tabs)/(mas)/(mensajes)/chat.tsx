@@ -62,6 +62,12 @@ export default function Chat() {
     if (id) {
       fetchMessages();
       loadUsuario();
+      
+      // Actualizar cada 5 segundos
+      const interval = setInterval(fetchMessages, 5000);
+      
+      // Limpiar el intervalo al desmontar el componente
+      return () => clearInterval(interval);
     }
   }, [id]);
 
@@ -78,7 +84,7 @@ export default function Chat() {
         },
         body: JSON.stringify({
           id_chat: id,
-          id_autor: usuario?.id, // aqui hay que remplazar con el id del local storage
+          id_autor: usuario?.id,
           contenido: newMessage,
         }),
       });

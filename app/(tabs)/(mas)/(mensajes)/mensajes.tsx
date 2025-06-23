@@ -10,6 +10,7 @@ import { recuperarStorage } from '../../../../services/asyncStorage';
 interface Chat {
   id: number;
   id_usuario: number;
+  apellido?: string;
   nombre: string;
   foto: string;
   descripcion: string;
@@ -160,7 +161,7 @@ export default function Mensajes() {
     chatsTrabajador.map((chat) => (
           <BotonMensaje
             key={`chat-${chat.id}`} 
-            textoBoton={chat.nombre}
+            textoBoton={chat.nombre + ' ' + chat.apellido}
             textoProfesion={chat.descripcion}
             fecha={chat.f_creacion}
             colorTextoProfesion='#424242'      

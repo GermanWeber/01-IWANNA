@@ -76,6 +76,35 @@ export const obtenerDatos = async (id: string): Promise<UsuarioDatos> => {
   }
 };
 
+export const updateVerificacion = async (userId: number) => {
+  console.log('Iniciando envio de formulario de verificación...', userId);
+  try {
+    const response = await fetch(`${API_URL}usuarios/verificacion`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error al enviar formulario de verificación');
+    }
+    
+    const data = await response.json();
+
+    if (data.exito) {
+      console.log('Formulario enviado:', data);
+      alert('Formulario enviado correctamente, nuestro equipo se pondra en contacto contigo proximamente.');
+      return data.exito;
+    }
+    
+  } catch (error) {
+    console.error('Error:', error);
+    throw error;
+  }
+};
+
 export const updateSuscripcion = async (userId: string, email: string) => {
   try {
     const response = await fetch(`${API_URL}usuarios/update-suscripcion`, {

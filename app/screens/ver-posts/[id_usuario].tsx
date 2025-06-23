@@ -1,12 +1,10 @@
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Stack } from "expo-router";
 import { useCallback, useEffect } from "react";
 import { FlatList, RefreshControl, View, Text, ActivityIndicator, StatusBar } from "react-native";
 import PostSecundario from "../../../components/post-secundario";
 import { obtenerPostsByUser } from "../../../services/postService";
 import { useState } from "react";
 import { PostType } from "../../../types/post";
-import { useFocusEffect } from "expo-router";
 import { StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 

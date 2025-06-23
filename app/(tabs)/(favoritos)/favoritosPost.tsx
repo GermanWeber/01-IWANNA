@@ -87,7 +87,7 @@ export default function FavoritosPost() {
         <Text style={styles.authMessage}>y obtén la experiencia completa</Text>
         <TouchableOpacity 
           style={styles.authButton}
-          onPress={() => router.push('(auth)')}
+          onPress={() => router.push('(auth)/index2')}
         >
           <Text style={styles.authButtonText}>Regístrate aquí</Text>
         </TouchableOpacity>
