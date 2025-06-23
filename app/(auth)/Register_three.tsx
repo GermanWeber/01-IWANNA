@@ -82,7 +82,7 @@ const Register_three = () => {
                 rut: datosUsuario.rut || '12345678-9',
                 edad: datosUsuario.edad || 18,
                 id_sexo: datosUsuario.sexo || 1,
-                descripcion: datosUsuario.profesion || 'Sin descripción',
+                descripcion: null,
                 id_profesion: datosUsuario.id_profesion || null,
                 id_estado: 1,
                 id_tipo: parseInt(tipoUsuario || '1'),

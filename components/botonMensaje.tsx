@@ -15,15 +15,15 @@ type Props = {
     avatar?: any;
 };
 
-const BotonAvatar: React.FC<Props> = ({ 
-    textoBoton, 
-    colorTexto = '#333', 
+const BotonAvatar: React.FC<Props> = ({
+    textoBoton,
+    colorTexto = '#333',
     onPress,
-    bgColor = '#FFFFFF', 
-    avatar, 
-    textoProfesion, 
-    colorTextoProfesion = '#666',  
-    fecha 
+    bgColor = '#FFFFFF',
+    avatar,
+    textoProfesion,
+    colorTextoProfesion = '#666',
+    fecha
 }) => {
     return (
         <TouchableHighlight
@@ -39,7 +39,7 @@ const BotonAvatar: React.FC<Props> = ({
                         resizeMode="cover"
                     />
                 </View>
-                
+
                 <View style={styles.textContainer}>
                     <View style={styles.textHeader}>
                         <Text style={[styles.nombre, { color: colorTexto }]} numberOfLines={1}>
@@ -49,10 +49,10 @@ const BotonAvatar: React.FC<Props> = ({
                             <Text style={styles.fecha}>{fecha}</Text>
                         )}
                     </View>
-                    
+
                     {textoProfesion && (
-                        <Text 
-                            style={[styles.profesion, { color: colorTextoProfesion }]} 
+                        <Text
+                            style={[styles.profesion, { color: colorTextoProfesion }]}
                             numberOfLines={1}
                         >
                             {textoProfesion}

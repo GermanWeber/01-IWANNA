@@ -27,10 +27,10 @@ export default function Chat() {
     try {
       console.log('Iniciando carga de usuario...');
       const usuarioData = await recuperarStorage('usuario');
-      
+
       if (usuarioData) {
-          console.log('Usuario recuperado:', usuarioData);
-          setUsuario(usuarioData);
+        console.log('Usuario recuperado:', usuarioData);
+        setUsuario(usuarioData);
       }
     } catch (error) {
       console.log('Error al recuperar el usuario:', error);
@@ -42,17 +42,38 @@ export default function Chat() {
     console.log('ID del chat:', id);
     try {
       setLoading(true);
+      setError(null); // Limpiar errores anteriores
+
       const response = await fetch(`${API_URL}chat/mensajes/${id}`);
-      
+
       if (!response.ok) {
-        throw new Error(`Error al cargar los mensajes del chat: ${id}`);
+        // Si es 404, significa que no hay mensajes, no es un error
+        if (response.status === 404) {
+          console.log('No hay mensajes en este chat');
+          setMessages([]);
+          return;
+        }
+        throw new Error(`Error al cargar los mensajes del chat: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      setMessages(data);
+
+      // Verificar si la respuesta es válida
+      if (Array.isArray(data)) {
+        setMessages(data);
+      } else if (data && Array.isArray(data.mensajes)) {
+        // Si la respuesta viene envuelta en un objeto
+        setMessages(data.mensajes);
+      } else {
+        // Si la respuesta no es un array, asumir que no hay mensajes
+        console.log('Respuesta no válida, estableciendo mensajes vacíos');
+        setMessages([]);
+      }
+
     } catch (err) {
-      console.error('Error:', err);
-      setError('Error al cargar los mensajes del chat' + id);
+      console.error('Error al cargar mensajes:', err);
+      setError('Error al cargar los mensajes del chat');
+      setMessages([]); // Establecer array vacío en caso de error
     } finally {
       setLoading(false);
     }
@@ -75,7 +96,7 @@ export default function Chat() {
 
     console.log('enviando mensaje en chat: ', id, 'usuario: ', usuario?.id);
     if (newMessage.trim() === '') return;
-  
+
     try {
       const response = await fetch(`${API_URL}chat/mensajes/enviar`, {
         method: 'POST',
@@ -88,13 +109,13 @@ export default function Chat() {
           contenido: newMessage,
         }),
       });
-  
+
       if (!response.ok) {
         throw new Error('Error al enviar el mensaje');
       }
-  
+
       const sentMessage = await response.json();
-      
+
       // Refrescar la lista completa de mensajes
       await fetchMessages();
       setNewMessage('');
@@ -118,33 +139,50 @@ export default function Chat() {
   }
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={90}
     >
-      
+
       <FlatList
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={handleRefresh} />}
-      data={messages}
-      keyExtractor={(item, index) => item?.id?.toString() || `message-${index}`}
-      renderItem={({ item }) => (
-        <View style={[
-          styles.messageBubble, 
-          item.id_autor === usuario?.id ? styles.userBubble : styles.otherBubble // ID del usuario autenticado
-        ]}>
-          {item.nombre && item.id_autor !== usuario?.id && (
-            <Text style={styles.senderName}>{item.nombre}</Text>
-          )}
-          <Text style={styles.messageText}>{item.contenido}</Text>
-          <Text style={styles.messageTime}>{item.f_creacion}</Text>
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={handleRefresh} />}
+        data={messages}
+        keyExtractor={(item, index) => item?.id?.toString() || `message-${index}`}
+        renderItem={({ item }) => (
+          <View style={[
+            styles.messageBubble,
+            item.id_autor === usuario?.id ? styles.userBubble : styles.otherBubble // ID del usuario autenticado
+          ]}>
+            {item.nombre && item.id_autor !== usuario?.id && (
+              <Text style={styles.senderName}>{item.nombre}</Text>
+            )}
+            <Text style={styles.messageText}>{item.contenido}</Text>
+            <Text style={styles.messageTime}>{item.f_creacion}</Text>
+          </View>
+        )}
+        contentContainerStyle={[
+          styles.messageList,
+          messages.length === 0 && styles.emptyMessageList
+        ]}
+        ListEmptyComponent={
+          !loading && !error ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No hay mensajes aún</Text>
+              <Text style={styles.emptySubtext}>Sé el primero en escribir un mensaje</Text>
+            </View>
+          ) : null
+        }
+      />
+
+      {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+            <Text style={styles.retryButtonText}>Reintentar</Text>
+          </TouchableOpacity>
         </View>
       )}
-      contentContainerStyle={styles.messageList}
-
-      />
-     
-      
 
       <View style={styles.inputContainer}>
         <TextInput
@@ -154,11 +192,11 @@ export default function Chat() {
           onChangeText={setNewMessage}
           multiline
         />
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
             styles.sendButton,
             { backgroundColor: newMessage.trim() ? '#8BC34A' : '#CCCCCC' }
-          ]} 
+          ]}
           onPress={sendMessage}
           disabled={!newMessage.trim()}
         >
@@ -197,6 +235,10 @@ const styles = StyleSheet.create({
   },
   messageList: {
     padding: 10,
+  },
+  emptyMessageList: {
+    flex: 1,
+    justifyContent: 'center',
   },
   messageBubble: {
     maxWidth: '80%',
@@ -246,6 +288,31 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   sendText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    color: '#555',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  emptySubtext: {
+    color: '#999',
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#8BC34A',
+    padding: 10,
+    borderRadius: 20,
+    marginTop: 10,
+  },
+  retryButtonText: {
     color: 'white',
     fontWeight: 'bold',
   },

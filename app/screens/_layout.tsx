@@ -13,6 +13,8 @@ export default function RootLayout() {
       <HeaderPrincipal/>
         <Stack>
           <Stack.Screen name="direccion" options={{ headerShown: false }} />
+          <Stack.Screen name="direccion-cotizacion" options={{ headerShown: false }} />
+          <Stack.Screen name="direccion-registrar" options={{ headerShown: false }} />
           <Stack.Screen name="[idUsuario]" options={{ headerShown: false }} />
           <Stack.Screen name="cotizacion-form" options={{ headerShown: false }} />
           <Stack.Screen name="ver-posts" options={{ headerShown: false }} />

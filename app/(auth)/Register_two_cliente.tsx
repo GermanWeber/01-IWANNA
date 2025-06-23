@@ -46,14 +46,14 @@ const Register_two_cliente = () => {
     };
 
     const toDireccion = () => {
-        router.push('/screens/direccion');
+        router.push('/screens/direccion-registrar');
     };
 
     useFocusEffect(
         React.useCallback(() => {
             const cargarDireccion = async () => {
                 try {
-                    const datos = await recuperarStorage('direccion');
+                    const datos = await recuperarStorage('direccion_registrar');
                     if (datos) {
                         setDireccion(datos);
                         console.log("direccion recuperada: ", datos);
@@ -398,6 +398,7 @@ const styles = StyleSheet.create({
         padding: 5,
     },
     inputTextPlaceHolder: {
+        fontSize: 16,
         color: '#999',
     },
     inputText: {

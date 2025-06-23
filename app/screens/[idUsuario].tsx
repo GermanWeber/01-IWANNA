@@ -259,7 +259,7 @@ export default function PerfilUsuario() {
                                 ) : (
                                     <View style={styles.noRatingContainer}>
                                         <Ionicons name="star-outline" size={16} color="#ccc" />
-                                        <Text style={styles.noRatingText}>Sin puntuaciones aún</Text>
+                                        <Text style={styles.noRatingText}>Sin puntuaciones</Text>
                                     </View>
                                 )}
                             </View>

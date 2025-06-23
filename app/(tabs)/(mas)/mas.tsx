@@ -27,10 +27,11 @@ export default function Mas() {
     const loadUsuario = async () => {
         try {
             const usuarioData = await recuperarStorage('usuario');
-            const tipoUsuarioData = await recuperarStorage('tipoUsuario');
 
             if (usuarioData) {
                 setUsuario(usuarioData);
+                console.log(usuarioData);
+
 
                 // Cargar el promedio de rating del trabajador
                 if (usuarioData.id_tipo === 2) { // Solo para trabajadores
@@ -138,10 +139,14 @@ export default function Mas() {
                                     )}
                                 </View>
 
-                                <View style={styles.ratingContainer}>
-                                    <RatingStars rating={Number(averageRating)} showValue />
-                                    <Text style={styles.ratingLabel}>Calificación promedio</Text>
-                                </View>
+                                {usuario?.id_tipo === 2 && (
+                                    <View style={styles.ratingContainer}>
+                                        <RatingStars rating={Number(averageRating)} showValue />
+                                        <Text style={styles.ratingLabel}>Calificación promedio</Text>
+                                    </View>
+                                )}
+
+
 
                                 <View style={styles.buttonContainer}>
                                     <TouchableOpacity

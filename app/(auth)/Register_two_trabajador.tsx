@@ -93,17 +93,17 @@ const Register_two_trabajador = () => {
     };
 
     const toDireccion = () => {
-        router.push('/screens/direccion');
+        router.push('/screens/direccion-registrar');
     };
 
     useFocusEffect(
         React.useCallback(() => {
             const cargarDireccion = async () => {
                 try {
-                    const datos = await recuperarStorage('direccion');
+                    const datos = await recuperarStorage('direccion_registrar');
                     if (datos) {
                         setDireccion(datos);
-                        console.log("direccion recuperada: ", datos);
+                        console.log("direccion recuperada 1: ", datos);
                     }
                 } catch (error) {
                     console.error('Error al cargar dirección:', error);
@@ -413,7 +413,6 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         paddingHorizontal: 15,
         backgroundColor: '#f9f9f9',
-        height: 50,
     },
     inputIcon: {
         marginRight: 10,
@@ -422,6 +421,7 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 50,
         color: '#333',
+        justifyContent: 'center',
     },
     categoriaInput: {
         flexDirection: 'row',
@@ -558,6 +558,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     inputTextPlaceHolder: {
+        fontSize: 16,
         color: '#999',
     },
     inputText: {

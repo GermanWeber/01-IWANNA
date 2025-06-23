@@ -46,6 +46,7 @@ export default function MiPerfil() {
         { id: 5, url: 'https://picsum.photos/600/600?random=5' },
         { id: 6, url: 'https://picsum.photos/600/600?random=6' },
     ]
+
     const [usuario, setUsuario] = useState<any>(null);
     const [fotoPerfil, setFotoPerfil] = useState<any>(null);
     const [datosCompletos, setDatosCompletos] = useState<any>(null);
@@ -54,19 +55,19 @@ export default function MiPerfil() {
     useFocusEffect(
         useCallback(() => {
             const cargarUsuario = async () => {
-            try {
-                const datos = await recuperarStorage('usuario');
-                console.log("datos: ", datos);
-                if (datos) {
-                setUsuario(datos);
-                const datosCompletos = await obtenerDatos(datos.id);
-                console.log("Datos completos:", datosCompletos);
-                console.log("Fecha creación:", datosCompletos?.fecha_creacion);
-                setDatosCompletos(datosCompletos);
+                try {
+                    const datos = await recuperarStorage('usuario');
+                    console.log("datos: ", datos);
+                    if (datos) {
+                        setUsuario(datos);
+                        const datosCompletos = await obtenerDatos(datos.id);
+                        console.log("Datos completos:", datosCompletos);
+                        console.log("Fecha creación:", datosCompletos?.fecha_creacion);
+                        setDatosCompletos(datosCompletos);
+                    }
+                } catch (error) {
+                    console.error('Error al cargar usuario:', error);
                 }
-            } catch (error) {
-                console.error('Error al cargar usuario:', error);
-            }
             };
 
             cargarUsuario();
@@ -159,19 +160,17 @@ export default function MiPerfil() {
                             <View style={styles.infoRow}>
                                 <Ionicons name="calendar-outline" size={20} color="#8BC34A" />
                                 <Text style={styles.infoLabel}>Edad:</Text>
-                                <Text style={styles.infoValue}>{usuario.edad ? `${usuario.edad} años` : 'Sin información'}</Text>
+                                <Text style={styles.infoValue}>{datosCompletos?.edad} años </Text>
                             </View>
                             <View style={styles.infoRow}>
                                 <Ionicons name="location-outline" size={20} color="#8BC34A" />
                                 <Text style={styles.infoLabel}>Ubicación:</Text>
-                                <Text style={styles.infoValue}>{datosCompletos?.direccion || usuario?.direccion || 'Sin información'}</Text>
+                                <Text style={styles.infoValue}>{datosCompletos?.direccion || 'Sin información'}</Text>
                             </View>
                             <View style={styles.infoRow}>
                                 <Ionicons name="person-outline" size={20} color="#8BC34A" />
                                 <Text style={styles.infoLabel}>Sexo:</Text>
-                                <Text style={styles.infoValue}>
-                                    {usuario.id_sexo === 1 ? 'Masculino' : usuario.id_sexo === 2 ? 'Femenino' : 'Sin información'}
-                                </Text>
+                                <Text style={styles.infoValue}>{datosCompletos?.sexo || 'Sin información'}</Text>
                             </View>
                             {usuario.rut && (
                                 <View style={styles.infoRow}>
@@ -210,8 +209,8 @@ export default function MiPerfil() {
                         <View style={styles.infoList}>
                             <View style={styles.infoRow}>
                                 <Ionicons name="mail-outline" size={20} color="#8BC34A" />
-                                <Text style={styles.infoLabel}>Email:</Text>
-                                <Text style={styles.infoValue}>{datosCompletos?.email || usuario?.email || 'Sin información'}</Text>
+                                <Text style={styles.infoLabel}>Email:  <Text style={styles.infoValue}>{datosCompletos?.email || 'Sin información'}</Text></Text>
+
                             </View>
                         </View>
                     </View>
@@ -233,35 +232,46 @@ export default function MiPerfil() {
                                                 usuario.id_tipo === 3 ? 'Cliente' : 'Sin información')}
                                 </Text>
                             </View>
-                            <View style={styles.infoRow}>
-                                <Ionicons name="shield-checkmark-outline" size={20} color="#8BC34A" />
-                                <Text style={styles.infoLabel}>Estado de Cuenta:</Text>
-                                <Text style={styles.infoValue}>
-                                    {datosCompletos?.estado_usuario ||
-                                        (usuario.id_estado === 1 ? 'Activo' :
-                                            usuario.id_estado === 2 ? 'Premium' :
-                                                usuario.id_estado === 3 ? 'Inactivo' : 'Sin información')}
-                                </Text>
-                            </View>
-                            <View style={styles.infoRow}>
-                                <Ionicons name="checkmark-circle-outline" size={20} color="#8BC34A" />
-                                <Text style={styles.infoLabel}>Verificación:</Text>
-                                <Text style={styles.infoValue}>
-                                    {usuario.id_auth === 1 ? 'Pendiente' :
-                                        usuario.id_auth === 2 ? 'Verificado' : 'Sin información'}
-                                </Text>
-                            </View>
-                            <View style={styles.infoRow}>
-                                <Ionicons name="briefcase-outline" size={20} color="#8BC34A" />
-                                <Text style={styles.infoLabel}>Profesión:</Text>
-                                <Text style={styles.infoValue}>{datosCompletos?.profesion || usuario?.profesion || 'Sin información'}</Text>
-                            </View>
+
+                            {/* {datosCompletos?.tipo_usuario !== "Consumidor" && (
+                                <View style={styles.infoRow}>
+                                    <Ionicons name="shield-checkmark-outline" size={20} color="#8BC34A" />
+                                    <Text style={styles.infoLabel}>Estado de Cuenta:</Text>
+                                    <Text style={styles.infoValue}>
+                                        {datosCompletos?.estado_usuario ||
+                                            (usuario.id_estado === 1 ? 'Activo' :
+                                                usuario.id_estado === 2 ? 'Premium' :
+                                                    usuario.id_estado === 3 ? 'Inactivo' : 'Sin información')}
+                                    </Text>
+                                </View>
+                            )} */}
+
+                            {datosCompletos?.tipo_usuario !== "Consumidor" && (
+                                <View style={styles.infoRow}>
+                                    <Ionicons name="checkmark-circle-outline" size={20} color="#8BC34A" />
+                                    <Text style={styles.infoLabel}>Estado suscripcion:</Text>
+                                    <Text style={styles.infoValue}>
+                                        {datosCompletos?.estado_usuario}
+                                    </Text>
+                                </View>
+                            )}
+
+                            {datosCompletos?.tipo_usuario !== "Consumidor" && (
+                                <View style={styles.infoRow}>
+                                    <Ionicons name="briefcase-outline" size={20} color="#8BC34A" />
+                                    <Text style={styles.infoLabel}>Profesión:</Text>
+                                    <Text style={styles.infoValue}>{datosCompletos?.profesion || usuario?.profesion || 'Sin información'}</Text>
+                                </View>
+                            )}
+
                             <View style={styles.infoRow}>
                                 <Ionicons name="calendar-outline" size={20} color="#8BC34A" />
                                 <Text style={styles.infoLabel}>Fecha de Registro:</Text>
                                 <Text style={styles.infoValue}>{datosCompletos?.fecha_creacion ? obtenerFechaCreacion(datosCompletos.fecha_creacion) : 'Sin información'}</Text>
                             </View>
+
                         </View>
+
                     </View>
 
                     {/* POSTS */}

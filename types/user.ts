@@ -22,6 +22,8 @@ export interface UsuarioDatos {
   profesion: string;
   estado_usuario: string;
   tipo_usuario: string;
+  edad: number;
+  sexo: string;
   fecha_creacion: Date;
 }
 
