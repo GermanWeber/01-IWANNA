@@ -1,8 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Image, KeyboardAvoidingView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { eliminarDatos } from '../../services/asyncStorage';
 
 const Register_one = () => {
     const router = useRouter();
@@ -54,7 +55,14 @@ const Register_one = () => {
             alert('Error al guardar la selección');
         }
     };
-
+    useFocusEffect(
+        React.useCallback(() => {
+            const resetearDireccion = async () => {
+                await eliminarDatos("direccion_registrar")
+            };
+            resetearDireccion();
+        }, [])
+    );
     return (
         <View style={styles.container}>
             <View style={styles.contentContainer}>
