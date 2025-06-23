@@ -90,7 +90,7 @@ export default function MiPerfil() {
                             await AsyncStorage.removeItem('usuario');
                             await AsyncStorage.removeItem('stripeData');
 
-                            router.replace('/(auth)');
+                            router.replace('/(auth)/index2');
                         } catch (error) {
                             console.error('Error al cerrar sesión:', error);
                             Alert.alert('Error', 'No se pudo cerrar la sesión');
