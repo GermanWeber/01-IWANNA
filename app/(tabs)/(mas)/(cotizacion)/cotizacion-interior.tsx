@@ -12,6 +12,17 @@ const capitalizeWords = (str: string | undefined) => {
     .join(' ');
 };
 
+// Función para formatear números con separadores de miles
+const formatNumber = (num: number | string | undefined): string => {
+  if (num === undefined || num === null) return '0';
+
+  const number = typeof num === 'string' ? parseFloat(num) : num;
+
+  if (isNaN(number)) return '0';
+
+  return number.toLocaleString('es-CL');
+};
+
 type DetalleCotizacion = {
   id: number;
   id_cliente: number;
@@ -242,22 +253,19 @@ export default function CotizacionInterior() {
         <Text style={styles.headerTitle}>Detalles de la Cotización</Text>
       </View>
 
-      <View style={styles.content}>
-        {/* Información del Cliente */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialIcons name="person" size={24} color="#007AFF" />
-            <Text style={styles.sectionTitle}>Información del Cliente</Text>
-          </View>
-          <View style={styles.sectionContent}>
-            <View style={styles.detailRow}>
-              <MaterialIcons name="person" size={20} color="#666" />
-              <Text style={styles.detailLabel}>Nombre cliente: </Text>
-              <Text style={styles.detailText}>{capitalizeWords(cotizacion?.nombre_cliente)} {cotizacion?.apellido_cliente}</Text>
-            </View>
-          </View>
-        </View>
+      {/* Mensaje de Chat Activo para estado 4 */}
+      {cotizacion?.id_estado === 4 && (
+        <TouchableOpacity
+          style={styles.chatStatusContainer}
+          onPress={() => router.push('/(mas)/(mensajes)/mensajes')}
+        >
+          <MaterialIcons name="chat-bubble" size={16} color="#007AFF" />
+          <Text style={styles.chatStatusText}>Chat activo</Text>
+          <MaterialIcons name="arrow-forward" size={16} color="#007AFF" />
+        </TouchableOpacity>
+      )}
 
+      <View style={styles.content}>
         {/* Detalles de la Cotización */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -265,6 +273,11 @@ export default function CotizacionInterior() {
             <Text style={styles.sectionTitle}>Detalles de la Cotización</Text>
           </View>
           <View style={styles.sectionContent}>
+            <View style={styles.detailRow}>
+              <MaterialIcons name="person" size={20} color="#666" />
+              <Text style={styles.detailLabel}>Cliente:</Text>
+              <Text style={styles.detailText}>{capitalizeWords(cotizacion?.nombre_cliente)} {cotizacion?.apellido_cliente}</Text>
+            </View>
             <View style={styles.detailRow}>
               <MaterialIcons name="subject" size={20} color="#666" />
               <Text style={styles.detailLabel}>Asunto:</Text>
@@ -303,6 +316,7 @@ export default function CotizacionInterior() {
                 {cotizacion.id_estado === 4 ? "Cotización Aceptada" : "Respuesta del Trabajador"}
               </Text>
             </View>
+
             <View style={styles.sectionContent}>
               <View style={[
                 styles.responseCard,
@@ -310,7 +324,6 @@ export default function CotizacionInterior() {
               ]}>
                 <View style={styles.responseHeader}>
                   <MaterialIcons
-                    name="attach-money"
                     size={24}
                     color={cotizacion.id_estado === 4 ? "#1565C0" : "#34C759"}
                   />
@@ -318,7 +331,7 @@ export default function CotizacionInterior() {
                     styles.responsePrice,
                     { color: cotizacion.id_estado === 4 ? "#1565C0" : "#34C759" }
                   ]}>
-                    {respuestaCotizacion.valor_estimado.toLocaleString()}
+                    ${formatNumber(respuestaCotizacion.valor_estimado)}
                   </Text>
                 </View>
                 <View style={styles.responseMessage}>
@@ -784,6 +797,48 @@ const styles = StyleSheet.create({
     backgroundColor: '#E3F2FD',
     borderColor: '#BBDEFB',
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    gap: 12,
+  },
+  chatStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#E3F2FD',
+    borderBottomWidth: 1,
+    borderBottomColor: '#BBDEFB',
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 8,
+  },
+  chatStatusText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1565C0',
+    flex: 1,
+    textAlign: 'center',
+  },
+  chatButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    padding: 14,
+    gap: 8,
+  },
+  chatButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
   terminarButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -791,8 +846,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#28A745',
     borderRadius: 8,
     padding: 14,
-    marginTop: 16,
     gap: 8,
+    marginTop: 16,
   },
   terminarButtonText: {
     color: '#fff',
