@@ -1,11 +1,14 @@
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useState, useRef, useMemo } from 'react';
 import { KeyboardAvoidingView, Platform, ViewToken } from 'react-native';
 import { FlatList, View, Text, Image, StyleSheet, SafeAreaView, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
 import Post from '../../../components/post';
+import AdBanner from '../../../components/AdBanner';
 import { guardarStorage, recuperarStorage } from '../../../services/asyncStorage';
 import { API_URL } from '@env';
 import { PostType } from '../../../types/post';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router'; 
+
+type ListItem = PostType | { type: 'ad', id: string };
 const Home = () => {
 
     const [posts, setPosts] = useState<PostType[]>([]);
@@ -13,6 +16,24 @@ const Home = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [visibleItem, setVisibleItem] = useState<number | null>(null);
+
+    // Función para mezclar publicidad con los posts
+    const dataWithAds = useMemo(() => {
+        if (!posts.length) return [];
+        
+        const result: ListItem[] = [];
+        posts.forEach((post, index) => {
+            // Agregar el post
+            result.push(post);
+            
+            // Agregar publicidad cada 5 posts (empezando después del 4to post)
+            if ((index + 1) % 5 === 0) {
+                result.push({ type: 'ad', id: `ad-${index}` });
+            }
+        });
+        
+        return result;
+    }, [posts]);
     
     const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
         if (viewableItems.length > 0) {
@@ -88,14 +109,23 @@ const Home = () => {
         <SafeAreaView style={{ flex: 1 }}>
             <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
             <FlatList
-                data={posts}
-                keyExtractor={(item) => `post-${item.id}`}
-                renderItem={({ item }) => (
-                    <Post 
-                        datos={item} 
-                        isVisible={visibleItem === item.id}
-                    />
-                )}
+                data={dataWithAds}
+                keyExtractor={(item, index) => 
+                    'type' in item && item.type === 'ad' 
+                        ? `ad-${index}` 
+                        : `post-${(item as PostType).id}`
+                }
+                renderItem={({ item, index }) => {
+                    if ('type' in item && item.type === 'ad') {
+                        return <AdBanner key={`ad-${index}`} />;
+                    }
+                    return (
+                        <Post 
+                            datos={item as PostType} 
+                            isVisible={visibleItem === (item as PostType).id}
+                        />
+                    );
+                }}
                 viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs}
                 viewabilityConfig={{
                     itemVisiblePercentThreshold: 50,

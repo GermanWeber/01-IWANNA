@@ -1,13 +1,15 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { ScrollView, StyleSheet, Text, View, ActivityIndicator, RefreshControl, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import BotonAvatar from '../../../../components/botonAvatar';
+import AdBanner from '../../../../components/AdBanner';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { fetchTrabajadoresByCategory } from '../../../../services/categoryService';
 import { Usuario } from '../../../../types/usuario';
 import { Ionicons } from '@expo/vector-icons';
 
+type ListItem = Usuario | { type: 'ad', id: string };
 
 export default function DetalleCategoriaTrabajadores() {
   const router = useRouter();
@@ -19,6 +21,26 @@ export default function DetalleCategoriaTrabajadores() {
   const [refreshing, setRefreshing] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [allUsuarios, setAllUsuarios] = useState<Usuario[]>([]);
+
+  // Función para mezclar publicidad con los trabajadores
+  const usuariosConPublicidad = useMemo(() => {
+    if (!usuarios.length) return [];
+    
+    const result: ListItem[] = [];
+    usuarios.forEach((usuario, index) => {
+      // Agregar el trabajador
+      result.push(usuario);
+      
+      // Agregar publicidad cada 5 trabajadores (empezando después del 4to trabajador)
+      if ((index + 1) % 3 === 0) {
+        result.push({ type: 'ad', id: `ad-${index}` });
+      }
+    });
+    
+    return result;
+  }, [usuarios]);
+  
+
 
   const handleBuscar = (text: string) => {
     setBusqueda(text);
@@ -42,7 +64,7 @@ export default function DetalleCategoriaTrabajadores() {
     fetchTrabajadoresByCategory(id.toString()).then((data) => {
       setUsuarios(data);
       setAllUsuarios(data);
-      setLoading(false);
+            setLoading(false);
     }).catch((error) => {
       setError(error.message);
       setLoading(false);
@@ -103,24 +125,30 @@ export default function DetalleCategoriaTrabajadores() {
         <View style={styles.container}>
           
         
-          {usuarios.length > 0 ? (
-            usuarios.map((usuario) => (
+          {usuariosConPublicidad.length > 0 ? (
+            usuariosConPublicidad.map((item, index) => {
+              if ('type' in item && item.type === 'ad') {
+                return <AdBanner key={`ad-${index}`} />;
+              }
               
-              <BotonAvatar
-                key={usuario.id}
-                textoBoton={`${usuario.nombre} ${usuario.apellido}`}
-                id_auth={Number(usuario.id_auth)}
-                textoProfesion={usuario.descripcion}
-                colorTextoProfesion='#424242'      
-                avatar={usuario.foto}
-                colorTexto='#8BC34A'
-                id_estado={Number(usuario.id_estado)}
-                bgColor='#F5F5F5'
-                iconoDerecha={"chevron-forward"}
-                colorIconoDerecha='#00BCD4'
-                onPress={() => router.push(`/screens/${usuario.id}`)}
-              />
-            ))
+              const usuario = item as Usuario;
+              return (
+                <BotonAvatar
+                  key={usuario.id}
+                  textoBoton={`${usuario.nombre} ${usuario.apellido}`}
+                  id_auth={Number(usuario.id_auth)}
+                  textoProfesion={usuario.descripcion}
+                  colorTextoProfesion='#424242'      
+                  avatar={usuario.foto}
+                  colorTexto='#8BC34A'
+                  id_estado={Number(usuario.id_estado)}
+                  bgColor='#F5F5F5'
+                  iconoDerecha={"chevron-forward"}
+                  colorIconoDerecha='#00BCD4'
+                  onPress={() => router.push(`/screens/${usuario.id}`)}
+                />
+              );
+            })
           ) : (
             <Text style={styles.noResults}>No se encontraron trabajadores en esta categoría</Text>
           )}
