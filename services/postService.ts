@@ -72,3 +72,24 @@ import { API_URL } from "@env";
             console.log('Error al actualizar:', error);
         }
     };
+
+    export const obtenerContadorPosts = async (id_usuario: number) => {
+        
+        const today = new Date().toISOString().split('T')[0];
+        
+
+        console.log("today: ",today,'usuarioId: ',id_usuario);
+
+        try {
+            const url = `${API_URL}post/contador/${id_usuario}/${today}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            const contador = data.contador;
+            if (!response.ok) {
+                throw new Error(data.message || 'Error al obtener contador de posts');
+            }
+            return contador;
+        } catch (error) {
+            console.error('Error al obtener contador de posts:', error);
+        }
+    };

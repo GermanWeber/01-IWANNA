@@ -1,17 +1,18 @@
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Text, TouchableOpacity, View, StyleSheet, ScrollView, Image, ActivityIndicator} from 'react-native'
+import { Text, TouchableOpacity, View, StyleSheet, ScrollView, Image, ActivityIndicator, Alert} from 'react-native'
 import { API_URL,BUCKET_URL } from '@env';
 import { PostType } from '../../../../types/post';
 import { recuperarStorage } from '../../../../services/asyncStorage';
 import { Video, ResizeMode } from 'expo-av';
-import { obtenerPostsByUser } from '../../../../services/postService';
+import { obtenerPostsByUser, obtenerContadorPosts } from '../../../../services/postService';
 
 export default function Post() {
     const router = useRouter();
     const [usuario, setUsuario] = useState<any>(null);
     const [posts, setPosts] = useState<PostType[]>([]);
+    const [yaPublicoHoy, setYaPublicoHoy] = useState<boolean>(false);
     const [videoCargando, setVideoCargando] = useState<{ [id: number]: boolean }>({});
 
     const esVideo = (archivo: string | null | undefined): boolean => {
@@ -25,19 +26,60 @@ export default function Post() {
         }
     };
     
-    const verPost = (post:PostType) =>{
+    const verPost = (post:PostType) =>{   
         router.push(`/ver-post/${post.id}`)
     }
+
+
+    const verificarPublicacionDiaria = async (userId: number) => {
+        try {
+            const contador = await obtenerContadorPosts(userId);
+            setYaPublicoHoy(contador > 0);
+            return contador;
+        } catch (error) {
+            console.error('Error al verificar publicación diaria:', error);
+            return 0;
+        }
+    };
+
+    const handleAgregarPost = async () => {
+        if (!usuario) return;
+        
+        // Si ya publicó hoy y no es usuario premium
+        if (yaPublicoHoy && usuario.id_estado !== 2) {
+            Alert.alert(
+                'Límite de publicaciones',
+                'Has alcanzado el límite de 1 publicación por día. Vuelve mañana para publicar de nuevo o actualiza tu cuenta para publicar sin límites.',
+                [
+                    { 
+                        text: 'Entendido',
+                        style: 'cancel' 
+                    },
+                    {
+                        text: 'Actualizar cuenta',
+                        onPress: () => router.push('/premium')
+                    }
+                ]
+            );
+            return;
+        }
+        
+        // Si es usuario premium o no ha publicado hoy
+        router.push('/(posts)/crear-post');
+    };
 
     useFocusEffect(
         useCallback(() => {
             const cargarUsuarioYPosts = async () => {
-            const datosUsuario = await recuperarStorage('usuario');
-            if (datosUsuario) {
-                setUsuario(datosUsuario);
-                const posts = await obtenerPostsByUser(datosUsuario.id);
-                setPosts(posts);
-            }
+                const datosUsuario = await recuperarStorage('usuario');
+                if (datosUsuario) {
+                    setUsuario(datosUsuario);
+                    const [posts] = await Promise.all([
+                        obtenerPostsByUser(datosUsuario.id),
+                        verificarPublicacionDiaria(datosUsuario.id)
+                    ]);
+                    setPosts(posts);
+                }
             };
             cargarUsuarioYPosts();
         }, [])
@@ -46,9 +88,23 @@ export default function Post() {
         <ScrollView contentContainerStyle={styles.scrollContainer}>
             <View style={styles.container}>
                 <View>
-                    <TouchableOpacity style={styles.editButton} onPress={() => router.push('/(posts)/crear-post')}>
-                        <Ionicons name="add" size={20} color="#fff" />
-                        <Text style={styles.editButtonText}>Agregar Publicación</Text>
+                    <TouchableOpacity 
+                        style={[
+                            styles.editButton, 
+                            yaPublicoHoy && styles.disabledButton
+                        ]} 
+                        onPress={handleAgregarPost}
+                        disabled={yaPublicoHoy}
+                    >
+                        <Ionicons 
+                            name={yaPublicoHoy ? 'time-outline' : 'add'} 
+                            size={20} 
+                            color="#fff" 
+                        />
+                        {/* cambiar texto segun estado */}
+                        <Text style={styles.editButtonText}>
+                            {yaPublicoHoy ? 'Ya publicaste hoy' : 'Agregar Publicación'}
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -118,6 +174,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 15,
         borderRadius: 10,
+        opacity: 1,
+    },
+    disabledButton: {
+        backgroundColor: '#A5D6A7',
+        opacity: 0.8,
     },
     editButtonText: {
         color: '#fff',

@@ -29,7 +29,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
     const [modalDenunciar, setModalDenunciar] = useState(false);
     const [cantidadComentarios, setCantidadComentarios] = useState<Number>(0);
     const [videoCargando, setVideoCargando] = useState(true);
-
+    const [videoError, setVideoError] = useState(false);
     const manejarCargaImagen = useCallback(() => setCargando(false), []);
     const toggleModal = useCallback(() => setModalVisible(prev => !prev), []);
 
@@ -198,6 +198,14 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
             <View style={styles.content}>
                 {isVideo ? (
                 <>
+                {videoError && (
+                    <View style={styles.videoErrorContainer}>
+                        <Text>No se pudo cargar el video</Text>
+                        <TouchableOpacity onPress={() => setVideoError(false)}>
+                            <Ionicons name="refresh" size={24} color="#1d9bf0" />
+                        </TouchableOpacity>
+                    </View>
+                )}
                     <Video
                         source={{ uri: `${BUCKET_URL}publicaciones/${datos.archivo}` }}
                         rate={1.0}
@@ -303,6 +311,13 @@ export const Post = React.memo(PostComponent);
 export default Post;
 
 const styles = StyleSheet.create({
+    videoErrorContainer: {
+        width: '100%',
+        height: 300,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f5f5f5',
+      },
     modalDots: {
         position: 'absolute',
         zIndex: 1,
