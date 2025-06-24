@@ -81,7 +81,7 @@ import { API_URL } from "@env";
        // console.log("today: ",today,'usuarioId: ',id_usuario);
 
         try {
-            const url = `${API_URL}post/contador/${id_usuario}/${today}`;
+            const url = `${API_URL}post/contador/${id_usuario}`;
             const response = await fetch(url);
             const data = await response.json();
             const contador = data.contador;
