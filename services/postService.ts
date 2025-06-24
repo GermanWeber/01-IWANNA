@@ -14,7 +14,7 @@ import { API_URL } from "@env";
 
             return data;
             } catch (error) {
-                console.error('Error al obtener posts:', error);
+                console.log('Error al obtener posts:', error);
             }
         };
 
@@ -31,7 +31,7 @@ import { API_URL } from "@env";
 
             return data;
         } catch (error) {
-            console.error('Error al obtener posts:', error);
+            console.log('Error al obtener posts:', error);
         }
     };
 
@@ -78,7 +78,7 @@ import { API_URL } from "@env";
         const today = new Date().toISOString().split('T')[0];
         
 
-        console.log("today: ",today,'usuarioId: ',id_usuario);
+       // console.log("today: ",today,'usuarioId: ',id_usuario);
 
         try {
             const url = `${API_URL}post/contador/${id_usuario}/${today}`;
@@ -90,6 +90,6 @@ import { API_URL } from "@env";
             }
             return contador;
         } catch (error) {
-            console.error('Error al obtener contador de posts:', error);
+            console.log('Error al obtener contador de posts:', error);
         }
     };

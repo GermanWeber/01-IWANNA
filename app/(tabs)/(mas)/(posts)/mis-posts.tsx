@@ -106,6 +106,15 @@ export default function Post() {
                             {yaPublicoHoy ? 'Ya publicaste hoy' : 'Agregar Publicación'}
                         </Text>
                     </TouchableOpacity>
+
+                    {yaPublicoHoy && (
+                        <View style={styles.infoBox}>
+                            <Ionicons name="information-circle" size={20} color="#2196F3" />
+                            <Text style={styles.infoText}>
+                                El plan gratuito te permite publicar 1 vez por dia, suscríbete a IWANNA y publica todo lo que quieras
+                            </Text>
+                        </View>
+                    )}
                 </View>
             </View>
             <View style={styles.container}>
@@ -159,6 +168,20 @@ export default function Post() {
 }
 
 const styles = StyleSheet.create({
+    infoBox: {
+        backgroundColor: '#f0f7ff',
+        borderRadius: 12,
+        padding: 16,
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+    },
+    infoText: {
+        flex: 1,
+        marginLeft: 12,
+        color: '#2980b9',
+        fontSize: 14,
+        lineHeight: 20,
+    },
     scrollContainer: {
         minHeight: "100%",
         backgroundColor: "#fff"

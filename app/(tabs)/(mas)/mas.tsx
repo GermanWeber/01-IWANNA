@@ -162,7 +162,7 @@ export default function Mas() {
                         </View>
 
                         {/* Sección boton autenticación */}
-                        {usuario?.id_auth == 1 && (
+                        {usuario?.id_auth == 1 && usuario?.id_tipo == 2 && (
                             <View style={styles.authSection}>
                                 <View style={styles.authContent}>
                                     <View style={styles.authInfo}>
@@ -184,7 +184,7 @@ export default function Mas() {
                             </View>
                         )}
 
-                        {usuario?.id_auth == 3 && (
+                        {usuario?.id_auth == 3 && usuario?.id_tipo == 2 && (
                             <View style={styles.authSection}>
                                 <View style={styles.authContent}>
                                     <View style={styles.authInfo}>

@@ -93,10 +93,10 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
     
 
     const toggleLike = async (id_post:number, id_usuario:number) => {
-        console.log('Datos recibidos en toggleLike:', id_post, id_usuario);
+        //console.log('Datos recibidos en toggleLike:', id_post, id_usuario);
         if (usuario && [1,2].includes(usuario?.id_estado)) {
             try {
-                console.log('Entro a like: post', id_post, 'usuario:', id_usuario);
+                //console.log('Entro a like: post', id_post, 'usuario:', id_usuario);
                 await btnFavPost(id_post, id_usuario);
                 // Recargar los datos después de hacer like
                 await cargarDatos();
@@ -107,21 +107,21 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
     };
 
     const handleDotPress = async () => {
-        console.log('Datos recibidos en handleDotPress');
+        //console.log('Datos recibidos en handleDotPress');
         setModalDots(!modalDots);
         
     };
 
     const handleProfilePress = useCallback(async () => {
-        console.log('Datos recibidos en handleProfilePress:', datos);
+        //console.log('Datos recibidos en handleProfilePress:', datos);
         try {
             await guardarStorage('idUsuarioPerfil', datos?.id_usuario.toString());
-            console.log('Navegando a perfil de usuario:', datos?.id_usuario);
+            //console.log('Navegando a perfil de usuario:', datos?.id_usuario);
             router.push(`/screens/${datos?.id_usuario}`);
         } catch (error) {
-            console.error('Error al navegar al perfil:', error);
+            console.log('Error al navegar al perfil:', error);
         }
-    }, [datos?.id_usuario, router]); // Añade todas las dependencias necesarias
+    }, [datos?.id_usuario, router]); 
     
 
     useFocusEffect(
@@ -129,7 +129,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
             setModalVisible(false);
             setCargando(true);
             cargarDatos();
-        }, [datos?.id]) // Solo volver a ejecutar si el ID del post cambia
+        }, [datos?.id]) 
     );
 
 
@@ -140,7 +140,8 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.headerPerfil}
-                    onPress={() => {handleProfilePress(); console.log('Datos recibidos en handleProfilePress:', datos)}}
+                    onPress={() => {handleProfilePress(); //console.log('Datos recibidos en handleProfilePress:', datos)
+                        }}
 
                 >
                     {datos?.id_estado == 2? (
@@ -218,7 +219,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                         onLoadStart={() => setVideoCargando(true)}
                         onLoad={() => setVideoCargando(false)}
                         onError={(error) => {
-                            console.error("Error al cargar el video:", error);
+                            console.log("Error al cargar el video:", error);
                             setVideoCargando(false);
                         }}
                     />

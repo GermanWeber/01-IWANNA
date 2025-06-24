@@ -44,11 +44,11 @@ export const fetchProducts = async (): Promise<Product[]> => {
     const products = await response.json();
     console.log('Productos recibidos:', products);
     
-    // Transformar los productos de Stripe para nuestro formato
+    // Transformar los productos de Stripe
     return products.map((product: any) => ({
       id: product.id,
       name: product.name,
-      price: product.price, // ya viene formateado
+      price: product.price, // ya viene formateado desde el back
       priceId: product.priceId,
       description: product.description,
       active: product.active,
@@ -78,11 +78,11 @@ export const fetchPrices = async (): Promise<Product[]> => {
     const prices = await response.json();
     console.log('Precios recibidos:', prices);
     
-    // Transformar los precios de Stripe para nuestro formato
+    // Transformar los precios de Stripe
     return prices.map((price: any) => ({
       id: price.id,
       name: price.name,
-      price: price.price, // ya viene formateado
+      price: price.price, // ya viene formateado desde el back
       priceId: price.priceId,
       description: price.description,
       active: price.active,
@@ -121,7 +121,7 @@ export const crearUsuarioStripe = async (userId: string, email: string, nombre: 
     }
 
 } catch (error) {
-    console.error('Error en la creación del cliente Stripe:', error);
+    console.log('Error en la creación del cliente Stripe:', error);
     
 }
 };
@@ -144,7 +144,7 @@ export const getSubscriptionInfo = async (Id: string) => {
     try {
       data = JSON.parse(responseText);
     } catch (e) {
-      console.error('Failed to parse JSON response:', responseText);
+      console.log('Failed to parse JSON response:', responseText);
       throw new Error(`Invalid JSON response from server: ${response.status} ${response.statusText}`);
     }
 
@@ -165,14 +165,13 @@ export const getSubscriptionInfo = async (Id: string) => {
         
       };
     }
-    
-    // When not subscribed, return both status and customerId
+ 
     return { 
       subscribed: false, 
       ...data
     };
   } catch (error) {
-    console.error('Error al obtener la información de suscripción:', error);
+    console.log('Error al obtener la información de suscripción:', error);
     throw error;
   }
 };
@@ -196,7 +195,7 @@ export const iniciarCheckout = async (priceId: string, customerId: string, idUse
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Error en la respuesta del servidor:', errorText);
+      console.log('Error en la respuesta del servidor:', errorText);
       throw new Error(`Error en la respuesta del servidor: ${response.status} ${response.statusText}`);
     }
 
@@ -208,14 +207,14 @@ export const iniciarCheckout = async (priceId: string, customerId: string, idUse
       responseData = JSON.parse(responseText);
       console.log('Datos de respuesta parseados:', responseData);
     } catch (e) {
-      console.error('Error al parsear la respuesta JSON:', e);
+      console.log('Error al parsear la respuesta JSON:', e);
       throw new Error('Formato de respuesta inválido del servidor');
     }
     
     console.log('URL de checkout:', responseData?.url);
     
     if (!responseData || !responseData.url) {
-      console.error('Respuesta inesperada del servidor. Estructura completa:', {
+      console.log('Respuesta inesperada del servidor. Estructura completa:', {
         status: response.status,
         statusText: response.statusText,
         headers: Object.fromEntries(response.headers.entries()),

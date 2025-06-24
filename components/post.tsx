@@ -95,10 +95,10 @@ const PostComponent: React.FC<Props> = ({ datos, isVisible = true }) => {
     
 
     const toggleLike = async (id_post:number, id_usuario:number) => {
-        console.log('Datos recibidos en toggleLike:', id_post, id_usuario);
+        //console.log('Datos recibidos en toggleLike:', id_post, id_usuario);
         if (usuario && [1,2].includes(usuario?.id_estado)) {
             try {
-                console.log('Entro a like: post', id_post, 'usuario:', id_usuario);
+                //console.log('Entro a like: post', id_post, 'usuario:', id_usuario);
                 await btnFavPost(id_post, id_usuario);
                 // Recargar los datos después de hacer like
                 await cargarDatos();
@@ -109,21 +109,21 @@ const PostComponent: React.FC<Props> = ({ datos, isVisible = true }) => {
     };
 
     const handleDotPress = async () => {
-        console.log('Datos recibidos en handleDotPress');
+        //console.log('Datos recibidos en handleDotPress');
         setModalDots(!modalDots);
         
     };
 
     const handleProfilePress = useCallback(async () => {
-        console.log('Datos recibidos en handleProfilePress:', datos);
+        //console.log('Datos recibidos en handleProfilePress:', datos);
         try {
             await guardarStorage('idUsuarioPerfil', datos?.id_usuario.toString());
-            console.log('Navegando a perfil de usuario:', datos?.id_usuario);
+            //console.log('Navegando a perfil de usuario:', datos?.id_usuario);
             router.push(`/screens/${datos?.id_usuario}`);
         } catch (error) {
             console.error('Error al navegar al perfil:', error);
         }
-    }, [datos?.id_usuario, router]); // Añade todas las dependencias necesarias
+    }, [datos?.id_usuario, router]); 
     
 
     // Efecto para manejar la visibilidad del video
@@ -158,7 +158,9 @@ const PostComponent: React.FC<Props> = ({ datos, isVisible = true }) => {
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.headerPerfil}
-                    onPress={() => {handleProfilePress(); console.log('Datos recibidos en handleProfilePress:', datos)}}
+                    onPress={() => {handleProfilePress(); //console.log('Datos recibidos en handleProfilePress:', datos)
+
+                    }}
 
                 >
                     {datos?.id_estado == 2? (
@@ -251,7 +253,7 @@ const PostComponent: React.FC<Props> = ({ datos, isVisible = true }) => {
                     onPlaybackStatusUpdate={(status) => {
                         if (!status.isLoaded) {
                         if (status.error) {
-                            console.error('Error en reproducción:', status.error);
+                            console.log('Error en reproducción:', status.error);
                         }
                         return;
                         }
