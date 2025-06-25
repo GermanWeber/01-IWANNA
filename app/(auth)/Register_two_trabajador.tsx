@@ -113,6 +113,64 @@ const Register_two_trabajador = () => {
         }, [])
     );
 
+    // Función para validar RUT chileno
+    const validarRut = (rutCompleto: string): boolean => {
+        // Limpiar el RUT de puntos y guiones
+        const rutLimpio = rutCompleto.replace(/\./g, '').replace(/-/g, '');
+
+        // Verificar formato básico
+        const formatoRut = /^\d{7,8}[0-9kK]$/;
+        if (!formatoRut.test(rutLimpio)) {
+            return false;
+        }
+
+        // Separar número y dígito verificador
+        const numero = rutLimpio.slice(0, -1);
+        const dv = rutLimpio.slice(-1).toUpperCase();
+
+        // Calcular dígito verificador
+        let suma = 0;
+        let multiplicador = 2;
+
+        for (let i = numero.length - 1; i >= 0; i--) {
+            suma += parseInt(numero[i]) * multiplicador;
+            multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
+        }
+
+        const resto = suma % 11;
+        const dvCalculado = resto === 0 ? '0' : resto === 1 ? 'K' : (11 - resto).toString();
+
+        return dv === dvCalculado;
+    };
+
+    // Función para formatear RUT mientras se escribe
+    const formatearRut = (texto: string): string => {
+        // Remover todo excepto números y 'k'
+        const rutLimpio = texto.replace(/[^0-9kK]/g, '');
+
+        if (rutLimpio.length === 0) return '';
+
+        // Separar número y dígito verificador
+        const numero = rutLimpio.slice(0, -1);
+        const dv = rutLimpio.slice(-1).toUpperCase();
+
+        // Formatear número con puntos
+        let numeroFormateado = '';
+        for (let i = numero.length - 1, j = 0; i >= 0; i--, j++) {
+            if (j > 0 && j % 3 === 0) {
+                numeroFormateado = '.' + numeroFormateado;
+            }
+            numeroFormateado = numero[i] + numeroFormateado;
+        }
+
+        return numeroFormateado + '-' + dv;
+    };
+
+    const handleRutChange = (texto: string) => {
+        const rutFormateado = formatearRut(texto);
+        setRut(rutFormateado);
+    };
+
     const handleNext = async () => {
         // Validación de campos
         if (!nombre || !apellido || !telefono || sexo === null || !fechaNacimiento || !direccion || !idProfesionSeleccionada) {
@@ -120,15 +178,32 @@ const Register_two_trabajador = () => {
             return;
         }
 
+        // Validación específica del RUT
+        if (!rut) {
+            Alert.alert('Error', 'El RUT es obligatorio');
+            return;
+        }
+
+        if (!validarRut(rut)) {
+            Alert.alert('Error', 'El RUT ingresado no es válido. Debe tener el formato XX.XXX.XXX-X');
+            return;
+        }
+
+        // Validación del teléfono
+        if (telefono.length < 9) {
+            Alert.alert('Error', 'El teléfono debe tener 9 dígitos');
+            return;
+        }
+
         setIsLoading(true);
         try {
             const edadCalculada = calcularEdad(fechaNacimiento);
 
-            // Guardar datos en AsyncStorage
+            // Guardar datos en AsyncStorage con teléfono completo (+56)
             const datosUsuario = {
                 nombre,
                 apellido,
-                telefono,
+                telefono: `+56${telefono}`,
                 rut,
                 sexo,
                 fecha_nacimiento: fechaNacimiento.toISOString(),
@@ -208,13 +283,26 @@ const Register_two_trabajador = () => {
 
                     <View style={styles.inputContainer}>
                         <Ionicons name="call-outline" size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Teléfono"
-                            value={telefono}
-                            onChangeText={setTelefono}
-                            keyboardType="phone-pad"
-                        />
+                        <View style={styles.phoneContainer}>
+                            <View style={styles.countryCodeContainer}>
+                                <Text style={styles.flag}>🇨🇱</Text>
+                                <Text style={styles.countryCode}>+56</Text>
+                            </View>
+                            <TextInput
+                                style={styles.phoneInput}
+                                placeholder="9 1234 5678"
+                                value={telefono}
+                                onChangeText={(text) => {
+                                    // Solo permitir números y máximo 9 dígitos
+                                    const numeros = text.replace(/[^0-9]/g, '');
+                                    if (numeros.length <= 9) {
+                                        setTelefono(numeros);
+                                    }
+                                }}
+                                keyboardType="phone-pad"
+                                maxLength={9}
+                            />
+                        </View>
                     </View>
 
                     <TouchableOpacity
@@ -344,10 +432,11 @@ const Register_two_trabajador = () => {
                         <Ionicons name="card-outline" size={20} color="#666" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
-                            placeholder="RUT"
+                            placeholder="RUT (ej: 12.345.678-9)"
                             value={rut}
-                            onChangeText={setRut}
+                            onChangeText={handleRutChange}
                             keyboardType="numeric"
+                            maxLength={12}
                         />
                     </View>
 
@@ -563,6 +652,32 @@ const styles = StyleSheet.create({
     },
     inputText: {
         color: '#333',
+    },
+    phoneContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        height: 50,
+    },
+    countryCodeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 10,
+    },
+    flag: {
+        fontSize: 16,
+        marginRight: 5,
+    },
+    countryCode: {
+        fontSize: 16,
+        color: '#333',
+        fontWeight: '500',
+    },
+    phoneInput: {
+        flex: 1,
+        height: 50,
+        color: '#333',
+        fontSize: 16,
     },
 });
 

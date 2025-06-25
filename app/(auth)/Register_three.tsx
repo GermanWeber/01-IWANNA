@@ -20,6 +20,15 @@ const Register_three = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [datosUsuario, setDatosUsuario] = useState<any>(null);
 
+    // Estados para validación de contraseña
+    const [passwordRequirements, setPasswordRequirements] = useState({
+        length: false,
+        uppercase: false,
+        lowercase: false,
+        number: false,
+        special: false
+    });
+
     useEffect(() => {
         const cargarDatosUsuario = async () => {
             try {
@@ -39,6 +48,22 @@ const Register_three = () => {
         setIsValidEmail(emailRegex.test(email));
     };
 
+    const validatePassword = (password: string) => {
+        const requirements = {
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            number: /\d/.test(password),
+            special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+        };
+        setPasswordRequirements(requirements);
+        return Object.values(requirements).every(req => req);
+    };
+
+    const isPasswordValid = () => {
+        return Object.values(passwordRequirements).every(req => req);
+    };
+
     const handleRegister = async () => {
         if (!correo || !contrasena || !confirmarContrasena) {
             Alert.alert('Error', 'Por favor, completa todos los campos');
@@ -50,13 +75,13 @@ const Register_three = () => {
             return;
         }
 
-        if (contrasena !== confirmarContrasena) {
-            Alert.alert('Error', 'Las contraseñas no coinciden');
+        if (!isPasswordValid()) {
+            Alert.alert('Error', 'La contraseña no cumple con los requisitos mínimos de seguridad');
             return;
         }
 
-        if (contrasena.length < 6) {
-            Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+        if (contrasena !== confirmarContrasena) {
+            Alert.alert('Error', 'Las contraseñas no coinciden');
             return;
         }
 
@@ -202,7 +227,10 @@ const Register_three = () => {
                             style={styles.input}
                             placeholder="Contraseña"
                             value={contrasena}
-                            onChangeText={setContrasena}
+                            onChangeText={(text) => {
+                                setContrasena(text);
+                                validatePassword(text);
+                            }}
                             secureTextEntry={!showPassword}
                         />
                         <TouchableOpacity
@@ -216,6 +244,63 @@ const Register_three = () => {
                             />
                         </TouchableOpacity>
                     </View>
+
+                    {/* Requisitos de contraseña */}
+                    {contrasena.length > 0 && (
+                        <View style={styles.passwordRequirements}>
+                            <Text style={styles.requirementsTitle}>Requisitos de seguridad:</Text>
+                            <View style={styles.requirementItem}>
+                                <Ionicons
+                                    name={passwordRequirements.length ? "checkmark-circle" : "close-circle"}
+                                    size={16}
+                                    color={passwordRequirements.length ? "#4CAF50" : "#FF5722"}
+                                />
+                                <Text style={[styles.requirementText, { color: passwordRequirements.length ? "#4CAF50" : "#FF5722" }]}>
+                                    Mínimo 8 caracteres
+                                </Text>
+                            </View>
+                            <View style={styles.requirementItem}>
+                                <Ionicons
+                                    name={passwordRequirements.uppercase ? "checkmark-circle" : "close-circle"}
+                                    size={16}
+                                    color={passwordRequirements.uppercase ? "#4CAF50" : "#FF5722"}
+                                />
+                                <Text style={[styles.requirementText, { color: passwordRequirements.uppercase ? "#4CAF50" : "#FF5722" }]}>
+                                    Al menos una mayúscula
+                                </Text>
+                            </View>
+                            <View style={styles.requirementItem}>
+                                <Ionicons
+                                    name={passwordRequirements.lowercase ? "checkmark-circle" : "close-circle"}
+                                    size={16}
+                                    color={passwordRequirements.lowercase ? "#4CAF50" : "#FF5722"}
+                                />
+                                <Text style={[styles.requirementText, { color: passwordRequirements.lowercase ? "#4CAF50" : "#FF5722" }]}>
+                                    Al menos una minúscula
+                                </Text>
+                            </View>
+                            <View style={styles.requirementItem}>
+                                <Ionicons
+                                    name={passwordRequirements.number ? "checkmark-circle" : "close-circle"}
+                                    size={16}
+                                    color={passwordRequirements.number ? "#4CAF50" : "#FF5722"}
+                                />
+                                <Text style={[styles.requirementText, { color: passwordRequirements.number ? "#4CAF50" : "#FF5722" }]}>
+                                    Al menos un número
+                                </Text>
+                            </View>
+                            <View style={styles.requirementItem}>
+                                <Ionicons
+                                    name={passwordRequirements.special ? "checkmark-circle" : "close-circle"}
+                                    size={16}
+                                    color={passwordRequirements.special ? "#4CAF50" : "#FF5722"}
+                                />
+                                <Text style={[styles.requirementText, { color: passwordRequirements.special ? "#4CAF50" : "#FF5722" }]}>
+                                    Al menos un carácter especial
+                                </Text>
+                            </View>
+                        </View>
+                    )}
 
                     <View style={styles.inputContainer}>
                         <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
@@ -321,6 +406,28 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    passwordRequirements: {
+        marginTop: 10,
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 10,
+        backgroundColor: '#f9f9f9',
+    },
+    requirementsTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 10,
+    },
+    requirementItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 5,
+    },
+    requirementText: {
+        marginLeft: 5,
     },
 });
 
