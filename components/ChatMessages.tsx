@@ -67,6 +67,11 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
           setLocalMessages(prev => {
             if (updateMessagesIfNeeded(message.messages, prev)) {
               console.log('Actualizando mensajes con cambios');
+                if (flatListRef.current && messages.length > 0) {
+                  setTimeout(() => {
+                    flatListRef.current?.scrollToEnd({ animated: true });
+                  }, 100);
+                }
               return message.messages;
             }
             //console.log('No hay cambios en los mensajes');
@@ -136,29 +141,17 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (flatListRef.current && messages.length > 0) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    }
-  }, [messages, localMessages, tempMessages]);
-
-  // Combine server messages with local/temp messages
-  const allMessages = [
-    ...messages,
-    ...localMessages,
-    ...Object.values(tempMessages)
-  ].sort((a, b) => new Date(a.f_creacion).getTime() - new Date(b.f_creacion).getTime());
-  // Format message time
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+    // if (flatListRef.current && messages.length > 0) {
+    //   setTimeout(() => {
+    //     flatListRef.current?.scrollToEnd({ animated: true });
+    //   }, 100);
+    // }
+  }, [messages]);
 
   return (
     <FlatList
       ref={flatListRef}
-      data={allMessages}
+      data={messages}
       keyExtractor={(item, index) => index.toString()}
       renderItem={({ item }) => {
         const isCurrentUser = item.id_autor === currentUserId;
@@ -191,7 +184,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
       }}
       contentContainerStyle={[
         styles.messageList,
-        allMessages.length === 0 && styles.emptyMessageList,
+        messages.length === 0 && styles.emptyMessageList,
       ]}
       ListEmptyComponent={
         !error ? (
@@ -216,12 +209,12 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
         />
       }
       onContentSizeChange={() => {
-        if (allMessages.length > 0) {
+        if (messages.length > 0) {
           flatListRef.current?.scrollToEnd({ animated: true });
         }
       }}
       onLayout={() => {
-        if (allMessages.length > 0) {
+        if (messages.length > 0) {
           flatListRef.current?.scrollToEnd({ animated: true });
         }
       }}

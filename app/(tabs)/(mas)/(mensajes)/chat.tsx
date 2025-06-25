@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, FlatList } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { recuperarStorage } from '../../../../services/asyncStorage';
 import ChatMessages from '../../../../components/ChatMessages';
@@ -20,6 +20,8 @@ export default function Chat() {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usuario, setUsuario] = useState<any>(null);
+
+  const flatListRef = useRef<FlatList<Message>>(null);
 
   // Load user data
   const loadUsuario = useCallback(async () => {
@@ -126,6 +128,11 @@ export default function Chat() {
       setNewMessage(messageContent); // Restore message if sending fails
     } finally {
       setIsSending(false);
+      if (flatListRef.current && messages.length > 0) {
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
     }
   };
 
