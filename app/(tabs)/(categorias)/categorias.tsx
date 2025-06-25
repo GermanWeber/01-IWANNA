@@ -21,13 +21,13 @@ export default function Categorias() {
 
   const handleBuscar = (text: string) => {
     setBusqueda(text);
-    
+
     if (text.trim() === '') {
       // Si el texto está vacío, mostramos todas las categorías
       setCategorias(allCategorias);
     } else {
       // Filtramos las categorías localmente
-      const filtered = allCategorias.filter(categoria => 
+      const filtered = allCategorias.filter(categoria =>
         categoria.descripcion.toLowerCase().includes(text.toLowerCase())
       );
       setCategorias(filtered);
@@ -36,10 +36,10 @@ export default function Categorias() {
 
   const fetchCategorias = async () => {
     try {
-      const response = await fetch(`${API_URL}category`); 
+      const response = await fetch(`${API_URL}category`);
       const data = await response.json();
-      setAllCategorias(data); 
-      setCategorias(data);    
+      setAllCategorias(data);
+      setCategorias(data);
       setError(null);
     } catch (err) {
       console.error('Error fetching categorias:', err);
@@ -62,24 +62,24 @@ export default function Categorias() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      
-        <View style={styles.container}>
-          <Text style={styles.titulo}>Categorías</Text>
-          
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#888" style={styles.icono} />
-            <TextInput
-              placeholder="Buscar categoría..."
-              placeholderTextColor="#888"
-              value={busqueda}
-              onChangeText={handleBuscar}
-              style={styles.input}
-            />
-          </View>
+
+      <View style={styles.container}>
+        <Text style={styles.titulo}>Categorías</Text>
+
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color="#888" style={styles.icono} />
+          <TextInput
+            placeholder="Buscar categoría..."
+            placeholderTextColor="#888"
+            value={busqueda}
+            onChangeText={handleBuscar}
+            style={styles.input}
+          />
+        </View>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#8BC34A" />
+              <ActivityIndicator size="large" color="#007AFF" />
               <Text style={styles.loadingText}>Cargando categorías...</Text>
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             </View>
@@ -95,15 +95,15 @@ export default function Categorias() {
             </View>
           ) : (
             categorias.map((categoria) => (
-              <BotonCategorias 
+              <BotonCategorias
                 key={`categoria-${categoria.id}`}
-                textoBoton={categoria.descripcion	} 
-                colorTexto='#8BC34A'
-                bgColor='#F5F5F5' 
-                iconoDerecha={"chevron-forward"} 
-                colorIconoDerecha='#00BCD4'
-                colorIconoIzquierda='#8BC34A'
-                iconoIzquierda={categoria.icono	 || 'cube'} 
+                textoBoton={categoria.descripcion}
+                colorTexto='#212529'
+                bgColor='#FFFFFF'
+                iconoDerecha={"chevron-forward"}
+                colorIconoDerecha='#6C757D'
+                colorIconoIzquierda='#007AFF'
+                iconoIzquierda={categoria.icono || 'cube'}
                 onPress={() => router.push({
                   pathname: '/(categorias)/[detalleCategoria]',
                   params: { categoria: categoria.descripcion, id: categoria.id }
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   errorButton: {
     marginTop: 10,
     padding: 10,
-    backgroundColor: '#8BC34A',
+    backgroundColor: '#007AFF',
     borderRadius: 12,
     alignItems: 'center',
   },
@@ -135,13 +135,13 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8F9FA',
     padding: 20,
   },
   titulo: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#212529',
     marginBottom: 20,
     marginTop: 10,
   },
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 10,
-    color: '#666',
+    color: '#6C757D',
   },
   errorContainer: {
     flex: 1,
@@ -162,22 +162,24 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   errorText: {
-    color: '#e74c3c',
+    color: '#DC3545',
     textAlign: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f2f2f2',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     paddingHorizontal: 15,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
       },
       android: {
         elevation: 2,
@@ -186,11 +188,12 @@ const styles = StyleSheet.create({
   },
   icono: {
     marginRight: 8,
+    color: '#6C757D',
   },
   input: {
     flex: 1,
     height: 45,
     fontSize: 16,
-    color: '#333',
+    color: '#212529',
   },
 });
