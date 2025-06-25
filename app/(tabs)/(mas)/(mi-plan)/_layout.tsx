@@ -1,7 +1,15 @@
 import { Stack } from 'expo-router';
 import HeaderPrincipal from '../../../../components/Header';
+import { useRouter } from 'expo-router';
 
 export default function PlanesLayout() {
+
+
+  const router = useRouter();
+
+  const handleBackButtonPress = () => {
+    router.push('/(tabs)/(mas)');
+  };
   
   return (
     <Stack>
@@ -9,7 +17,7 @@ export default function PlanesLayout() {
         name="mi-plan"
         options={{
           header: (props) => (
-            <HeaderPrincipal/>
+            <HeaderPrincipal showBackButton={false}/>
           ),
         }}
       />

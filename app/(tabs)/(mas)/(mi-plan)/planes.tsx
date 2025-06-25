@@ -96,7 +96,7 @@ export default function Planes() {
         if (respuesta) {
           console.log('Suscripción actualizada:', respuesta);
           // Redirigir a la pantalla de éxito
-          router.push(`../(mi-plan)/(respuesta-suscripcion)/success-layout`);
+          router.push(`../(respuesta-suscripcion)/success-layout`);
         } else {
           throw new Error('No se recibió respuesta del servidor');
         }
@@ -109,7 +109,7 @@ export default function Planes() {
     } else if (url.includes('cancel')) {
       console.log('Redirigiendo a la app desde:', url);
       setCheckoutUrl(null);
-      router.push(`../(mi-plan)/(respuesta-suscripcion)/cancel-layout`);
+      router.push(`../(respuesta-suscripcion)/cancel-layout`);
     }
   };
 

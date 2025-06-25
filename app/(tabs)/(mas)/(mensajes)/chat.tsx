@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { API_URL } from '@env';
 import { recuperarStorage } from '../../../../services/asyncStorage';
+import ChatMessages from '../../../../components/ChatMessages';
 
 interface Message {
   id: number;
@@ -21,7 +22,6 @@ export default function Chat() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usuario, setUsuario] = useState<any>(null);
-
 
   const loadUsuario = async () => {
     try {
@@ -83,17 +83,10 @@ export default function Chat() {
     if (id) {
       fetchMessages();
       loadUsuario();
-      
-      // Actualizar cada 5 segundos
-      const interval = setInterval(fetchMessages, 5000);
-      
-      // Limpiar el intervalo al desmontar el componente
-      return () => clearInterval(interval);
     }
   }, [id]);
 
   const sendMessage = async () => {
-
     console.log('enviando mensaje en chat: ', id, 'usuario: ', usuario?.id);
     if (newMessage.trim() === '') return;
 
@@ -125,12 +118,12 @@ export default function Chat() {
     }
   };
 
-  const handleRefresh = () => {
+  const memoizedHandleRefresh = useCallback(() => {
     setLoading(true);
     fetchMessages();
-  };
+  }, [fetchMessages]);
 
-  if (loading) {
+  if (loading && messages.length === 0) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#8BC34A" />
@@ -144,41 +137,18 @@ export default function Chat() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={90}
     >
-
-      <FlatList
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={handleRefresh} />}
-        data={messages}
-        keyExtractor={(item, index) => item?.id?.toString() || `message-${index}`}
-        renderItem={({ item }) => (
-          <View style={[
-            styles.messageBubble,
-            item.id_autor === usuario?.id ? styles.userBubble : styles.otherBubble // ID del usuario autenticado
-          ]}>
-            {item.nombre && item.id_autor !== usuario?.id && (
-              <Text style={styles.senderName}>{item.nombre}</Text>
-            )}
-            <Text style={styles.messageText}>{item.contenido}</Text>
-            <Text style={styles.messageTime}>{item.f_creacion}</Text>
-          </View>
-        )}
-        contentContainerStyle={[
-          styles.messageList,
-          messages.length === 0 && styles.emptyMessageList
-        ]}
-        ListEmptyComponent={
-          !loading && !error ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No hay mensajes aún</Text>
-              <Text style={styles.emptySubtext}>Sé el primero en escribir un mensaje</Text>
-            </View>
-          ) : null
-        }
+      <ChatMessages
+        messages={messages}
+        loading={loading}
+        error={error}
+        currentUserId={usuario?.id}
+        onRefresh={memoizedHandleRefresh}
       />
 
       {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+          <TouchableOpacity style={styles.retryButton} onPress={memoizedHandleRefresh}>
             <Text style={styles.retryButtonText}>Reintentar</Text>
           </TouchableOpacity>
         </View>
