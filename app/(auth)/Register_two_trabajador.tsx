@@ -189,15 +189,21 @@ const Register_two_trabajador = () => {
             return;
         }
 
+        // Validación del teléfono
+        if (telefono.length < 9) {
+            Alert.alert('Error', 'El teléfono debe tener 9 dígitos');
+            return;
+        }
+
         setIsLoading(true);
         try {
             const edadCalculada = calcularEdad(fechaNacimiento);
 
-            // Guardar datos en AsyncStorage
+            // Guardar datos en AsyncStorage con teléfono completo (+56)
             const datosUsuario = {
                 nombre,
                 apellido,
-                telefono,
+                telefono: `+56${telefono}`,
                 rut,
                 sexo,
                 fecha_nacimiento: fechaNacimiento.toISOString(),
@@ -277,13 +283,26 @@ const Register_two_trabajador = () => {
 
                     <View style={styles.inputContainer}>
                         <Ionicons name="call-outline" size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Teléfono"
-                            value={telefono}
-                            onChangeText={setTelefono}
-                            keyboardType="phone-pad"
-                        />
+                        <View style={styles.phoneContainer}>
+                            <View style={styles.countryCodeContainer}>
+                                <Text style={styles.flag}>🇨🇱</Text>
+                                <Text style={styles.countryCode}>+56</Text>
+                            </View>
+                            <TextInput
+                                style={styles.phoneInput}
+                                placeholder="9 1234 5678"
+                                value={telefono}
+                                onChangeText={(text) => {
+                                    // Solo permitir números y máximo 9 dígitos
+                                    const numeros = text.replace(/[^0-9]/g, '');
+                                    if (numeros.length <= 9) {
+                                        setTelefono(numeros);
+                                    }
+                                }}
+                                keyboardType="phone-pad"
+                                maxLength={9}
+                            />
+                        </View>
                     </View>
 
                     <TouchableOpacity
@@ -633,6 +652,32 @@ const styles = StyleSheet.create({
     },
     inputText: {
         color: '#333',
+    },
+    phoneContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        height: 50,
+    },
+    countryCodeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 10,
+    },
+    flag: {
+        fontSize: 16,
+        marginRight: 5,
+    },
+    countryCode: {
+        fontSize: 16,
+        color: '#333',
+        fontWeight: '500',
+    },
+    phoneInput: {
+        flex: 1,
+        height: 50,
+        color: '#333',
+        fontSize: 16,
     },
 });
 
