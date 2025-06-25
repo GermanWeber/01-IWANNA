@@ -17,11 +17,10 @@ interface Message {
 export default function Chat() {
   const { id } = useLocalSearchParams();
 
-  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usuario, setUsuario] = useState<any>(null);
+  const [checkEnviado, setCheckEnviado] = useState<number>(0);
 
   const loadUsuario = async () => {
     try {
@@ -36,55 +35,6 @@ export default function Chat() {
       console.log('Error al recuperar el usuario:', error);
     }
   };
-
-  const fetchMessages = async () => {
-    console.log('Iniciando carga de mensajes...');
-    console.log('ID del chat:', id);
-    try {
-      setLoading(true);
-      setError(null); // Limpiar errores anteriores
-
-      const response = await fetch(`${API_URL}chat/mensajes/${id}`);
-
-      if (!response.ok) {
-        // Si es 404, significa que no hay mensajes, no es un error
-        if (response.status === 404) {
-          console.log('No hay mensajes en este chat');
-          setMessages([]);
-          return;
-        }
-        throw new Error(`Error al cargar los mensajes del chat: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // Verificar si la respuesta es válida
-      if (Array.isArray(data)) {
-        setMessages(data);
-      } else if (data && Array.isArray(data.mensajes)) {
-        // Si la respuesta viene envuelta en un objeto
-        setMessages(data.mensajes);
-      } else {
-        // Si la respuesta no es un array, asumir que no hay mensajes
-        console.log('Respuesta no válida, estableciendo mensajes vacíos');
-        setMessages([]);
-      }
-
-    } catch (err) {
-      console.error('Error al cargar mensajes:', err);
-      setError('Error al cargar los mensajes del chat');
-      setMessages([]); // Establecer array vacío en caso de error
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (id) {
-      fetchMessages();
-      loadUsuario();
-    }
-  }, [id]);
 
   const sendMessage = async () => {
     console.log('enviando mensaje en chat: ', id, 'usuario: ', usuario?.id);
@@ -108,9 +58,8 @@ export default function Chat() {
       }
 
       const sentMessage = await response.json();
-
+      setCheckEnviado(prev => prev + 1);
       // Refrescar la lista completa de mensajes
-      await fetchMessages();
       setNewMessage('');
     } catch (err) {
       console.error('Error al enviar mensaje:', err);
@@ -118,18 +67,9 @@ export default function Chat() {
     }
   };
 
-  const memoizedHandleRefresh = useCallback(() => {
-    setLoading(true);
-    fetchMessages();
-  }, [fetchMessages]);
-
-  if (loading && messages.length === 0) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8BC34A" />
-      </View>
-    );
-  }
+  useEffect(() => {
+    loadUsuario();
+  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -138,17 +78,15 @@ export default function Chat() {
       keyboardVerticalOffset={90}
     >
       <ChatMessages
-        messages={messages}
-        loading={loading}
-        error={error}
         currentUserId={usuario?.id}
-        onRefresh={memoizedHandleRefresh}
+        currentChatId={Number(id)}
+        checkEnviado={checkEnviado}
       />
 
       {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={memoizedHandleRefresh}>
+          <TouchableOpacity style={styles.retryButton} >
             <Text style={styles.retryButtonText}>Reintentar</Text>
           </TouchableOpacity>
         </View>

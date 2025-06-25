@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
+import { API_URL } from '@env';
 
 interface Message {
   id: number;
@@ -11,33 +12,74 @@ interface Message {
 }
 
 interface ChatMessagesProps {
-  messages: Message[];
-  loading: boolean;
-  error: string | null;
+  currentChatId?: number;
   currentUserId?: number;
-  onRefresh: () => void;
+  checkEnviado?: number;
+
 }
 
-const ChatMessages: React.FC<ChatMessagesProps> = ({
-  messages,
-  loading,
-  error,
-  currentUserId,
-  onRefresh,
-}) => {
-  if (loading && messages.length === 0) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8BC34A" />
-      </View>
-    );
-  }
+const ChatMessages: React.FC<ChatMessagesProps> = ({ currentChatId, currentUserId, checkEnviado }) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const flatListRef = useRef<FlatList<Message>>(null)
 
+  const fetchMessages = async () => {
+    try {
+      setError(null);
+      const response = await fetch(`${API_URL}chat/mensajes/${currentChatId}`);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setMessages([]);
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      let nuevosMensajes: Message[] = [];
+
+      if (Array.isArray(data)) {
+        nuevosMensajes = data;
+      } else if (data && Array.isArray(data.mensajes)) {
+        nuevosMensajes = data.mensajes;
+      } else {
+        nuevosMensajes = [];
+      }
+
+      // Solo actualizar y hacer scroll si la cantidad cambia
+      if (nuevosMensajes.length !== messages.length) {
+        setMessages(nuevosMensajes);
+      }
+
+    } catch (err) {
+      console.error('Error al cargar mensajes:', err);
+      setError('Error al cargar los mensajes del chat');
+      setMessages([]);
+    }
+  };
+
+  useEffect(() => {
+    if (currentChatId) {
+      fetchMessages();
+      
+      // Actualizar cada 5 segundos
+      const interval = setInterval(fetchMessages, 5000);
+      
+      // Limpiar el intervalo al desmontar el componente
+      return () => clearInterval(interval);
+    }
+  }, [currentChatId]);
+
+  useEffect(() => {
+    if (currentChatId) {
+      fetchMessages(); // ✅ se ejecuta al inicio y cada vez que checkEnviado cambia
+    }
+  }, [checkEnviado]);
   return (
     <FlatList
-      refreshControl={
-        <RefreshControl refreshing={loading} onRefresh={onRefresh} />
-      }
+      ref={flatListRef}
       data={messages}
       keyExtractor={(item, index) => item?.id?.toString() || `message-${index}`}
       renderItem={({ item }) => (
@@ -60,7 +102,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
         messages.length === 0 && styles.emptyMessageList,
       ]}
       ListEmptyComponent={
-        !loading && !error ? (
+        !error ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No hay mensajes aún</Text>
             <Text style={styles.emptySubtext}>
