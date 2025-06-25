@@ -76,7 +76,6 @@ import { API_URL } from "@env";
     export const obtenerContadorPosts = async (id_usuario: number) => {
         
         const today = new Date().toISOString().split('T')[0];
-        
 
        // console.log("today: ",today,'usuarioId: ',id_usuario);
 
