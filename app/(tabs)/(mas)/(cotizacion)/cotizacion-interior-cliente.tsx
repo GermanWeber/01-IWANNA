@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput, Platform, Animated } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getCotizacionesId, getRespuestaId, updateRespondido, getRechazo, createRechazoCot } from '../../../../services/cotizacionService';
 
 import { createRating, getRating } from '../../../../services/ratingService';
@@ -72,6 +72,35 @@ export default function CotizacionInteriorCliente() {
     const [ratingSubmitted, setRatingSubmitted] = useState(false);
     const [submittingRating, setSubmittingRating] = useState(false);
     const [dateRating, setdateRating] = useState<string | null>(null);;
+
+    // Animación para la flecha del chat
+    const arrowAnimation = useRef(new Animated.Value(0)).current;
+
+    // Función para animar la flecha
+    const animateArrow = () => {
+        Animated.sequence([
+            Animated.timing(arrowAnimation, {
+                toValue: 1,
+                duration: 500,
+                useNativeDriver: true,
+            }),
+            Animated.timing(arrowAnimation, {
+                toValue: 0,
+                duration: 500,
+                useNativeDriver: true,
+            }),
+        ]).start(() => {
+            // Repetir la animación cada 3 segundos
+            setTimeout(animateArrow, 3000);
+        });
+    };
+
+    // Iniciar animación cuando la cotización está en estado 4 (aceptada)
+    useEffect(() => {
+        if (cotizacion?.id_estado === 4) {
+            animateArrow();
+        }
+    }, [cotizacion?.id_estado]);
 
     useEffect(() => {
         const fetchDetalleCotizacion = async () => {
@@ -309,7 +338,20 @@ export default function CotizacionInteriorCliente() {
                 >
                     <MaterialIcons name="chat-bubble" size={16} color="#007AFF" />
                     <Text style={styles.chatStatusText}>Chat activo</Text>
-                    <MaterialIcons name="arrow-forward" size={16} color="#007AFF" />
+                    <Animated.View
+                        style={{
+                            transform: [
+                                {
+                                    translateX: arrowAnimation.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [0, 8], // Se mueve 8 píxeles hacia la derecha
+                                    }),
+                                },
+                            ],
+                        }}
+                    >
+                        <MaterialIcons name="arrow-forward" size={16} color="#007AFF" />
+                    </Animated.View>
                 </TouchableOpacity>
             )}
 
