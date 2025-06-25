@@ -1,28 +1,28 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { API_URL } from '@env';
 import { recuperarStorage } from '../../../../services/asyncStorage';
 import ChatMessages from '../../../../components/ChatMessages';
-
-interface Message {
-  id: number;
-  id_autor: number;
-  contenido: string;
-  f_creacion: string;
-  nombre: string;
-  foto: string;
-}
+import { 
+  fetchMessages, 
+  sendMessage, 
+  initializeChat, 
+  cleanupChat, 
+  subscribeToMessages 
+} from '../../../../services/chatService';
+import { Message } from '../../../../types/chat';
 
 export default function Chat() {
   const { id } = useLocalSearchParams();
-
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usuario, setUsuario] = useState<any>(null);
-  const [checkEnviado, setCheckEnviado] = useState<number>(0);
 
-  const loadUsuario = async () => {
+  // Load user data
+  const loadUsuario = useCallback(async () => {
     try {
       console.log('Iniciando carga de usuario...');
       const usuarioData = await recuperarStorage('usuario');
@@ -30,46 +30,125 @@ export default function Chat() {
       if (usuarioData) {
         console.log('Usuario recuperado:', usuarioData);
         setUsuario(usuarioData);
+        return usuarioData;
       }
+      return null;
     } catch (error) {
-      console.log('Error al recuperar el usuario:', error);
+      console.error('Error al recuperar el usuario:', error);
+      setError('Error al cargar la información del usuario');
+      return null;
     }
-  };
+  }, []);
 
-  const sendMessage = async () => {
-    console.log('enviando mensaje en chat: ', id, 'usuario: ', usuario?.id);
-    if (newMessage.trim() === '') return;
-
+  // Cargar mensajes
+  const loadMessages = useCallback(async () => {
+    if (!id) return;
+    
     try {
-      const response = await fetch(`${API_URL}chat/mensajes/enviar`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id_chat: id,
-          id_autor: usuario?.id,
-          contenido: newMessage,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al enviar el mensaje');
+      setIsLoading(true);
+      const user = await loadUsuario();
+      
+      if (!user) {
+        setError('No se pudo cargar la información del usuario');
+        return;
       }
 
-      const sentMessage = await response.json();
-      setCheckEnviado(prev => prev + 1);
-      // Refrescar la lista completa de mensajes
-      setNewMessage('');
+      // Inicializar el chat
+      initializeChat(Number(id), user.id);
+      
+      // Cargar mensajes iniciales
+      const chatMessages = await fetchMessages(Number(id));
+      setMessages(chatMessages);
+      
+      // Limpiar errores previos
+      setError(null);
+      
     } catch (err) {
-      console.error('Error al enviar mensaje:', err);
-      // Mostrar algún mensaje de error al usuario
+      console.error('Error al cargar los mensajes:', err);
+      setError('Error al cargar los mensajes. Desliza hacia abajo para intentar de nuevo.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, loadUsuario]);
+  
+  // Suscribirse a actualizaciones de mensajes
+  useEffect(() => {
+    if (!usuario?.id || !id) return;
+    
+    // Inicializar la suscripción a mensajes
+    const unsubscribe = subscribeToMessages((message: any) => {
+      if (message.type === 'messages_update') {
+        setMessages(message.messages);
+      } else if (message.type === 'message') {
+        setMessages(prev => [...prev, message]);
+      } else if (message.type === 'message_error') {
+        Alert.alert('Error', 'No se pudo enviar el mensaje. Inténtalo de nuevo.');
+      } else if (message.type === 'error') {
+        setError(message.error || 'Ocurrió un error');
+      }
+    });
+    
+    // Cargar mensajes iniciales
+    loadMessages();
+    
+    // Limpieza al desmontar
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+      cleanupChat();
+    };
+  }, [id, loadMessages, usuario?.id]);
+
+  // Initialize chat on mount
+  useEffect(() => {
+    loadMessages();
+    
+    // Cleanup on unmount
+    return () => {
+      cleanupChat();
+    };
+  }, [loadMessages]);
+
+  // Handle sending a new message
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !usuario?.id || isSending) return;
+    
+    const messageContent = newMessage.trim();
+    setNewMessage('');
+    setIsSending(true);
+    
+    try {
+      await sendMessage(messageContent);
+    } catch (err) {
+      console.error('Error al enviar el mensaje:', err);
+      Alert.alert('Error', 'No se pudo enviar el mensaje. Inténtalo de nuevo.');
+      setNewMessage(messageContent); // Restore message if sending fails
+    } finally {
+      setIsSending(false);
     }
   };
 
-  useEffect(() => {
-    loadUsuario();
-  }, []);
+  // Handle pull-to-refresh
+  const handleRefresh = useCallback(async () => {
+    if (!id) return;
+    
+    try {
+      const chatMessages = await fetchMessages(Number(id));
+      setMessages(chatMessages);
+    } catch (err) {
+      console.error('Error al actualizar los mensajes:', err);
+      setError('Error al actualizar los mensajes');
+    }
+  }, [id]);
+
+  if (isLoading && messages.length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#8BC34A" />
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -78,15 +157,22 @@ export default function Chat() {
       keyboardVerticalOffset={90}
     >
       <ChatMessages
-        currentUserId={usuario?.id}
-        currentChatId={Number(id)}
-        checkEnviado={checkEnviado}
+        currentUserId={usuario?.id || 0}
+        currentChatId={Number(id) || 0}
+        messages={messages}
+        onRefresh={handleRefresh}
+        loading={isLoading}
+        error={error}
+        onError={(errorMsg) => setError(errorMsg)}
       />
 
       {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} >
+          <TouchableOpacity 
+            style={styles.retryButton} 
+            onPress={loadMessages}
+          >
             <Text style={styles.retryButtonText}>Reintentar</Text>
           </TouchableOpacity>
         </View>
@@ -99,16 +185,26 @@ export default function Chat() {
           value={newMessage}
           onChangeText={setNewMessage}
           multiline
+          onSubmitEditing={handleSendMessage}
+          returnKeyType="send"
+          blurOnSubmit={false}
         />
         <TouchableOpacity
           style={[
             styles.sendButton,
-            { backgroundColor: newMessage.trim() ? '#8BC34A' : '#CCCCCC' }
+            { 
+              backgroundColor: newMessage.trim() ? '#8BC34A' : '#CCCCCC',
+              opacity: isSending ? 0.7 : 1
+            }
           ]}
-          onPress={sendMessage}
-          disabled={!newMessage.trim()}
+          onPress={handleSendMessage}
+          disabled={!newMessage.trim() || isSending}
         >
-          <Text style={styles.sendText}>Enviar</Text>
+          {isSending ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text style={styles.sendText}>Enviar</Text>
+          )}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
