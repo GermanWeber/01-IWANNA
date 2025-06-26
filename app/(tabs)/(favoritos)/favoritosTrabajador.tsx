@@ -21,7 +21,7 @@ interface Trabajador {
   nombre: string;
   apellido: string;
   foto: string;
-  descripcion: string;
+  profesion: string;
   id_auth: number;
   id_estado_suscripcion: number;
 }
@@ -79,7 +79,7 @@ export default function FavoritosTrabajador() {
       const filtered = allTrabajadores.filter(trabajador => 
         trabajador.nombre.toLowerCase().includes(text.toLowerCase()) ||
         trabajador.apellido.toLowerCase().includes(text.toLowerCase()) ||
-        trabajador.descripcion?.toLowerCase().includes(text.toLowerCase())
+        trabajador.profesion?.toLowerCase().includes(text.toLowerCase())
       );
       setTrabajadores(filtered);
     }
@@ -155,7 +155,7 @@ export default function FavoritosTrabajador() {
               <BotonAvatar
                 key={trabajador.id}
                 textoBoton={`${trabajador.nombre} ${trabajador.apellido}`}
-                textoProfesion={trabajador.descripcion}
+                textoProfesion={trabajador.profesion}
                 colorTextoProfesion='#424242'      
                 avatar={trabajador.foto}
                 colorTexto='#8BC34A'

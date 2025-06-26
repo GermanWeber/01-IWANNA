@@ -335,7 +335,7 @@ export default function Mas() {
                             iconoIzquierda="help"
                             onPress={() => router.push('/(mas)/preguntas-frecuentes')}
                         />
-                        <BotonCategorias
+                        {/* <BotonCategorias
                             textoBoton="DENUNCIAS"
                             colorTexto="#333"
                             textoBotonSub="Reporta contenidos sospechosos o malintencionados"
@@ -346,7 +346,7 @@ export default function Mas() {
                             colorIconoIzquierda="#8BC34A"
                             iconoIzquierda="eye"
                             onPress={() => router.push('/(mas)/denuncias')}
-                        />
+                        /> */}
                     </View>
                 </View>
             </ScrollView>

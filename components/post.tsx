@@ -246,7 +246,7 @@ const PostComponent: React.FC<Props> = ({ datos, isVisible = true }) => {
                     onLoadStart={() => setVideoCargando(true)}
                     onReadyForDisplay={() => setVideoCargando(false)}
                     onError={(error) => {
-                        console.error("Error al cargar el video:", error);
+                        console.log("Error al cargar el video:", error);
                         setVideoCargando(false);
                     }}
                     progressUpdateIntervalMillis={1000}
