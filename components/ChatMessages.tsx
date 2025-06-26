@@ -45,6 +45,14 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
     return false;
   };
 
+  useEffect(() => {
+    if (flatListRef.current && messages.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+      }
+    }, []);
+
   // Inicializar el chat y cargar mensajes
   useEffect(() => {
     if (currentChatId && currentUserId) {
