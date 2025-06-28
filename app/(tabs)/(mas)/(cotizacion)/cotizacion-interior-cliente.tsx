@@ -215,22 +215,22 @@ export default function CotizacionInteriorCliente() {
                 rechazado_por: "cliente"
             };
 
-            const response = await createRechazoCot(data);
-            if (response.message === 'Rechazo creado correctamente') {
-                // Actualizar el estado local
-                setCotizacion(prev => prev ? {
-                    ...prev,
-                    id_estado: 3 // Estado rechazado
-                } : null);
+            await createRechazoCot(data);
+            await updateRespondido(Number(id), 3); // Estado 3 = Rechazada
 
-                // Obtener y actualizar el rechazo
-                const rechazoData = await getRechazo(Number(id));
-                setRechazo(rechazoData);
+            // Actualizar el estado local
+            setCotizacion(prev => prev ? {
+                ...prev,
+                id_estado: 3 // Estado rechazado
+            } : null);
 
-                Alert.alert('Éxito', 'Cotización rechazada correctamente');
-                setShowRechazoForm(false);
-                setMotivoRechazo('');
-            }
+            // Obtener y actualizar el rechazo
+            const rechazoData = await getRechazo(Number(id));
+            setRechazo(rechazoData);
+
+            Alert.alert('Éxito', 'Cotización rechazada correctamente');
+            setShowRechazoForm(false);
+            setMotivoRechazo('');
         } catch (error) {
             Alert.alert('Error', 'No se pudo rechazar la cotización. Por favor, intenta nuevamente.');
         }
@@ -353,6 +353,97 @@ export default function CotizacionInteriorCliente() {
                         <MaterialIcons name="arrow-forward" size={16} color="#007AFF" />
                     </Animated.View>
                 </TouchableOpacity>
+            )}
+
+            {/* Botones de Acción Flotantes para estado 2 */}
+            {cotizacion?.id_estado === 2 && !procesando && (
+                <View style={styles.floatingActionContainer}>
+                    <TouchableOpacity
+                        style={[styles.floatingActionButton, styles.floatingAcceptButton]}
+                        onPress={handleAceptar}
+                        disabled={procesando}
+                        activeOpacity={0.8}
+                    >
+                        <MaterialIcons name="check-circle" size={20} color="#fff" />
+                        <Text style={styles.floatingActionText}>Aceptar</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.floatingActionButton, styles.floatingRejectButton]}
+                        onPress={() => setShowRechazoForm(true)}
+                        disabled={procesando}
+                        activeOpacity={0.8}
+                    >
+                        <MaterialIcons name="cancel" size={20} color="#fff" />
+                        <Text style={styles.floatingActionText}>Rechazar</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            {/* Formulario de Rechazo - Ahora debajo de los botones flotantes */}
+            {showRechazoForm && (
+                <View style={styles.rechazoFormContainer}>
+                    <View style={styles.rechazoFormHeader}>
+                        <MaterialIcons name="warning" size={24} color="#DC3545" />
+                        <Text style={styles.rechazoFormTitle}>Rechazar Cotización</Text>
+                    </View>
+
+                    <View style={styles.rechazoFormContent}>
+                        <Text style={styles.rechazoFormDescription}>
+                            Por favor, indica el motivo por el cual rechazas esta cotización. Esta información ayudará al trabajador a mejorar sus futuras propuestas.
+                        </Text>
+
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.inputLabel}>Motivo del Rechazo *</Text>
+                            <TextInput
+                                style={[styles.input, styles.textArea]}
+                                value={motivoRechazo}
+                                onChangeText={setMotivoRechazo}
+                                multiline
+                                numberOfLines={4}
+                                placeholder="Ej: El precio está fuera de mi presupuesto, necesito más detalles sobre el trabajo, etc."
+                                placeholderTextColor="#999"
+                                maxLength={500}
+                            />
+                            <Text style={styles.charCount}>
+                                {motivoRechazo.length}/500 caracteres
+                            </Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.rechazoButtonsContainer}>
+                        <TouchableOpacity
+                            style={[styles.rechazoButton, styles.cancelRechazoButton]}
+                            onPress={() => {
+                                setShowRechazoForm(false);
+                                setMotivoRechazo('');
+                            }}
+                            disabled={procesando}
+                        >
+                            <MaterialIcons name="arrow-back" size={16} color="#fff" />
+                            <Text style={styles.rechazoButtonText}>Cancelar</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[
+                                styles.rechazoButton,
+                                styles.confirmRechazoButton,
+                                !motivoRechazo.trim() && styles.disabledButton
+                            ]}
+                            onPress={handleRechazar}
+                            disabled={procesando || !motivoRechazo.trim()}
+                        >
+                            {procesando ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <MaterialIcons name="send" size={16} color="#fff" />
+                            )}
+                            <Text style={styles.rechazoButtonText}>
+                                {procesando ? 'Enviando...' : 'Confirmar Rechazo'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             )}
 
             <View style={styles.content}>
@@ -554,72 +645,6 @@ export default function CotizacionInteriorCliente() {
                                     </Text>
                                 </View>
                             </View>
-                        </View>
-                    </View>
-                )}
-
-                {/* Botones de Acción para Cotizaciones Respondidas */}
-                {cotizacion && cotizacion.id_estado === 2 && !procesando && (
-                    <View style={styles.actionButtonsContainer}>
-                        <TouchableOpacity
-                            style={[styles.actionButton, styles.acceptButton]}
-                            onPress={handleAceptar}
-                            disabled={procesando}
-                        >
-                            <MaterialIcons name="check-circle" size={24} color="#fff" />
-                            <Text style={styles.actionButtonText}>
-                                {procesando ? 'Procesando...' : 'Aceptar Cotización'}
-                            </Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.actionButton, styles.rejectButton]}
-                            onPress={() => setShowRechazoForm(true)}
-                            disabled={procesando}
-                        >
-                            <MaterialIcons name="cancel" size={24} color="#fff" />
-                            <Text style={styles.actionButtonText}>
-                                {procesando ? 'Procesando...' : 'Rechazar Cotización'}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-
-                {/* Formulario de Rechazo */}
-                {showRechazoForm && (
-                    <View style={styles.rechazoFormContainer}>
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.inputLabel}>Motivo del Rechazo</Text>
-                            <TextInput
-                                style={[styles.input, styles.textArea]}
-                                value={motivoRechazo}
-                                onChangeText={setMotivoRechazo}
-                                multiline
-                                numberOfLines={4}
-                                placeholder="Ingrese el motivo del rechazo..."
-                                placeholderTextColor="#999"
-                            />
-                        </View>
-                        <View style={styles.rechazoButtonsContainer}>
-                            <TouchableOpacity
-                                style={[styles.rechazoButton, styles.confirmRechazoButton]}
-                                onPress={handleRechazar}
-                                disabled={procesando}
-                            >
-                                <Text style={styles.rechazoButtonText}>
-                                    {procesando ? 'Enviando...' : 'Confirmar'}
-                                </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.rechazoButton, styles.cancelRechazoButton]}
-                                onPress={() => {
-                                    setShowRechazoForm(false);
-                                    setMotivoRechazo('');
-                                }}
-                                disabled={procesando}
-                            >
-                                <Text style={styles.rechazoButtonText}>Cancelar</Text>
-                            </TouchableOpacity>
                         </View>
                     </View>
                 )}
@@ -872,7 +897,8 @@ const styles = StyleSheet.create({
         textAlignVertical: 'top',
     },
     rechazoFormContainer: {
-        marginTop: 16,
+        marginHorizontal: 16,
+        marginTop: 8,
         padding: 16,
         backgroundColor: '#fff',
         borderRadius: 12,
@@ -890,6 +916,31 @@ const styles = StyleSheet.create({
             },
         }),
     },
+    rechazoFormHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E9ECEF',
+        marginBottom: 16,
+    },
+    rechazoFormTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#DC3545',
+        marginLeft: 8,
+    },
+    rechazoFormContent: {
+        marginBottom: 16,
+    },
+    rechazoFormDescription: {
+        fontSize: 14,
+        color: '#666',
+        lineHeight: 20,
+        marginBottom: 16,
+        textAlign: 'center',
+    },
     rechazoButtonsContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -898,9 +949,13 @@ const styles = StyleSheet.create({
     },
     rechazoButton: {
         flex: 1,
-        padding: 12,
-        borderRadius: 8,
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        gap: 6,
     },
     confirmRechazoButton: {
         backgroundColor: '#DC3545',
@@ -910,7 +965,7 @@ const styles = StyleSheet.create({
     },
     rechazoButtonText: {
         color: '#fff',
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: '600',
     },
     acceptedCard: {
@@ -1046,5 +1101,63 @@ const styles = StyleSheet.create({
         color: '#1565C0',
         flex: 1,
         textAlign: 'center',
+    },
+    disabledButton: {
+        backgroundColor: '#6C757D',
+    },
+    floatingActionContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E9ECEF',
+        marginHorizontal: 16,
+        marginTop: 8,
+        borderRadius: 12,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 3,
+            },
+        }),
+    },
+    floatingActionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        flex: 0.48,
+        gap: 8,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.2,
+                shadowRadius: 2,
+            },
+            android: {
+                elevation: 2,
+            },
+        }),
+    },
+    floatingAcceptButton: {
+        backgroundColor: '#28A745',
+    },
+    floatingRejectButton: {
+        backgroundColor: '#DC3545',
+    },
+    floatingActionText: {
+        color: '#fff',
+        fontSize: 15,
+        fontWeight: '700',
     },
 });

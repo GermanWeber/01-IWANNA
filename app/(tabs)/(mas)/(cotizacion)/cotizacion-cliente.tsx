@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, RefreshControl } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getCotizacionesId, createRespuestaCot, updateRespondido, getRespuestaId, getCotizacionesCli } from '../../../../services/cotizacionService';
 import { recuperarStorage } from '../../../../services/asyncStorage';
+import { getRating } from '../../../../services/ratingService';
 
 type CotizacionCliente = {
     id_cotizacion: number;
@@ -20,6 +21,7 @@ type CotizacionCliente = {
     telefono: string;
     rut: string;
     edad: number;
+    isRated?: boolean; // Nuevo campo para indicar si está calificada
 };
 
 export default function CotizacionCliente() {
@@ -27,6 +29,31 @@ export default function CotizacionCliente() {
     const [activeTab, setActiveTab] = useState('pendientes');
     const [userId, setUserId] = useState<number | null>(null);
     const [cotizaciones, setCotizaciones] = useState<CotizacionCliente[]>([]);
+    const [refreshing, setRefreshing] = useState(false);
+
+    // Función para verificar si una cotización terminada ya fue calificada
+    const checkRatingStatus = async (cotizacionesData: CotizacionCliente[]): Promise<CotizacionCliente[]> => {
+        const cotizacionesWithRating = await Promise.all(
+            cotizacionesData.map(async (cotizacion) => {
+                if (cotizacion.id_estado === 5) { // Solo verificar cotizaciones terminadas
+                    try {
+                        const ratingData = await getRating(cotizacion.id_cotizacion);
+                        return {
+                            ...cotizacion,
+                            isRated: Boolean(ratingData.puntuacion && ratingData.puntuacion > 0)
+                        };
+                    } catch (error) {
+                        return {
+                            ...cotizacion,
+                            isRated: false
+                        };
+                    }
+                }
+                return cotizacion;
+            })
+        );
+        return cotizacionesWithRating;
+    };
 
     // Filtrar cotizaciones según la pestaña activa
     const filteredCotizaciones = cotizaciones.filter(cotizacion => {
@@ -51,62 +78,117 @@ export default function CotizacionCliente() {
             try {
                 const usuarioData = await recuperarStorage('usuario');
                 if (usuarioData?.id) {
-                    console.log('ID de usuario recuperado:', usuarioData.id);
                     setUserId(Number(usuarioData.id));
 
                     // Obtener cotizaciones del cliente
-                    console.log('Consultando cotizaciones para el cliente:', usuarioData.id);
                     const cotizacionesData = await getCotizacionesCli(Number(usuarioData.id));
-                    console.log('Cotizaciones recibidas:', cotizacionesData);
-                    setCotizaciones(cotizacionesData);
+                    // Verificar estado de rating para cotizaciones terminadas
+                    const cotizacionesWithRating = await checkRatingStatus(cotizacionesData);
+                    setCotizaciones(cotizacionesWithRating);
                 }
             } catch (error) {
-                console.error('Error al recuperar el ID del usuario:', error);
+                // Error silencioso para mejor UX
             }
         };
 
         loadUserId();
     }, []);
 
-    const getEstadoText = (id_estado: number) => {
+    // Actualizar cotizaciones cuando el usuario regrese a la pantalla
+    useFocusEffect(
+        useCallback(() => {
+            if (userId) {
+                const refreshCotizaciones = async () => {
+                    try {
+                        const cotizacionesData = await getCotizacionesCli(userId);
+                        // Verificar estado de rating para cotizaciones terminadas
+                        const cotizacionesWithRating = await checkRatingStatus(cotizacionesData);
+                        setCotizaciones(cotizacionesWithRating);
+                    } catch (error) {
+                        // Error silencioso para mejor UX
+                    }
+                };
+                refreshCotizaciones();
+            }
+        }, [userId])
+    );
+
+    const getEstadoText = (id_estado: number, isRated?: boolean) => {
+        if (id_estado === 5) {
+            return isRated ? 'Terminada y Calificada' : 'Terminada';
+        }
+
         switch (id_estado) {
             case 1: return 'Pendiente';
             case 2: return 'Respondida';
             case 3: return 'Rechazada';
             case 4: return 'Aceptada';
-            case 5: return 'Terminada';
             default: return 'Desconocido';
         }
     };
 
-    const getEstadoColor = (id_estado: number) => {
+    const getEstadoColor = (id_estado: number, isRated?: boolean) => {
+        if (id_estado === 5) {
+            return isRated ? '#FF6B35' : '#28A745'; // Naranja para calificada, verde para terminada
+        }
+
         switch (id_estado) {
             case 1: return '#FFA000'; // Naranja para pendientes
             case 2: return '#2E7D32'; // Verde para respondidas
             case 3: return '#C62828'; // Rojo para rechazadas
             case 4: return '#1565C0'; // Azul para aceptadas
-            case 5: return '#28A745'; // Verde para terminadas
             default: return '#666666';
         }
     };
 
-    const getEstadoBackground = (id_estado: number) => {
+    const getEstadoBackground = (id_estado: number, isRated?: boolean) => {
+        if (id_estado === 5) {
+            return isRated ? '#FFF3E0' : '#E8F5E9'; // Naranja claro para calificada, verde claro para terminada
+        }
+
         switch (id_estado) {
             case 1: return '#FFF3E0'; // Naranja claro para pendientes
             case 2: return '#E8F5E9'; // Verde claro para respondidas
             case 3: return '#FFEBEE'; // Rojo claro para rechazadas
             case 4: return '#E3F2FD'; // Azul claro para aceptadas
-            case 5: return '#E8F5E9'; // Verde claro para terminadas
             default: return '#F5F5F5';
         }
     };
+
+    const getEstadoIcon = (id_estado: number, isRated?: boolean) => {
+        if (id_estado === 5) {
+            return isRated ? 'star' : 'task-alt';
+        }
+
+        switch (id_estado) {
+            case 1: return 'pending-actions';
+            case 2: return 'check-circle';
+            case 3: return 'cancel';
+            case 4: return 'assignment-turned-in';
+            default: return 'help';
+        }
+    };
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        if (userId) {
+            try {
+                const cotizacionesData = await getCotizacionesCli(userId);
+                // Verificar estado de rating para cotizaciones terminadas
+                const cotizacionesWithRating = await checkRatingStatus(cotizacionesData);
+                setCotizaciones(cotizacionesWithRating);
+            } catch (error) {
+                // Error silencioso para mejor UX
+            }
+        }
+        setRefreshing(false);
+    }, [userId]);
 
     const renderCotizacionCard = (cotizacion: CotizacionCliente) => (
         <TouchableOpacity
             key={cotizacion.id_cotizacion}
             style={styles.card}
             onPress={() => {
-                console.log('Cotización seleccionada:', cotizacion);
                 router.push({
                     pathname: '/(tabs)/(mas)/(cotizacion)/cotizacion-interior-cliente',
                     params: { id: cotizacion.id_cotizacion }
@@ -126,21 +208,18 @@ export default function CotizacionCliente() {
                 </View>
                 <View style={[
                     styles.estadoContainer,
-                    { backgroundColor: getEstadoBackground(cotizacion.id_estado) }
+                    { backgroundColor: getEstadoBackground(cotizacion.id_estado, cotizacion.isRated) }
                 ]}>
                     <MaterialIcons
-                        name={cotizacion.id_estado === 1 ? 'pending-actions' :
-                            cotizacion.id_estado === 2 ? 'check-circle' :
-                                cotizacion.id_estado === 4 ? 'assignment-turned-in' :
-                                    cotizacion.id_estado === 5 ? 'task-alt' : 'cancel'}
+                        name={getEstadoIcon(cotizacion.id_estado, cotizacion.isRated) as any}
                         size={16}
-                        color={getEstadoColor(cotizacion.id_estado)}
+                        color={getEstadoColor(cotizacion.id_estado, cotizacion.isRated)}
                     />
                     <Text style={[
                         styles.estado,
-                        { color: getEstadoColor(cotizacion.id_estado) }
+                        { color: getEstadoColor(cotizacion.id_estado, cotizacion.isRated) }
                     ]}>
-                        {getEstadoText(cotizacion.id_estado)}
+                        {getEstadoText(cotizacion.id_estado, cotizacion.isRated)}
                     </Text>
                 </View>
             </View>
@@ -254,6 +333,9 @@ export default function CotizacionCliente() {
                 style={styles.content}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                }
             >
                 {filteredCotizaciones.length > 0 ? (
                     filteredCotizaciones.map(renderCotizacionCard)

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -55,6 +55,7 @@ export default function Cotizacion() {
   const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
   const [userId, setUserId] = useState<number | null>(null);
   const [userName, setName] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchCotizaciones = async () => {
     try {
@@ -64,8 +65,6 @@ export default function Cotizacion() {
         setName(String(usuario.nombre));
 
         const resultado = await getCotizaciones(Number(usuario.id));
-        console.log('ID del trabajador:', usuario.id);
-        console.log('Cotizaciones recibidas del backend:', resultado);
         setCotizaciones(resultado.map((cot: CotizacionBackend) => ({
           id: cot.id.toString(),
           nombre: capitalizeWords(cot.nombre_cliente),
@@ -78,10 +77,10 @@ export default function Cotizacion() {
                 cot.id_estado === 5 ? 'Terminada' : 'No Respondida'
         })));
       } else {
-        console.log('No se pudo obtener el ID del usuario');
+        // Usuario no encontrado
       }
     } catch (error) {
-      console.log('Error al cargar cotizaciones:', error);
+      // Error silencioso para mejor UX
     }
   };
 
@@ -92,7 +91,6 @@ export default function Cotizacion() {
   );
 
   const handleCardPress = (id: string) => {
-    console.log('ID de la cotización tocada:', id);
     router.push(`/(mas)/(cotizacion)/cotizacion-interior?id=${id}`);
   };
 
@@ -121,6 +119,29 @@ export default function Cotizacion() {
 
   const currentCotizaciones = getCurrentCotizaciones();
   const activeTabData = TABS.find(tab => tab.id === activeTab);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    if (userId) {
+      try {
+        const resultado = await getCotizaciones(userId);
+        setCotizaciones(resultado.map((cot: CotizacionBackend) => ({
+          id: cot.id.toString(),
+          nombre: capitalizeWords(cot.nombre_cliente),
+          apellido: capitalizeWords(cot.apellido_cliente),
+          fecha: cot.f_creacion,
+          motivo: cot.asunto,
+          estado: cot.id_estado === 2 ? 'Respondida' :
+            cot.id_estado === 3 ? 'Rechazada' :
+              cot.id_estado === 4 ? 'Aceptada' :
+                cot.id_estado === 5 ? 'Terminada' : 'No Respondida'
+        })));
+      } catch (error) {
+        // Error silencioso para mejor UX
+      }
+    }
+    setRefreshing(false);
+  }, [userId]);
 
   return (
     <View style={styles.container}>
@@ -222,6 +243,9 @@ export default function Cotizacion() {
         style={styles.content}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {currentCotizaciones.length > 0 ? (
           currentCotizaciones.map((cotizacion) => (

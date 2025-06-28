@@ -325,17 +325,31 @@ export default function PerfilUsuario() {
                     </View>
 
                     {(perfil?.id_tipo === 2 && usuario?.id_tipo === 3) && (
-                        <TouchableOpacity
-                            style={styles.cotizacionButton}
-                            onPress={handleCotizar}
-                            disabled={isLoading}
-                        >
-                            <Ionicons name="chatbubble-ellipses" size={20} color="#fff" style={styles.cotizacionIcon} />
-                            <Text style={styles.cotizacionButtonText}>
-                                {isLoading ? 'Verificando...' : 'Solicitar Cotización'}
-                            </Text>
-                            <Ionicons name="arrow-forward" size={16} color="#fff" style={styles.cotizacionArrow} />
-                        </TouchableOpacity>
+                        <View style={styles.cotizacionContainer}>
+                            <TouchableOpacity
+                                style={styles.cotizacionButton}
+                                onPress={handleCotizar}
+                                disabled={isLoading}
+                                activeOpacity={0.8}
+                            >
+                                <View style={styles.cotizacionButtonContent}>
+                                    <View style={styles.cotizacionIconContainer}>
+                                        <Ionicons name="chatbubble-ellipses" size={24} color="#fff" />
+                                    </View>
+                                    <View style={styles.cotizacionTextContainer}>
+                                        <Text style={styles.cotizacionButtonText}>
+                                            {isLoading ? 'Verificando...' : 'Solicitar Cotización'}
+                                        </Text>
+                                        <Text style={styles.cotizacionSubtext}>
+                                            Obtén un presupuesto personalizado
+                                        </Text>
+                                    </View>
+                                    <View style={styles.cotizacionArrowContainer}>
+                                        <Ionicons name="arrow-forward" size={20} color="#fff" />
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
                     )}
 
                     <View style={styles.section}>
@@ -670,23 +684,59 @@ const styles = StyleSheet.create({
     likedButton: {
         backgroundColor: '#8BC34A',
     },
+    cotizacionContainer: {
+        marginBottom: 24,
+        paddingHorizontal: 4,
+    },
     cotizacionButton: {
         backgroundColor: '#8BC34A',
-        paddingVertical: 14,
-        borderRadius: 30,
-        alignItems: 'center',
-        marginBottom: 24,
+        borderRadius: 20,
+        paddingVertical: 18,
+        paddingHorizontal: 20,
         shadowColor: '#8BC34A',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 5,
+        shadowRadius: 8,
+        elevation: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
     },
-
+    cotizacionButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    cotizacionIconContainer: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: 12,
+        padding: 8,
+        marginRight: 12,
+    },
+    cotizacionTextContainer: {
+        flex: 1,
+        flexDirection: 'column',
+    },
     cotizacionButtonText: {
         color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
+        fontSize: 17,
+        fontWeight: '700',
+        marginBottom: 2,
+    },
+    cotizacionSubtext: {
+        color: 'rgba(255, 255, 255, 0.9)',
+        fontSize: 13,
+        fontWeight: '400',
+    },
+    cotizacionArrowContainer: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: 12,
+        padding: 8,
+        marginLeft: 12,
+    },
+    sectionIconContainer: {
+        backgroundColor: '#8BC34A',
+        borderRadius: 10,
+        padding: 4,
     },
     section: {
         backgroundColor: '#fff',
@@ -856,17 +906,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         marginRight: 8,
-    },
-    cotizacionIcon: {
-        marginRight: 8,
-    },
-    cotizacionArrow: {
-        marginLeft: 8,
-    },
-    sectionIconContainer: {
-        backgroundColor: '#8BC34A',
-        borderRadius: 10,
-        padding: 4,
     },
     descriptionContainer: {
         padding: 16,
