@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, RefreshControl, TextInput } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -57,6 +57,9 @@ export default function Cotizacion() {
   const [userName, setName] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Estados para filtros
+  const [searchText, setSearchText] = useState('');
+
   const fetchCotizaciones = async () => {
     try {
       const usuario = await recuperarStorage('usuario');
@@ -94,6 +97,33 @@ export default function Cotizacion() {
     router.push(`/(mas)/(cotizacion)/cotizacion-interior?id=${id}`);
   };
 
+  // Función para filtrar cotizaciones por texto
+  const filterByText = (cotizacion: Cotizacion): boolean => {
+    if (!searchText.trim()) return true;
+    const fullName = `${cotizacion.nombre} ${cotizacion.apellido}`.toLowerCase();
+    const searchLower = searchText.toLowerCase();
+    return fullName.includes(searchLower) ||
+      cotizacion.motivo.toLowerCase().includes(searchLower);
+  };
+
+  // Función para limpiar filtros
+  const clearFilters = () => {
+    setSearchText('');
+  };
+
+  // Función para verificar si hay filtros activos
+  const hasActiveFilters = (): boolean => {
+    return searchText.trim() !== '';
+  };
+
+  // Función para obtener texto de filtros activos
+  const getActiveFiltersText = (): string => {
+    if (searchText.trim()) {
+      return `"${searchText}"`;
+    }
+    return '';
+  };
+
   const noRespondidas = cotizaciones.filter((cotizacion) => cotizacion.estado === 'No Respondida');
   const respondidas = cotizaciones.filter((cotizacion) => cotizacion.estado === 'Respondida');
   const aceptadas = cotizaciones.filter((cotizacion) => cotizacion.estado === 'Aceptada');
@@ -101,20 +131,29 @@ export default function Cotizacion() {
   const rechazadas = cotizaciones.filter((cotizacion) => cotizacion.estado === 'Rechazada');
 
   const getCurrentCotizaciones = () => {
+    let currentCotizaciones;
     switch (activeTab) {
       case 'noRespondidas':
-        return noRespondidas;
+        currentCotizaciones = noRespondidas;
+        break;
       case 'respondidas':
-        return respondidas;
+        currentCotizaciones = respondidas;
+        break;
       case 'aceptadas':
-        return aceptadas;
+        currentCotizaciones = aceptadas;
+        break;
       case 'terminadas':
-        return terminadas;
+        currentCotizaciones = terminadas;
+        break;
       case 'rechazadas':
-        return rechazadas;
+        currentCotizaciones = rechazadas;
+        break;
       default:
-        return noRespondidas;
+        currentCotizaciones = noRespondidas;
     }
+
+    // Aplicar filtro de texto
+    return currentCotizaciones.filter(filterByText);
   };
 
   const currentCotizaciones = getCurrentCotizaciones();
@@ -150,6 +189,45 @@ export default function Cotizacion() {
           Cotizaciones de <Text style={styles.titleHighlight}>{userName?.toUpperCase()}</Text>
         </Text>
       </View>
+
+      {/* Barra de búsqueda */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <MaterialIcons name="search" size={20} color="#666" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar por cliente, asunto..."
+            value={searchText}
+            onChangeText={setSearchText}
+            placeholderTextColor="#999"
+          />
+          {searchText.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchText('')}>
+              <MaterialIcons name="close" size={20} color="#666" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Indicador de filtros activos */}
+      {hasActiveFilters() && (
+        <View style={styles.activeFiltersContainer}>
+          <View style={styles.activeFiltersInfo}>
+            <MaterialIcons name="search" size={16} color="#1565C0" />
+            <Text style={styles.activeFiltersText}>
+              {getActiveFiltersText()}
+            </Text>
+          </View>
+          <View style={styles.activeFiltersActions}>
+            <Text style={styles.resultsCount}>
+              {currentCotizaciones.length} resultado{currentCotizaciones.length !== 1 ? 's' : ''}
+            </Text>
+            <TouchableOpacity onPress={clearFilters}>
+              <Text style={styles.clearFiltersText}>Limpiar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       <View style={styles.tabsContainer}>
         <TouchableOpacity
@@ -264,11 +342,12 @@ export default function Cotizacion() {
               color="#ccc"
             />
             <Text style={styles.emptyText}>
-              {activeTab === 'noRespondidas' ? 'No hay cotizaciones pendientes' :
-                activeTab === 'respondidas' ? 'No hay cotizaciones respondidas' :
-                  activeTab === 'aceptadas' ? 'No hay cotizaciones aceptadas' :
-                    activeTab === 'terminadas' ? 'No hay trabajos terminados' :
-                      'No hay cotizaciones rechazadas'}
+              {hasActiveFilters() ? 'No se encontraron cotizaciones con la búsqueda aplicada' :
+                activeTab === 'noRespondidas' ? 'No hay cotizaciones pendientes' :
+                  activeTab === 'respondidas' ? 'No hay cotizaciones respondidas' :
+                    activeTab === 'aceptadas' ? 'No hay cotizaciones aceptadas' :
+                      activeTab === 'terminadas' ? 'No hay trabajos terminados' :
+                        'No hay cotizaciones rechazadas'}
             </Text>
           </View>
         )}
@@ -368,5 +447,64 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    marginLeft: 8,
+  },
+  activeFiltersContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#E3F2FD',
+    borderBottomWidth: 1,
+    borderBottomColor: '#BBDEFB',
+  },
+  activeFiltersInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  activeFiltersText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1565C0',
+    marginLeft: 8,
+  },
+  activeFiltersActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  resultsCount: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1565C0',
+    marginRight: 8,
+  },
+  clearFiltersText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#007AFF',
   },
 });
