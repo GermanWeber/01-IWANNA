@@ -153,7 +153,7 @@ const Register_three = () => {
                 [
                     {
                         text: 'OK',
-                        onPress: () => router.push('/')
+                        onPress: () => router.push('/index2')
                     }
                 ]
             );

@@ -1,4 +1,4 @@
-package com.anonymous.IWANNA
+package com.germanweber.IWANNA
 
 import android.os.Build
 import android.os.Bundle

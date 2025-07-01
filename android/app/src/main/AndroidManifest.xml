@@ -28,7 +28,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="iwanna"/>
-        <data android:scheme="com.anonymous.IWANNA"/>
+        <data android:scheme="com.germanweber.IWANNA"/>
       </intent-filter>
     </activity>
   </application>
