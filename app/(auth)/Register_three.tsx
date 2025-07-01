@@ -7,6 +7,8 @@ import { auth } from '../../config/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@env';
+import { guardarStorage, recuperarStorage } from '../../services/asyncStorage';
+import { guardarDireccion } from '../../services/direccionService';
 
 const Register_three = () => {
     const router = useRouter();
@@ -19,6 +21,7 @@ const Register_three = () => {
     const [isValidEmail, setIsValidEmail] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [datosUsuario, setDatosUsuario] = useState<any>(null);
+    const [direccion, setDireccion] = useState<InterfaceDireccion | null>(null);
 
     // Estados para validación de contraseña
     const [passwordRequirements, setPasswordRequirements] = useState({
@@ -41,6 +44,21 @@ const Register_three = () => {
             }
         };
         cargarDatosUsuario();
+    },[]);
+
+    useEffect( () => {
+        const cargarDireccion = async () => {
+            try {
+                const datos = await recuperarStorage('direccion_registrar');
+                if (datos) {
+                    setDireccion(datos);
+                    console.log("direccion recuperada 1: ", datos);
+                }
+            } catch (error) {
+                console.error('Error al cargar dirección:', error);
+            }
+        };
+        cargarDireccion();
     }, []);
 
     const validateEmail = (email: string) => {
@@ -91,7 +109,7 @@ const Register_three = () => {
             const userCredential = await createUserWithEmailAndPassword(auth, correo, contrasena);
             const user = userCredential.user;
 
-            console.log(user.uid);
+            // console.log(user.uid);
 
             // 2. Obtener datos almacenados
             const tipoUsuario = await AsyncStorage.getItem('tipoUsuario');
@@ -112,8 +130,6 @@ const Register_three = () => {
                 id_estado: 1,
                 id_tipo: parseInt(tipoUsuario || '1'),
                 foto: '',
-                id_comuna: 1,
-                direccion: datosUsuario.direccion?.descripcion || null
             };
 
             // 4. Crear usuario en la base de datos
@@ -126,15 +142,22 @@ const Register_three = () => {
             });
 
             const responseData = await response.json();
-
             if (!response.ok) {
                 throw new Error(responseData.error || 'Error al crear usuario en la base de datos');
             }
 
+            
             // Obtener el ID del usuario recién creado
             const userId = responseData.userId;
-            console.log('Usuario creado con ID:', userId);
 
+
+            //  Crear direccion del usuario
+            if(direccion){
+                await guardarDireccion(userId, direccion);
+                guardarStorage("direccion", direccion);
+            } else {
+                console.log("No se creo la direccion del usuario: ",userId)
+            }
             // 5. Crear usuario en Stripe
             await crearUsuarioStripe(userId, correo, `${usuarioData.nombre} ${usuarioData.apellido}`);
 
@@ -153,7 +176,7 @@ const Register_three = () => {
                 [
                     {
                         text: 'OK',
-                        onPress: () => router.push('/')
+                        onPress: () => router.push('/index2')
                     }
                 ]
             );

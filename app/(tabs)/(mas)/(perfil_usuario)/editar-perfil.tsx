@@ -7,6 +7,7 @@ import { guardarStorage, recuperarStorage } from '../../../../services/asyncStor
 import * as ImagePicker from 'expo-image-picker';
 import { Usuario } from '../../../../types/usuario';
 import { API_URL, BUCKET_URL } from '@env';
+import { guardarDireccion } from '../../../../services/direccionService';
 const imgPerfil = require('../../../../assets/images/perfil.png');
 
 export default function EditarPerfil() {
@@ -80,7 +81,7 @@ export default function EditarPerfil() {
                 try {
                     // Guardar dirección
                     if (direccion) {
-                        const resDireccion = await guardarDireccion();
+                        const resDireccion = await guardarDireccion(usuario.id, direccion);
                         console.log(resDireccion);
                         if (!resDireccion) {
                             Alert.alert("Error", "Error al guardar dirección");
@@ -132,38 +133,38 @@ export default function EditarPerfil() {
         setIsLoading(false);
     };
 
-    const guardarDireccion = async () => {
-        if (!usuario?.id) {
-            console.error("Usuario sin ID. No se puede guardar dirección.");
-            return;
-        }
-        if (!direccion || !direccion.descripcion || !direccion.latitud || !direccion.longitud) {
-            console.error("Dirección incompleta:", direccion);
-            return;
-        }
+    // const guardarDireccion = async (id_usuario:number, direccion:) => {
+    //     if (!usuario?.id && !id_usuario) {
+    //         console.error("Usuario sin ID. No se puede guardar dirección.");
+    //         return;
+    //     }
+    //     if (!direccion || !direccion.descripcion || !direccion.latitud || !direccion.longitud) {
+    //         console.error("Dirección incompleta:", direccion);
+    //         return;
+    //     }
 
-        const urlApi = `${API_URL}direccion/${usuario.id}`;
+    //     const urlApi = `${API_URL}direccion/${usuario.id}`;
 
-        try {
-            const res = await fetch(urlApi, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(direccion),
-            });
-            console.log("res: ", res);
+    //     try {
+    //         const res = await fetch(urlApi, {
+    //             method: 'PUT',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //             },
+    //             body: JSON.stringify(direccion),
+    //         });
+    //         console.log("res: ", res);
 
-            if (!res.ok) {
-                throw new Error(`Error al enviar datos de dirección. Status: ${res.status}`);
-            }
+    //         if (!res.ok) {
+    //             throw new Error(`Error al enviar datos de dirección. Status: ${res.status}`);
+    //         }
 
-            const data = await res.json();
-            return data.exito;
-        } catch (error) {
-            console.error('Error al actualizar dirección:', error);
-        }
-    };
+    //         const data = await res.json();
+    //         return data.exito;
+    //     } catch (error) {
+    //         console.error('Error al actualizar dirección:', error);
+    //     }
+    // };
 
     const guardarDatos = async () => {
         if (usuario) {
