@@ -57,7 +57,7 @@ export default function Post() {
                     },
                     {
                         text: 'Actualizar cuenta',
-                        onPress: () => router.push('/premium')
+                        onPress: () => router.push('../(mas)/(mi-plan)/planes')
                     }
                 ]
             );
@@ -91,10 +91,10 @@ export default function Post() {
                     <TouchableOpacity 
                         style={[
                             styles.editButton, 
-                            yaPublicoHoy && styles.disabledButton
+                            yaPublicoHoy && usuario?.id_estado !== 2 && styles.disabledButton
                         ]} 
                         onPress={handleAgregarPost}
-                        disabled={yaPublicoHoy}
+                        
                     >
                         <Ionicons 
                             name={yaPublicoHoy ? 'time-outline' : 'add'} 
@@ -102,12 +102,18 @@ export default function Post() {
                             color="#fff" 
                         />
                         {/* cambiar texto segun estado */}
-                        <Text style={styles.editButtonText}>
-                            {yaPublicoHoy ? 'Ya publicaste hoy' : 'Agregar Publicación'}
-                        </Text>
+                        {yaPublicoHoy && usuario?.id_estado == 1 && (
+                            <Text style={styles.editButtonText}>Ya publicaste hoy</Text>
+                        )}
+                        {yaPublicoHoy == false && usuario?.id_estado == 1 && (
+                            <Text style={styles.editButtonText}>Agregar Publicación</Text>
+                        )}
+                        {usuario?.id_estado == 2 && (
+                            <Text style={styles.editButtonText}>Agregar Publicación</Text>
+                        )}
                     </TouchableOpacity>
 
-                    {yaPublicoHoy && (
+                    {yaPublicoHoy && usuario?.id_estado !== 2 && (
                         <View style={styles.infoBox}>
                             <Ionicons name="information-circle" size={20} color="#2196F3" />
                             <Text style={styles.infoText}>
