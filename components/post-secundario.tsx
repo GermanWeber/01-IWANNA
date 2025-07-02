@@ -144,7 +144,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                         }}
 
                 >
-                    {datos?.id_estado == 2? (
+                    {datos?.id_estado_suscripcion == 2? (
                         <Image source={datos?.foto ? { uri: `${BUCKET_URL}foto-perfil/${datos.foto}` } : foto_default} style={{...styles.foto_usuario, borderWidth: 3, borderColor: '#00BCD4'}} />
                     ) : (
                         <Image source={datos?.foto ? { uri: `${BUCKET_URL}foto-perfil/${datos.foto}` } : foto_default} style={styles.foto_usuario} />
@@ -212,7 +212,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                         rate={1.0}
                         volume={1.0}
                         isMuted={false}
-                        resizeMode={ResizeMode.COVER}
+                        resizeMode={ResizeMode.CONTAIN}
                         shouldPlay={false}
                         useNativeControls
                         style={styles.imagen_post}
