@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, Text, View, Image, TouchableOpacity, Alert } fr
 import { Ionicons } from '@expo/vector-icons';
 import { RatingStars } from '../../../../components/rating-stars';
 import { router, useFocusEffect } from 'expo-router';
-import { recuperarStorage } from '../../../../services/asyncStorage';
+import { recuperarStorage, eliminarDatos } from '../../../../services/asyncStorage';
 import { useCallback, useEffect, useState } from 'react';
 import { BUCKET_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -90,6 +90,7 @@ export default function MiPerfil() {
                         try {
                             await AsyncStorage.removeItem('usuario');
                             await AsyncStorage.removeItem('stripeData');
+                            await eliminarDatos('direccion_cotizacion');
 
                             router.replace('/(auth)/index2');
                         } catch (error) {
