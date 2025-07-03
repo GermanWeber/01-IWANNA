@@ -1,23 +1,22 @@
 import { API_URL } from "@env";
 
     export const obtenerPostsByUser = async (usuarioId: number) => {
-            try {
-                const url = `${API_URL}post/usuario/${usuarioId}`;
-                const response = await fetch(url);
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.message || 'Error al obtener posts');
-                }
-                if (!response.ok) {
-                    throw new Error(data.message || 'Error al obtener posts');
-                }
-
-            return data;
-            } catch (error) {
-                console.log('Error al obtener posts:', error);
+        try {
+            const url = `${API_URL}post/usuario/${usuarioId}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || 'Error al obtener posts');
             }
-        };
+            if (!response.ok) {
+                throw new Error(data.message || 'Error al obtener posts');
+            }
 
+        return data;
+        } catch (error) {
+            console.log('Error al obtener posts:', error);
+        }
+    };
 
     export const obtenerPostsByIdPost = async (id: number) => {
         try {
@@ -34,7 +33,24 @@ import { API_URL } from "@env";
             console.log('Error al obtener posts:', error);
         }
     };
+    
+    export const crearPost = async (formData: FormData) => {
+        const urlApi = `${API_URL}s3/publicacion`;
 
+        try {
+            const response = await fetch(urlApi, {
+                method: "POST",
+                body: formData,
+            });
+
+            const data = await response.json();
+            
+            return data
+        } catch (error) {
+            console.error("Error al subir el archivo:", error);
+            return false;
+        }
+    }
     export const modificarPost = async (idPost: number, descripcion: string) => {
         try {
             const url = `${API_URL}post/${idPost}`

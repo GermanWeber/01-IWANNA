@@ -9,6 +9,7 @@ import { recuperarStorage } from '../../../../services/asyncStorage';
 import { Usuario } from '../../../../types/usuario';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
+import { crearPost } from '../../../../services/postService';
 
 export default function Post() {
     const [usuario, setUsuario] = useState<Usuario | null>(null);
@@ -67,7 +68,6 @@ export default function Post() {
         }
 
         const formData = new FormData();
-        const urlApi = `${API_URL}s3/publicacion`;
 
         const uri = archivo.uri;
         const nombre = uri.split('/').pop() ?? 'archivo';
@@ -97,30 +97,19 @@ export default function Post() {
         formData.append("id_user", usuario.id.toString());
         formData.append("descripcion", descripcion);
 
-        try {
-            const response = await fetch(urlApi, {
-                method: "POST",
-                headers: {
-                "Content-Type": "multipart/form-data",
-                },
-                body: formData,
-            });
+        const result = await crearPost(formData);
 
-            const data = await response.json();
-            if (!data.exito) {
-                Alert.alert("Error", data.error);
-            } else {
-                Alert.alert("Éxito", "Archivo subido con éxito.");
-                router.back();
-            }
-        } catch (error) {
-            console.error("Error al subir el archivo:", error);
-            Alert.alert("Error", "Ocurrió un problema al subir el archivo.");
+         if (!result.exito) {
+            Alert.alert("Error", result.error);
+        } else {
+            Alert.alert("Éxito", "Archivo subido con éxito.");
+            router.back();
         }
+
         setIsLoading(false);
     };
 
-    // Función para preparar el video: copiar a documentDirectory para poder reproducirlo bien
+
     const prepararVideoParaVisualizacion = async (uri: string): Promise<string> => {
         try {
             const fileName = uri.split('/').pop();
