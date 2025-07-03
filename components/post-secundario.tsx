@@ -212,7 +212,7 @@ const PostComponent: React.FC<Props> = ({ datos }) => {
                         rate={1.0}
                         volume={1.0}
                         isMuted={false}
-                        resizeMode={ResizeMode.COVER}
+                        resizeMode={ResizeMode.CONTAIN}
                         shouldPlay={false}
                         useNativeControls
                         style={styles.imagen_post}
