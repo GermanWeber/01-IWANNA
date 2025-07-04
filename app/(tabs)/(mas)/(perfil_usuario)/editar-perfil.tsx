@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Usuario } from '../../../../types/usuario';
 import { API_URL, BUCKET_URL } from '@env';
 import { guardarDireccion } from '../../../../services/direccionService';
+import { guardarDatos, guardarFoto, obtenerUsuario } from '../../../../services/userService';
 const imgPerfil = require('../../../../assets/images/perfil.png');
 
 export default function EditarPerfil() {
@@ -16,24 +17,6 @@ export default function EditarPerfil() {
     const [direccion, setDireccion] = useState<InterfaceDireccion | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [nuevaFoto, setNuevaFoto] = useState<any>(null);
-
-    const obtenerUsuario = async (email: string): Promise<Usuario | null> => {
-        const urlApi = `${API_URL}usuarios/${email}`;
-        console.log(urlApi)
-        try {
-            const res = await fetch(urlApi);
-
-            if (!res.ok) {
-                throw new Error(`Error al consultar la API. Status: ${res.status}`);
-            }
-
-            const data: Usuario = await res.json();
-            return data;
-        } catch (error) {
-            console.error('Error al obtener usuario:', error);
-            return null;
-        }
-    };
 
     const toDireccion = () => {
         router.push('../../../screens/direccion');
@@ -82,7 +65,6 @@ export default function EditarPerfil() {
                     // Guardar dirección
                     if (direccion) {
                         const resDireccion = await guardarDireccion(usuario.id, direccion);
-                        console.log(resDireccion);
                         if (!resDireccion) {
                             Alert.alert("Error", "Error al guardar dirección");
                             setIsLoading(false);
@@ -92,7 +74,7 @@ export default function EditarPerfil() {
 
                     // Guardar usuario
                     if (usuario) {
-                        const resDatos = await guardarDatos();
+                        const resDatos = await guardarDatos(usuario);
                         if (!resDatos) {
                             Alert.alert("Error", "Error al guardar usuario");
                             setIsLoading(false);
@@ -101,12 +83,8 @@ export default function EditarPerfil() {
                     }
 
                     if (nuevaFoto) {
-                        const resFoto = await guardarFoto();
-                        console.log("respuesta de foto: ", resFoto)
-                    } else {
-                        console.log("sin foto por mandar")
-                    }
-
+                        const resFoto = await guardarFoto(nuevaFoto,usuario);
+                    } 
                     const usuarioDatos = await obtenerUsuario(usuario.email);
 
                     if (usuarioDatos) {
@@ -133,93 +111,7 @@ export default function EditarPerfil() {
         setIsLoading(false);
     };
 
-    // const guardarDireccion = async (id_usuario:number, direccion:) => {
-    //     if (!usuario?.id && !id_usuario) {
-    //         console.error("Usuario sin ID. No se puede guardar dirección.");
-    //         return;
-    //     }
-    //     if (!direccion || !direccion.descripcion || !direccion.latitud || !direccion.longitud) {
-    //         console.error("Dirección incompleta:", direccion);
-    //         return;
-    //     }
-
-    //     const urlApi = `${API_URL}direccion/${usuario.id}`;
-
-    //     try {
-    //         const res = await fetch(urlApi, {
-    //             method: 'PUT',
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //             },
-    //             body: JSON.stringify(direccion),
-    //         });
-    //         console.log("res: ", res);
-
-    //         if (!res.ok) {
-    //             throw new Error(`Error al enviar datos de dirección. Status: ${res.status}`);
-    //         }
-
-    //         const data = await res.json();
-    //         return data.exito;
-    //     } catch (error) {
-    //         console.error('Error al actualizar dirección:', error);
-    //     }
-    // };
-
-    const guardarDatos = async () => {
-        if (usuario) {
-            const urlApi = `${API_URL}usuarios/update-user/${usuario.id}`;
-            console.log("URL API: ", urlApi);
-            try {
-                const res = await fetch(urlApi, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(usuario),
-                });
-
-                if (!res.ok) {
-                    throw new Error(`Error al enviar datos. Status: ${res.status}`);
-                }
-
-                const data = await res.json();
-
-                return data.exito;
-            } catch (error) {
-                console.error('Error al enviar usuario:', error);
-            }
-        }
-    };
-
-    const guardarFoto = async () => {
-        const formData = new FormData();
-        const urlApi = `${API_URL}s3/foto-perfil`;
-        console.log(urlApi)
-        formData.append("foto-perfil", {
-            uri: nuevaFoto,
-            name: "foto.jpg",
-            type: "image/jpeg",
-        } as any);
-
-        if (usuario?.id) {
-            formData.append("id_user", usuario.id.toString());
-        }
-
-        try {
-            const response = await fetch(urlApi, {
-                method: "POST",
-                body: formData
-            });
-
-            const data = await response.json();
-            console.log("Foto subida con éxito:", data.url);
-
-        } catch (error) {
-            console.error("Error al subir la foto:", error);
-        }
-    };
-
+    //PIDE PERMISOS PARA USAR CAMARA Y ALMACENAMIENTO
     useEffect(() => {
         (async () => {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -229,6 +121,7 @@ export default function EditarPerfil() {
         })();
     }, []);
 
+    //CARGA USUARIO DESDE EL STORAGE
     useEffect(() => {
         const cargarUsuario = async () => {
             try {
@@ -243,20 +136,20 @@ export default function EditarPerfil() {
         cargarUsuario();
     }, []);
 
+    //CARGA DIRECCION DESDE EL STORAGE
     useFocusEffect(
         useCallback(() => {
-            const cargarUsuario = async () => {
+            const cargarDireccion = async () => {
                 try {
                     const datos = await recuperarStorage('direccion');
                     if (datos) {
                         setDireccion(datos);
-                        console.log("direccion recuperada edit: ", datos)
                     }
                 } catch (error) {
-                    console.error('Error al cargar usuario:', error);
+                    console.log('Error al cargar usuario:', error);
                 }
             };
-            cargarUsuario();
+            cargarDireccion();
         }, [])
     )
 

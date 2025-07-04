@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { guardarStorage } from './asyncStorage';
 import { getSubscriptionInfo } from './paymentService';
 import { UsuarioDatos, BackendResponse } from '../types/user'
+import { Usuario } from '../types/usuario';
 
 
 
@@ -40,19 +41,39 @@ export const obtenerUsuario = async (email: string) => {
       throw new Error(data.message || 'Error al obtener usuario');
     }
 
-    // Guardar datos simples en AsyncStorage
-    await AsyncStorage.setItem('usuario', JSON.stringify(data));
-    console.log('Datos guardados en AsyncStorage:', data); // Log para verificar datos guardados
-
-    // Verificar que los datos se guardaron correctamente
-    const storedData = await AsyncStorage.getItem('usuario');
-    console.log('Datos recuperados de AsyncStorage:', storedData); // Log para verificar datos recuperados
+    await guardarStorage('usuario', JSON.stringify(data));
 
     return data;
   } catch (error) {
     console.error('Error:', error);
     throw error;
   }
+};
+
+export const guardarDatos = async (usuario: Usuario) => {
+    if (usuario) {
+        const urlApi = `${API_URL}usuarios/update-user/${usuario.id}`;
+        console.log("URL API: ", urlApi);
+        try {
+            const res = await fetch(urlApi, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(usuario),
+            });
+
+            if (!res.ok) {
+                throw new Error(`Error al enviar datos. Status: ${res.status}`);
+            }
+
+            const data = await res.json();
+
+            return data.exito;
+        } catch (error) {
+            console.error('Error al enviar usuario:', error);
+        }
+    }
 };
 
 export const obtenerDatos = async (id: string): Promise<UsuarioDatos | null> => {
@@ -64,12 +85,12 @@ export const obtenerDatos = async (id: string): Promise<UsuarioDatos | null> => 
     const data: BackendResponse = await response.json();
 
     if (!response.ok) {
-      // Si el usuario no tiene datos (404) o hay otro error, retornamos null
-      if (response.status === 404) {
-        console.log('Usuario no encontrado o sin datos');
-        return null;
-      }
-      throw new Error(data.mensaje || 'Error al obtener usuario');
+        // Si el usuario no tiene datos (404) o hay otro error, retornamos null
+        if (response.status === 404) {
+            console.log('Usuario no encontrado o sin datos');
+            return null;
+        }
+        throw new Error(data.mensaje || 'Error al obtener usuario');
     }
 
     // Verificar si el backend devuelve datos válidos
@@ -157,4 +178,31 @@ export const updateSuscripcion = async (userId: string, email: string) => {
   } catch (error) {
     throw error;
   }
+};
+
+export const guardarFoto = async (nuevaFoto:any, usuario:Usuario) => {
+        const formData = new FormData();
+        const urlApi = `${API_URL}s3/foto-perfil`;
+        formData.append("foto-perfil", {
+            uri: nuevaFoto,
+            name: "foto.jpg",
+            type: "image/jpeg",
+        } as any);
+
+        if (usuario?.id) {
+            formData.append("id_user", usuario.id.toString());
+        }
+
+        try {
+            const response = await fetch(urlApi, {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+            console.log("Foto subida con éxito:", data.url);
+
+        } catch (error) {
+            console.error("Error al subir la foto:", error);
+        }
 };
