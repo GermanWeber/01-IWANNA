@@ -90,7 +90,7 @@ export default function MiPerfil() {
                         try {
                             await AsyncStorage.removeItem('usuario');
                             await AsyncStorage.removeItem('stripeData');
-                            await eliminarDatos('direccion_cotizacion');
+                            await eliminarDatos('direccion');
 
                             router.replace('/(auth)/index2');
                         } catch (error) {

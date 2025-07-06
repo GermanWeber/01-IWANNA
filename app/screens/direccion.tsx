@@ -51,8 +51,8 @@ export default function DireccionScreen() {
                 if (datos) {
                     setDireccion(datos);
                     setRegion({
-                        latitude: datos.latitud,
-                        longitude: datos.longitud,
+                        latitude: Number(datos.latitud),
+                        longitude: Number(datos.longitud),
                         latitudeDelta: 0.01,
                         longitudeDelta: 0.01,
                     });

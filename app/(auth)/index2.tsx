@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSubscriptionInfo } from '../../services/paymentService';
 import { obtenerUsuario } from '../../services/userService';
 import { guardarStorage } from '../../services/asyncStorage';
+import { obtenerDireccion } from '../../services/direccionService';
 
 
 // LOGIN 
@@ -69,36 +70,32 @@ const Login = () => {
         setIsLoading(true);
         try {
             // Autenticación con Firebase
-         
             const userCredential = await signInWithEmailAndPassword(auth, email, contrasena);
             const user = userCredential.user;
-           
             // Obtener token de Firebase
             const token = await user.getIdToken();
             await AsyncStorage.setItem('userToken', token);
             
              // 3. Obtener datos básicos del usuario
             const userData = await obtenerUsuario(email);
+            await guardarStorage('usuario', userData);    
 
+            const direccion_usuario = await obtenerDireccion(userData.id);
+            await guardarStorage('direccion', direccion_usuario);            
             //obtener datos de stripe
             const stripeData = await getSubscriptionInfo(userData.id);
-            console.log('Datos de Stripe:', stripeData);
 
             //recargar los datos de usuario si no esta suscrito
             if(!stripeData.subscribed){
-                console.log('El usuario no esta suscrito');
                 try {
                     await AsyncStorage.removeItem('usuario');
-                    console.log('Datos de usuario eliminados de AsyncStorage');
                     const userData = await obtenerUsuario(email);
-                    console.log('Datos de usuario obtenidos:', userData);
                     await guardarStorage('usuario', userData);    
                 } catch (error) {
                     console.error('Error al guardar datos de usuario:', error);
                 }
             }
             await guardarStorage('stripeData', stripeData);
-            console.log('Datos de Stripe:', stripeData);
             Keyboard.dismiss();
             await new Promise(resolve => setTimeout(resolve, 100));
 

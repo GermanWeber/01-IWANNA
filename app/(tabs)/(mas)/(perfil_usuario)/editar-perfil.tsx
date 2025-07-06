@@ -142,6 +142,7 @@ export default function EditarPerfil() {
             const cargarDireccion = async () => {
                 try {
                     const datos = await recuperarStorage('direccion');
+                    console.log("direccion: ",datos);
                     if (datos) {
                         setDireccion(datos);
                     }
